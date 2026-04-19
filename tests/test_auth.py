@@ -2,6 +2,8 @@
 
 import pytest
 
+from tests.conftest import assert_error_envelope
+
 
 @pytest.mark.asyncio
 async def test_missing_api_key_returns_401(client):
@@ -11,6 +13,7 @@ async def test_missing_api_key_returns_401(client):
         json={"source": "test"},
     )
     assert resp.status_code == 401
+    assert_error_envelope(resp.json(), error_code="MISSING_API_KEY")
 
 
 @pytest.mark.asyncio
@@ -22,6 +25,7 @@ async def test_invalid_api_key_returns_403(client):
         json={"source": "test"},
     )
     assert resp.status_code == 403
+    assert_error_envelope(resp.json(), error_code="INVALID_API_KEY")
 
 
 @pytest.mark.asyncio

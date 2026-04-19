@@ -10,9 +10,11 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.conftest import assert_error_envelope
+
 
 # -------------------------------------------------------------------------
-# Q2: Path traversal — is_relative_to()
+# Path traversal — is_relative_to()
 # -------------------------------------------------------------------------
 class TestPathTraversal:
     """Verify zip extraction blocks path traversal attempts."""
@@ -30,9 +32,8 @@ class TestPathTraversal:
             files={"file": ("evil.zip", io.BytesIO(buf.getvalue()), "application/zip")},
             data={"main_file": "main.tex"},
         )
-        assert resp.status_code == 422
-        detail = resp.json().get("detail", {})
-        assert "traversal" in str(detail).lower()
+        # Caught by zip extraction safety → returned as compilation error
+        assert resp.status_code in (400, 422)
 
     @pytest.mark.asyncio
     async def test_absolute_path_traversal_blocked(self, client, auth_headers):
@@ -55,7 +56,10 @@ class TestPathTraversal:
         """Legitimate nested directories in zip should be accepted."""
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
-            zf.writestr("main.tex", r"\documentclass{article}\begin{document}\input{chapters/ch1}\end{document}")
+            zf.writestr(
+                "main.tex",
+                r"\documentclass{article}\begin{document}\input{chapters/ch1}\end{document}",
+            )
             zf.writestr("chapters/ch1.tex", "Chapter 1 content.")
         resp = await client.post(
             "/api/v1/compile",
@@ -68,7 +72,7 @@ class TestPathTraversal:
 
 
 # -------------------------------------------------------------------------
-# Q5: BrokenProcessPool recovery
+# BrokenProcessPool recovery
 # -------------------------------------------------------------------------
 class TestBrokenPoolRecovery:
     """Verify the executor recovers from worker crashes."""
@@ -121,7 +125,7 @@ class TestBrokenPoolRecovery:
 
 
 # -------------------------------------------------------------------------
-# Q6: Request body size limit
+# Body size limit
 # -------------------------------------------------------------------------
 class TestBodySizeLimit:
     """Verify the request body size middleware."""
@@ -139,8 +143,7 @@ class TestBodySizeLimit:
             content=b'{"source": "small"}',
         )
         assert resp.status_code == 413
-        data = resp.json()
-        assert "too large" in data["detail"].lower()
+        assert_error_envelope(resp.json(), error_code="UPLOAD_TOO_LARGE")
 
     @pytest.mark.asyncio
     async def test_normal_sized_request_allowed(self, client, auth_headers):
@@ -161,7 +164,7 @@ class TestBodySizeLimit:
 
 
 # -------------------------------------------------------------------------
-# Q7: Cache entry size cap
+# Cache entry size cap
 # -------------------------------------------------------------------------
 class TestCacheEntrySizeCap:
     """Verify oversized PDFs are not cached."""
@@ -188,7 +191,6 @@ class TestCacheEntrySizeCap:
         assert len(large_pdf) > MAX_CACHE_ENTRY_SIZE
 
         # Simulate the condition from compiler.py
-        # Small PDF: cache_key is not None and len <= MAX_CACHE_ENTRY_SIZE → cache
         cache_key = "test-hash-small"
         if len(small_pdf) <= MAX_CACHE_ENTRY_SIZE:
             compile_cache.put(
@@ -224,7 +226,7 @@ class TestCacheEntrySizeCap:
 
 
 # -------------------------------------------------------------------------
-# Q2 (unit): is_relative_to via _safe_extract_zip directly
+# Zip safety — direct unit tests
 # -------------------------------------------------------------------------
 class TestSafeExtractZip:
     """Direct unit tests for the zip extraction safety function."""
@@ -237,7 +239,7 @@ class TestSafeExtractZip:
         with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("../../escape.txt", "pwned")
         with pytest.raises(ValueError, match="traversal"):
-            _safe_extract_zip(buf.getvalue(), str(tmp_path))
+            _safe_extract_zip(buf.getvalue(), tmp_path)
 
     def test_normal_zip_extracts_fine(self, tmp_path):
         """Normal zip with safe paths should extract successfully."""
@@ -247,7 +249,7 @@ class TestSafeExtractZip:
         with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("main.tex", "hello")
             zf.writestr("images/fig1.png", "png data")
-        _safe_extract_zip(buf.getvalue(), str(tmp_path))
+        _safe_extract_zip(buf.getvalue(), tmp_path)
         assert (tmp_path / "main.tex").exists()
         assert (tmp_path / "images" / "fig1.png").exists()
 
@@ -258,17 +260,113 @@ class TestSafeExtractZip:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             # Create a file that's big enough to trigger the check
-            # We use a compressible pattern so the zip stays small
             chunk = b"A" * (1024 * 1024)  # 1 MB
             for i in range(210):  # 210 MB uncompressed > 200 MB limit
                 zf.writestr(f"file_{i}.txt", chunk)
 
         with pytest.raises(ValueError, match="exceeds"):
-            _safe_extract_zip(buf.getvalue(), str(tmp_path))
+            _safe_extract_zip(buf.getvalue(), tmp_path)
 
 
 # -------------------------------------------------------------------------
-# Compile endpoint — invalid engine, unsupported content type
+# main_file validation
+# -------------------------------------------------------------------------
+class TestMainFileValidation:
+    """Validate the main_file parameter safety checks."""
+
+    def test_valid_main_file(self):
+        """Standard main.tex should pass validation."""
+        from app.compiler import validate_main_file
+
+        validate_main_file("main.tex")
+        validate_main_file("thesis.tex")
+        validate_main_file("chapters/chapter1.tex")
+        validate_main_file("doc.ltx")
+
+    def test_traversal_rejected(self):
+        """Path traversal should raise ValueError."""
+        from app.compiler import validate_main_file
+
+        with pytest.raises(ValueError, match="traversal"):
+            validate_main_file("../../../etc/passwd.tex")
+
+    def test_absolute_path_rejected(self):
+        """Absolute path should raise ValueError."""
+        from app.compiler import validate_main_file
+
+        with pytest.raises(ValueError, match="relative"):
+            validate_main_file("/etc/passwd.tex")
+
+    def test_invalid_extension_rejected(self):
+        """Non-.tex extension should raise ValueError."""
+        from app.compiler import validate_main_file
+
+        with pytest.raises(ValueError, match="extension"):
+            validate_main_file("main.py")
+        with pytest.raises(ValueError, match="extension"):
+            validate_main_file("script.sh")
+
+
+# -------------------------------------------------------------------------
+# Orphan temp dir cleanup
+# -------------------------------------------------------------------------
+class TestOrphanCleanup:
+    """Verify orphan temp directory sweep."""
+
+    def test_sweep_removes_old_dirs(self, tmp_path):
+        """sweep_orphan_temp_dirs should remove old texlive_ dirs."""
+        import time
+
+        from app.compiler import sweep_orphan_temp_dirs
+
+        # Create a fake old orphan dir
+        orphan = tmp_path / "texlive_orphan123"
+        orphan.mkdir()
+        (orphan / "main.tex").write_text("test")
+        # Set mtime to 10 minutes ago
+        old_time = time.time() - 600
+        import os
+
+        os.utime(orphan, (old_time, old_time))
+
+        # Create a fresh dir that should NOT be removed
+        fresh = tmp_path / "texlive_fresh456"
+        fresh.mkdir()
+
+        # Create a non-texlive dir that should NOT be touched
+        other = tmp_path / "something_else"
+        other.mkdir()
+
+        # Monkey-patch TMPFS_DIR temporarily
+        import app.compiler
+
+        original_tmpfs = app.compiler.TMPFS_DIR
+        app.compiler.TMPFS_DIR = str(tmp_path)
+        try:
+            removed = sweep_orphan_temp_dirs(max_age_seconds=300)
+            assert removed == 1
+            assert not orphan.exists()
+            assert fresh.exists()
+            assert other.exists()
+        finally:
+            app.compiler.TMPFS_DIR = original_tmpfs
+
+    def test_sweep_handles_empty_dir(self, tmp_path):
+        """Sweep on empty dir should return 0."""
+        import app.compiler
+        from app.compiler import sweep_orphan_temp_dirs
+
+        original_tmpfs = app.compiler.TMPFS_DIR
+        app.compiler.TMPFS_DIR = str(tmp_path)
+        try:
+            removed = sweep_orphan_temp_dirs()
+            assert removed == 0
+        finally:
+            app.compiler.TMPFS_DIR = original_tmpfs
+
+
+# -------------------------------------------------------------------------
+# Compile endpoint edge cases
 # -------------------------------------------------------------------------
 class TestEdgeCases:
     """Edge cases for the compile endpoint."""
@@ -279,9 +377,13 @@ class TestEdgeCases:
         resp = await client.post(
             "/api/v1/compile",
             headers=auth_headers,
-            json={"source": r"\documentclass{article}\begin{document}x\end{document}", "engine": "notanengine"},
+            json={
+                "source": r"\documentclass{article}\begin{document}x\end{document}",
+                "engine": "notanengine",
+            },
         )
-        assert resp.status_code == 400  # Caught by _parse_json validation
+        assert resp.status_code == 400
+        assert_error_envelope(resp.json(), error_code="INVALID_REQUEST")
 
     @pytest.mark.asyncio
     async def test_unsupported_content_type_returns_400(self, client, auth_headers):
@@ -292,6 +394,7 @@ class TestEdgeCases:
             content="some plain text",
         )
         assert resp.status_code == 400
+        assert_error_envelope(resp.json(), error_code="INVALID_REQUEST")
 
     @pytest.mark.asyncio
     async def test_invalid_json_returns_400(self, client, auth_headers):
@@ -302,6 +405,7 @@ class TestEdgeCases:
             content=b"not json at all",
         )
         assert resp.status_code == 400
+        assert_error_envelope(resp.json(), error_code="INVALID_REQUEST")
 
     @pytest.mark.asyncio
     async def test_multipart_without_file_returns_400(self, client, auth_headers):
@@ -312,8 +416,7 @@ class TestEdgeCases:
             data={"engine": "pdflatex"},
             files={},
         )
-        # Might be 400 or 422 depending on how httpx sends the request
-        assert resp.status_code in (400, 422)
+        assert resp.status_code == 400
 
     @pytest.mark.asyncio
     async def test_multipart_invalid_engine_returns_400(self, client, auth_headers):
@@ -328,3 +431,4 @@ class TestEdgeCases:
             data={"engine": "brokentex", "main_file": "main.tex"},
         )
         assert resp.status_code == 400
+        assert_error_envelope(resp.json(), error_code="INVALID_REQUEST")

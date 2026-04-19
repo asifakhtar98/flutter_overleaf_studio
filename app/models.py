@@ -24,28 +24,6 @@ class CompileRequest(BaseModel):
     enable_cache: bool = Field(default=True, description="Use compilation cache")
 
 
-class CompileResponse(BaseModel):
-    """Metadata returned alongside PDF bytes on successful compilation."""
-
-    success: bool = True
-    engine: str
-    compilation_time: float
-    warnings_count: int = 0
-    cached: bool = False
-    passes_run: int = 1
-    log_snippet: str = ""
-
-
-class ErrorResponse(BaseModel):
-    """Error response on compilation failure."""
-
-    success: bool = False
-    error: str
-    exit_code: int = 1
-    log: str = ""
-    engine: str = "pdflatex"
-
-
 class CacheStats(BaseModel):
     """Cache statistics for health endpoint."""
 

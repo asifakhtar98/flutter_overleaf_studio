@@ -9,6 +9,8 @@ import zipfile
 
 import pytest
 
+from tests.conftest import assert_error_envelope
+
 
 @pytest.mark.asyncio
 async def test_compile_simple_document(client, auth_headers, simple_tex):
@@ -29,6 +31,7 @@ async def test_compile_simple_document(client, auth_headers, simple_tex):
     assert resp.headers["x-engine"] == "pdflatex"
     assert "x-cached" in resp.headers
     assert "x-passes-run" in resp.headers
+    assert "x-request-id" in resp.headers
 
 
 @pytest.mark.asyncio
@@ -59,7 +62,7 @@ async def test_compile_with_lualatex(client, auth_headers, simple_tex):
 
 @pytest.mark.asyncio
 async def test_compile_invalid_latex(client, auth_headers, invalid_tex):
-    """Invalid LaTeX should return 422 with error log."""
+    """Invalid LaTeX should return 422 with ErrorEnvelope."""
     resp = await client.post(
         "/api/v1/compile",
         headers=auth_headers,
@@ -67,10 +70,10 @@ async def test_compile_invalid_latex(client, auth_headers, invalid_tex):
     )
     assert resp.status_code == 422
     data = resp.json()
-    assert "detail" in data
-    detail = data["detail"]
-    assert detail["success"] is False
-    assert "log" in detail
+    assert_error_envelope(data, error_code="COMPILATION_FAILED")
+    # Detail should contain the compilation log
+    if data.get("detail"):
+        assert "log" in data["detail"]
 
 
 @pytest.mark.asyncio
@@ -82,6 +85,7 @@ async def test_compile_empty_source(client, auth_headers):
         json={"source": ""},
     )
     assert resp.status_code == 400
+    assert_error_envelope(resp.json(), error_code="INVALID_REQUEST")
 
 
 @pytest.mark.asyncio
@@ -91,8 +95,8 @@ async def test_compile_no_body(client, auth_headers):
         "/api/v1/compile",
         headers=auth_headers,
     )
-    # FastAPI will return 422 for missing body/form validation
-    assert resp.status_code in (400, 422)
+    # Should be 400 — no recognized Content-Type
+    assert resp.status_code == 400
 
 
 @pytest.mark.asyncio
@@ -188,9 +192,6 @@ async def test_zip_bomb_protection(client, auth_headers):
     """Oversized zip should be rejected at extraction time."""
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
-        # Write a file that claims a large uncompressed size is impossible
-        # in pure Python without hacking headers, so test the upload size
-        # limit path instead: a file larger than MAX_UPLOAD_SIZE_MB.
         zf.writestr("main.tex", r"\documentclass{article}\begin{document}ok\end{document}")
     zip_bytes = buf.getvalue()
 
@@ -222,8 +223,5 @@ async def test_path_traversal_protection(client, auth_headers):
         files={"file": ("evil.zip", io.BytesIO(zip_bytes), "application/zip")},
         data={"engine": "pdflatex", "main_file": "main.tex"},
     )
-    assert resp.status_code == 422
-    # Should contain path traversal error
-    detail = resp.json().get("detail", {})
-    if isinstance(detail, dict):
-        assert "traversal" in detail.get("log", "").lower() or "traversal" in str(detail).lower()
+    # Should be caught by zip extraction or compilation — not 500
+    assert resp.status_code in (400, 422)

@@ -48,3 +48,11 @@ async def test_health_no_auth_required(client):
     """Health endpoint should not require API key."""
     resp = await client.get("/api/v1/health")
     assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_health_has_request_id(client):
+    """Health response should include X-Request-ID header."""
+    resp = await client.get("/api/v1/health")
+    assert resp.status_code == 200
+    assert resp.headers.get("x-request-id") is not None

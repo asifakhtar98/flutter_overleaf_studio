@@ -100,14 +100,15 @@ file=@project.zip  engine=xelatex  main_file=thesis.tex  draft=false  enable_cac
 | `X-Warnings-Count` | `3` |
 | `X-Cached` | `false` |
 | `X-Passes-Run` | `2` |
+| `X-Request-ID` | `a1b2c3d4...` |
 
-**Failure (422):**
+**All errors** use a unified `ErrorEnvelope` format:
 ```json
 {
+  "request_id": "a1b2c3d4e5f6...",
+  "error_code": "COMPILATION_FAILED",
+  "message": "Compilation failed",
   "detail": {
-    "success": false,
-    "error": "Compilation failed",
-    "exit_code": 1,
     "log": "! Undefined control sequence.\nl.42 \\badcommand",
     "engine": "pdflatex",
     "compilation_time": 2.31,
@@ -115,6 +116,16 @@ file=@project.zip  engine=xelatex  main_file=thesis.tex  draft=false  enable_cac
   }
 }
 ```
+
+| Error Code | HTTP Status | When |
+|------------|-------------|------|
+| `COMPILATION_FAILED` | 422 | LaTeX compilation failed |
+| `INVALID_REQUEST` | 400 | Bad input, invalid engine/main_file |
+| `MISSING_API_KEY` | 401 | No `X-API-Key` header |
+| `INVALID_API_KEY` | 403 | Wrong API key |
+| `UPLOAD_TOO_LARGE` | 413 | Body exceeds max upload size |
+| `RATE_LIMITED` | 429 | Too many requests |
+| `INTERNAL_ERROR` | 500 | Unexpected server error |
 
 ---
 
@@ -177,10 +188,14 @@ All optimizations are **mandatory architectural features**, not toggles.
 | Auth | `X-API-Key` header, multi-key allowlist from env |
 | Rate limiting | SlowAPI, in-memory, per-key |
 | Zip bomb | Max uncompressed size: 200 MB |
-| Path traversal | All extracted paths validated against dest dir |
+| Path traversal (zip) | `Path.is_relative_to()` validation on all extracted paths |
+| Path traversal (main_file) | `validate_main_file()` — rejects `..`, absolute paths, non-TeX extensions |
+| Body size limit | Middleware rejects oversized `Content-Length` before reading body |
 | Timeout | 120s hard limit per compilation |
 | Shell injection | `subprocess.run()` with list args, no `shell=True` |
 | Ephemeral | Temp dirs cleaned in `finally` blocks |
+| Orphan cleanup | Startup sweep of stale `texlive_*` dirs from crashed workers |
+| Request tracing | UUID4 `X-Request-ID` on every request (auto-generated or client-provided) |
 
 ---
 

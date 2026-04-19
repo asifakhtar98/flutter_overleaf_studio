@@ -7,6 +7,7 @@ Performance features:
 - Draft mode — skip image rendering
 - Engine path caching — resolved once at startup
 - In-memory LRU cache — hash-based, per-request controllable
+- Orphan temp dir cleanup — startup sweep + post-compile reap
 """
 
 import asyncio
@@ -29,6 +30,7 @@ import structlog
 
 from app.cache import CachedResult, compile_cache
 from app.config import settings
+from app.models import Engine
 
 logger = structlog.get_logger()
 
@@ -39,8 +41,10 @@ MAX_UNCOMPRESSED_SIZE = 200 * 1024 * 1024  # 200 MB zip bomb limit
 MAX_PASSES = 3
 BIB_TOOL_TIMEOUT = 60  # seconds for bibtex/biber
 MAX_CACHE_ENTRY_SIZE = 10 * 1024 * 1024  # 10 MB — skip caching oversized PDFs
+_ORPHAN_MAX_AGE_SECONDS = settings.compilation_timeout + 120  # timeout + 2 min buffer
+_VALID_MAIN_EXTENSIONS = frozenset({".tex", ".ltx", ".latex"})
 
-_ENGINE_NAMES = ("pdflatex", "xelatex", "lualatex", "latexmk")
+_ENGINE_NAMES = tuple(e.value for e in Engine)
 _BIB_TOOL_NAMES = ("bibtex", "biber")
 _ALL_TOOLS = (*_ENGINE_NAMES, *_BIB_TOOL_NAMES)
 
@@ -114,6 +118,52 @@ def _recreate_executor() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Orphan temp dir cleanup
+# ---------------------------------------------------------------------------
+def sweep_orphan_temp_dirs(max_age_seconds: float | None = None) -> int:
+    """Remove stale ``texlive_*`` temp dirs from the compilation directory.
+
+    Scans ``TMPFS_DIR`` (or system temp) for directories matching the
+    ``texlive_`` prefix that are older than ``max_age_seconds``.  Called
+    at application startup and optionally after each compilation to
+    prevent tmpfs memory leaks from crashed workers.
+
+    Args:
+        max_age_seconds: Maximum age in seconds before a dir is considered
+            orphaned.  Defaults to ``COMPILATION_TIMEOUT + 120``.
+
+    Returns:
+        Number of orphan directories removed.
+    """
+    if max_age_seconds is None:
+        max_age_seconds = _ORPHAN_MAX_AGE_SECONDS
+
+    scan_dir = Path(TMPFS_DIR) if TMPFS_DIR else Path(tempfile.gettempdir())
+    if not scan_dir.is_dir():
+        return 0
+
+    now = time.time()
+    removed = 0
+
+    for entry in scan_dir.iterdir():
+        if not entry.is_dir() or not entry.name.startswith("texlive_"):
+            continue
+        try:
+            age = now - entry.stat().st_mtime
+            if age > max_age_seconds:
+                shutil.rmtree(entry, ignore_errors=True)
+                logger.info("orphan_dir_removed", path=str(entry), age_seconds=round(age, 1))
+                removed += 1
+        except OSError:
+            # Race condition: dir may have been removed between iterdir and stat
+            continue
+
+    if removed:
+        logger.info("orphan_sweep_complete", removed=removed)
+    return removed
+
+
+# ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
 @dataclass
@@ -150,6 +200,36 @@ def _error_result(
 
 
 # ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+def validate_main_file(main_file: str) -> None:
+    """Validate the ``main_file`` parameter for safety and correctness.
+
+    Args:
+        main_file: The main TeX file name provided by the client.
+
+    Raises:
+        ValueError: On path traversal attempt, absolute path, or invalid extension.
+    """
+    path = Path(main_file)
+
+    # Block absolute paths
+    if path.is_absolute():
+        raise ValueError(f"main_file must be a relative path, got: {main_file}")
+
+    # Block path traversal
+    if ".." in path.parts:
+        raise ValueError(f"Path traversal detected in main_file: {main_file}")
+
+    # Validate extension
+    if path.suffix.lower() not in _VALID_MAIN_EXTENSIONS:
+        raise ValueError(
+            f"Invalid main_file extension '{path.suffix}'. "
+            f"Allowed: {sorted(_VALID_MAIN_EXTENSIONS)}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Hashing
 # ---------------------------------------------------------------------------
 def _compute_hash(content: bytes, engine: str, main_file: str, draft: bool) -> str:
@@ -165,7 +245,7 @@ def _compute_hash(content: bytes, engine: str, main_file: str, draft: bool) -> s
 # ---------------------------------------------------------------------------
 # Zip safety
 # ---------------------------------------------------------------------------
-def _safe_extract_zip(zip_bytes: bytes, dest: str) -> None:
+def _safe_extract_zip(zip_bytes: bytes, dest: Path) -> None:
     """Extract a zip archive with bomb and path-traversal protection.
 
     Args:
@@ -183,10 +263,10 @@ def _safe_extract_zip(zip_bytes: bytes, dest: str) -> None:
                 f"limit ({MAX_UNCOMPRESSED_SIZE} bytes)"
             )
 
-        dest_path = Path(dest).resolve()
+        dest_resolved = dest.resolve()
         for info in zf.infolist():
-            target = (dest_path / info.filename).resolve()
-            if not target.is_relative_to(dest_path):
+            target = (dest_resolved / info.filename).resolve()
+            if not target.is_relative_to(dest_resolved):
                 raise ValueError(f"Path traversal detected: {info.filename}")
 
         zf.extractall(dest)
@@ -223,6 +303,8 @@ def _run_engine(
     cmd: list[str],
     cwd: str,
     timeout: int,
+    *,
+    label: str = "",
 ) -> subprocess.CompletedProcess[str]:
     """Run an engine/tool subprocess with standard options.
 
@@ -230,6 +312,7 @@ def _run_engine(
         cmd: Command and arguments.
         cwd: Working directory.
         timeout: Seconds before TimeoutExpired.
+        label: Human-readable label for debug logging (e.g. ``"pass_1"``).
 
     Returns:
         CompletedProcess result.
@@ -237,12 +320,26 @@ def _run_engine(
     Raises:
         subprocess.TimeoutExpired: If the command exceeds timeout.
     """
-    return subprocess.run(
+    start = time.monotonic()
+    result = subprocess.run(
         cmd,
         cwd=cwd,
         capture_output=True,
         text=True,
         timeout=timeout,
+    )
+    elapsed = time.monotonic() - start
+    # Debug-level logging of every engine invocation
+    _log_engine_run(cmd[0], label, result.returncode, elapsed)
+    return result
+
+
+def _log_engine_run(engine: str, label: str, returncode: int, elapsed: float) -> None:
+    """Log an engine invocation at debug level (runs in subprocess)."""
+    # Use print because structlog context may not be available in worker process
+    print(
+        f"[engine] {label}: {engine} → rc={returncode} ({elapsed:.2f}s)",
+        flush=True,
     )
 
 
@@ -264,14 +361,16 @@ def _compile_sync(
     """Synchronous LaTeX compilation — runs in a separate process.
 
     Handles draft injection, smart multi-pass, and auto BibTeX/Biber.
+    All file I/O is wrapped in try/except OSError for safety.
     """
     start = time.monotonic()
     passes_run = 0
     log_parts: list[str] = []
-    main_path = os.path.join(work_dir, main_file)
+    work_path = Path(work_dir)
+    main_path = work_path / main_file
 
     # --- Pre-flight checks ---
-    if not os.path.exists(main_path):
+    if not main_path.exists():
         return _error_result(f"Main file not found: {main_file}", engine)
 
     engine_path = ENGINE_PATHS.get(engine)
@@ -280,14 +379,17 @@ def _compile_sync(
 
     # --- Draft mode injection ---
     if draft:
-        with open(main_path, errors="ignore") as f:
-            src = f.read()
-        with open(main_path, "w") as f:
-            f.write("\\PassOptionsToPackage{draft}{graphicx}\n" + src)
+        try:
+            src = main_path.read_text(errors="ignore")
+            main_path.write_text("\\PassOptionsToPackage{draft}{graphicx}\n" + src)
+        except OSError as e:
+            return _error_result(f"Failed to inject draft mode: {e}", engine)
 
     # --- Read source for bibliography detection ---
-    with open(main_path, errors="ignore") as f:
-        tex_source = f.read()
+    try:
+        tex_source = main_path.read_text(errors="ignore")
+    except OSError as e:
+        return _error_result(f"Failed to read main file: {e}", engine)
     has_bib = _has_bibliography(tex_source)
 
     # --- latexmk mode: single invocation, it handles passes internally ---
@@ -302,10 +404,10 @@ def _compile_sync(
             "-interaction=nonstopmode",
             "-halt-on-error",
             f"-outdir={work_dir}",
-            main_path,
+            str(main_path),
         ]
         try:
-            result = _run_engine(cmd, work_dir, timeout)
+            result = _run_engine(cmd, work_dir, timeout, label="latexmk")
             log_parts.append(_collect_output(result))
             passes_run = 1
         except subprocess.TimeoutExpired:
@@ -321,12 +423,12 @@ def _compile_sync(
             "-interaction=nonstopmode",
             "-halt-on-error",
             f"-output-directory={work_dir}",
-            main_path,
+            str(main_path),
         ]
 
         # Pass 1
         try:
-            result = _run_engine(base_cmd, work_dir, timeout)
+            result = _run_engine(base_cmd, work_dir, timeout, label="pass_1")
             passes_run = 1
             log_parts.append(_collect_output(result))
         except subprocess.TimeoutExpired:
@@ -350,14 +452,14 @@ def _compile_sync(
 
         # BibTeX / Biber pass
         if has_bib:
-            main_stem = os.path.splitext(main_file)[0]
-            bcf_path = os.path.join(work_dir, f"{main_stem}.bcf")
-            aux_path = os.path.join(work_dir, f"{main_stem}.aux")
+            main_stem = Path(main_file).stem
+            bcf_path = work_path / f"{main_stem}.bcf"
+            aux_path = work_path / f"{main_stem}.aux"
 
             bib_tool = None
-            if os.path.exists(bcf_path):
+            if bcf_path.exists():
                 bib_tool = ENGINE_PATHS.get("biber")
-            elif os.path.exists(aux_path):
+            elif aux_path.exists():
                 bib_tool = ENGINE_PATHS.get("bibtex")
 
             if bib_tool:
@@ -366,32 +468,40 @@ def _compile_sync(
                         [bib_tool, main_stem],
                         work_dir,
                         BIB_TOOL_TIMEOUT,
+                        label="bibliography",
                     )
                     log_parts.append(_collect_output(bib_result))
                 except subprocess.TimeoutExpired:
                     log_parts.append(f"Bibliography tool timed out after {BIB_TOOL_TIMEOUT}s")
 
         # Additional passes (2 and 3) — only when needed
-        for _ in range(MAX_PASSES - 1):
+        for pass_num in range(2, MAX_PASSES + 1):
             combined_log = "\n".join(log_parts)
             if not _log_has_rerun_warning(combined_log):
                 break
             try:
-                result = _run_engine(base_cmd, work_dir, timeout)
+                result = _run_engine(base_cmd, work_dir, timeout, label=f"pass_{pass_num}")
                 passes_run += 1
                 log_parts.append(_collect_output(result))
             except subprocess.TimeoutExpired:
                 break
 
     # --- Read PDF output ---
-    main_stem = os.path.splitext(main_file)[0]
-    pdf_path = os.path.join(work_dir, f"{main_stem}.pdf")
+    pdf_path = work_path / f"{Path(main_file).stem}.pdf"
     elapsed = time.monotonic() - start
     combined_log = "\n".join(log_parts)
 
-    if os.path.exists(pdf_path):
-        with open(pdf_path, "rb") as f:
-            pdf_bytes = f.read()
+    if pdf_path.exists():
+        try:
+            pdf_bytes = pdf_path.read_bytes()
+        except OSError as e:
+            return _error_result(
+                f"Failed to read generated PDF: {e}",
+                engine,
+                elapsed=elapsed,
+                passes=passes_run,
+                warnings=_count_warnings(combined_log),
+            )
         return CompileResult(
             success=True,
             pdf_bytes=pdf_bytes,
@@ -438,7 +548,13 @@ async def compile_latex(
 
     Returns:
         CompileResult with PDF bytes and metadata.
+
+    Raises:
+        ValueError: On zip extraction errors or invalid main_file.
     """
+    # --- Validate main_file ---
+    validate_main_file(main_file)
+
     # --- Cache lookup ---
     cache_key: str | None = None
     if enable_cache:
@@ -459,34 +575,34 @@ async def compile_latex(
 
     # --- Compile in tmpfs ---
     work_dir = tempfile.mkdtemp(dir=TMPFS_DIR, prefix="texlive_")
+    work_path = Path(work_dir)
     logger.info("compilation_start", engine=engine, main_file=main_file, work_dir=work_dir)
 
     try:
         # Write content to work dir
         if is_zip:
-            _safe_extract_zip(content, work_dir)
+            _safe_extract_zip(content, work_path)
         else:
-            target_path = os.path.join(work_dir, main_file)
-            os.makedirs(os.path.dirname(target_path), exist_ok=True)
-            with open(target_path, "wb") as f:
-                f.write(content)
+            target_path = work_path / main_file
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_bytes(content)
 
         # Delegate to process pool (with crash recovery)
         loop = asyncio.get_running_loop()
         compile_args = (work_dir, engine, main_file, draft, settings.compilation_timeout)
         try:
-            result = await loop.run_in_executor(
-                get_executor(), _compile_sync, *compile_args
-            )
+            result = await loop.run_in_executor(get_executor(), _compile_sync, *compile_args)
         except BrokenProcessPool:
             logger.error("process_pool_broken", msg="Worker crashed, recreating pool")
             _recreate_executor()
-            result = await loop.run_in_executor(
-                get_executor(), _compile_sync, *compile_args
-            )
+            result = await loop.run_in_executor(get_executor(), _compile_sync, *compile_args)
 
         # Cache store on success (skip oversized PDFs)
-        if result.success and cache_key is not None and len(result.pdf_bytes) <= MAX_CACHE_ENTRY_SIZE:
+        if (
+            result.success
+            and cache_key is not None
+            and len(result.pdf_bytes) <= MAX_CACHE_ENTRY_SIZE
+        ):
             compile_cache.put(
                 cache_key,
                 CachedResult(

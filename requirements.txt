@@ -5,3 +5,5 @@ slowapi==0.1.9
 structlog==25.1.0
 pydantic-settings==2.9.1
 cachetools==5.5.2
+asgi-correlation-id==4.3.4
+orjson==3.10.18

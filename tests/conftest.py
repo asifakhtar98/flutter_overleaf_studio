@@ -89,3 +89,22 @@ Custom main file test.
 \end{document}""",
         )
     return buf.getvalue()
+
+
+def assert_error_envelope(resp_json: dict, *, error_code: str | None = None) -> None:
+    """Assert that a response body matches the ErrorEnvelope shape.
+
+    Args:
+        resp_json: Parsed JSON response body.
+        error_code: If provided, assert the error_code matches.
+    """
+    assert "request_id" in resp_json, f"Missing 'request_id' in error response: {resp_json}"
+    assert "error_code" in resp_json, f"Missing 'error_code' in error response: {resp_json}"
+    assert "message" in resp_json, f"Missing 'message' in error response: {resp_json}"
+    assert isinstance(resp_json["request_id"], str)
+    assert isinstance(resp_json["error_code"], str)
+    assert isinstance(resp_json["message"], str)
+    if error_code is not None:
+        assert resp_json["error_code"] == error_code, (
+            f"Expected error_code={error_code}, got {resp_json['error_code']}"
+        )

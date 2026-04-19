@@ -49,9 +49,13 @@
 | Rate limit | SlowAPI (in-memory, keyed by API key or IP) |
 | Cache | `cachetools.TTLCache` in `app/cache.py` |
 | Compilation | `concurrent.futures.ProcessPoolExecutor` in `app/compiler.py` |
+| Request ID | `asgi-correlation-id` — X-Request-ID header, structlog context |
+| Errors | `app/errors.py` — `TexLiveError` hierarchy + `ErrorEnvelope` |
+| Middleware | `app/middleware.py` — request ID, body limit, request logging |
+| JSON | `orjson` — fast JSON rendering for logs + error responses |
 | Tests | pytest + httpx (async), run inside container |
 | Lint | ruff (configured in `pyproject.toml`) |
-| Logging | structlog (structured, JSON-friendly) |
+| Logging | structlog (structured, JSON via orjson, configured in `app/logging.py`) |
 | Docker | Multi-stage build (`Dockerfile`), dev with `--reload` (`Dockerfile.dev`) |
 | Python env | `venv` at `/opt/venv` — never `--break-system-packages` |
 
@@ -79,15 +83,16 @@ X-Engine: pdflatex
 X-Warnings-Count: 3
 X-Cached: false
 X-Passes-Run: 2
+X-Request-ID: <uuid-hex>
 ```
 
-**Failure (422)**:
+**All errors** — unified `ErrorEnvelope` format:
 ```json
 {
+  "request_id": "<uuid-hex>",
+  "error_code": "COMPILATION_FAILED",
+  "message": "Compilation failed",
   "detail": {
-    "success": false,
-    "error": "Compilation failed",
-    "exit_code": 1,
     "log": "full stdout+stderr",
     "engine": "pdflatex",
     "compilation_time": 2.31,
@@ -96,7 +101,7 @@ X-Passes-Run: 2
 }
 ```
 
-**Auth errors**: 401 (missing key), 403 (invalid key). Standard FastAPI format.
+**Error codes**: `COMPILATION_FAILED` (422), `INVALID_REQUEST` (400), `MISSING_API_KEY` (401), `INVALID_API_KEY` (403), `UPLOAD_TOO_LARGE` (413), `RATE_LIMITED` (429), `INTERNAL_ERROR` (500).
 
 ---
 
@@ -105,22 +110,28 @@ X-Passes-Run: 2
 ```
 ├── app/
 │   ├── __init__.py              # Package + __version__
-│   ├── main.py                  # FastAPI app, CORS, rate limiting, lifespan
+│   ├── main.py                  # Thin wiring — CORS, lifespan, router mounts
 │   ├── config.py                # pydantic-settings from env vars
-│   ├── auth.py                  # API key dependency
+│   ├── auth.py                  # API key dependency (raises TexLiveError)
 │   ├── cache.py                 # CompileCache (TTLCache wrapper)
-│   ├── compiler.py              # Core compilation: tmpfs, smart passes, pool
-│   ├── models.py                # Pydantic schemas (Engine, CompileRequest, etc.)
+│   ├── compiler.py              # Core compilation: tmpfs, smart passes, pool, orphan cleanup
+│   ├── errors.py                # TexLiveError hierarchy + ErrorEnvelope + handlers
+│   ├── logging.py               # structlog configuration (orjson, contextvars)
+│   ├── middleware.py            # Request ID (asgi-correlation-id), body limit, request logging
+│   ├── models.py                # Pydantic schemas (Engine, CompileRequest, CacheStats, HealthResponse)
 │   └── routers/
 │       ├── __init__.py
 │       ├── compile.py           # POST /api/v1/compile (Content-Type dispatch)
 │       └── health.py            # GET /api/v1/health
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py              # Async client, fixtures, env setup
-│   ├── test_health.py
-│   ├── test_auth.py
-│   ├── test_compile.py
+│   ├── conftest.py              # Async client, fixtures, assert_error_envelope helper
+│   ├── test_auth.py             # Auth error envelope tests
+│   ├── test_compile.py          # Compilation + cache tests
+│   ├── test_errors.py           # ErrorEnvelope consistency across all error types
+│   ├── test_hardening.py        # Path traversal, pool recovery, orphan cleanup, main_file validation
+│   ├── test_health.py           # Health endpoint + request ID
+│   ├── test_middleware.py       # Request ID, body limit, request logging
 │   └── fixtures/                # .tex, .bib test files
 ├── test_samples/                # Sample .tex files for manual verification
 │   ├── 01_hello_world.tex
@@ -175,10 +186,15 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 | 7 | **Engine paths** | `compiler.py:ENGINE_PATHS` | `shutil.which()` once at import | Zero per-request PATH lookup |
 | 8 | **Health caching** | `health.py:_get_texlive_version` | `@lru_cache` — no shell-out per request | Instant health checks |
 | 9 | **Fontconfig** | `Dockerfile: fc-cache` | TeX Live fonts registered with fontconfig | XeLaTeX/LuaLaTeX font discovery |
-| 10 | **Body size limit** | `main.py` middleware | Rejects oversized `Content-Length` (JSON+multipart) | Prevents OOM |
+| 10 | **Body size limit** | `middleware.py` | Rejects oversized/malformed `Content-Length` | Prevents OOM |
 | 11 | **Cache entry cap** | `compiler.py:MAX_CACHE_ENTRY_SIZE` | Skip caching PDFs > 10 MB | Protects cache budget |
 | 12 | **Graceful shutdown** | `Dockerfile: --timeout-graceful-shutdown 30` | In-flight compiles finish on SIGTERM | No zombie temp dirs |
 | 13 | **Pool crash recovery** | `compiler.py:_recreate_executor` | Catches `BrokenProcessPool`, rebuilds | Survives TeX segfaults |
+| 14 | **Request ID** | `middleware.py` + `asgi-correlation-id` | UUID per request, bound to logs + response | Full request tracing |
+| 15 | **Orphan cleanup** | `compiler.py:sweep_orphan_temp_dirs` | Startup sweep of stale `texlive_*` dirs | Prevents tmpfs leak |
+| 16 | **Unified errors** | `errors.py:ErrorEnvelope` | All errors use same JSON shape with `request_id` | Consistent DX |
+| 17 | **main_file validation** | `compiler.py:validate_main_file` | Blocks path traversal + invalid extensions | Security hardening |
+| 18 | **File I/O hardening** | `compiler.py:_compile_sync` | All file ops wrapped in `try/except OSError` | No silent worker crashes |
 
 ---
 
@@ -224,6 +240,13 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 18. Use `Path.is_relative_to()` for path containment checks — never `str.startswith()`.
 19. Catch `BrokenProcessPool` around `run_in_executor` calls — recreate pool on crash.
 20. Skip caching PDFs larger than `MAX_CACHE_ENTRY_SIZE` — protect cache memory budget.
+21. Use `TexLiveError` subclasses for domain errors — never raise `HTTPException` directly.
+22. All error responses must use `ErrorEnvelope` format with `request_id`, `error_code`, `message`.
+23. Use `validate_main_file()` before compilation — reject traversal/invalid extensions.
+24. Wrap all file I/O in `_compile_sync` with `try/except OSError` — no silent worker crashes.
+25. Use `configure_logging()` from `app/logging.py` — never inline `structlog.configure()` in main.
+26. Register middleware via `register_middleware()` from `app/middleware.py` — never inline in main.
+27. Register error handlers via `register_error_handlers()` from `app/errors.py` — never inline in main.
 
 ### MUST NOT
 
@@ -244,6 +267,9 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 15. Hardcode worker counts — always use `$WORKERS` env var.
 16. Use `structlog.get_level_from_name()` — removed in v25.x. Use `logging.getLevelNamesMapping()` instead.
 17. Use `pip install --break-system-packages` — Ubuntu 22.04's pip 22.x doesn't support it.
+18. Construct error response dicts manually — use `ErrorEnvelope` and `TexLiveError` subclasses.
+19. Raise `HTTPException` for domain errors — use `ValidationError`, `CompilationError`, `UploadTooLargeError`.
+20. Put middleware or exception handlers inline in `main.py` — use `middleware.py` and `errors.py`.
 
 ### Code Conventions
 

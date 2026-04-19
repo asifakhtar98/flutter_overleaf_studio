@@ -3,13 +3,14 @@
 from dataclasses import dataclass
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 
 from app.auth import require_api_key
 from app.compiler import compile_latex
 from app.config import settings
-from app.models import CompileRequest, Engine, ErrorResponse
+from app.errors import CompilationError, ErrorEnvelope, ValidationError
+from app.models import CompileRequest, Engine
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/api/v1", tags=["compile"])
@@ -34,29 +35,24 @@ async def _parse_json(request: Request) -> _ParsedRequest:
     """Parse a JSON body compile request.
 
     Raises:
-        HTTPException: 400 on missing or empty source, or invalid fields.
+        ValidationError: On missing or empty source, or invalid fields.
     """
     try:
         raw = await request.json()
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JSON body.",
-        ) from None
+        raise ValidationError("Invalid JSON body.") from None
 
     try:
         body = CompileRequest(**raw)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid request fields: {e}",
+        raise ValidationError(
+            f"Invalid request fields: {e}",
+            detail={"hint": f"Valid engines: {[e.value for e in Engine]}"},
         ) from None
 
     if not body.source or not body.source.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Empty source. Provide LaTeX source code.",
-        )
+        raise ValidationError("Empty source. Provide LaTeX source code.")
+
     return _ParsedRequest(
         content=body.source.encode("utf-8"),
         engine=body.engine.value,
@@ -71,30 +67,24 @@ async def _parse_multipart(request: Request) -> _ParsedRequest:
     """Parse a multipart form compile request.
 
     Raises:
-        HTTPException: 400 on missing file or oversized upload.
+        ValidationError: On missing file, oversized upload, or invalid engine.
     """
     form = await request.form()
     file = form.get("file")
     if file is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Multipart form must include a 'file' field.",
-        )
+        raise ValidationError("Multipart form must include a 'file' field.")
 
     content = await file.read()
     if len(content) > settings.max_upload_size_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large. Max {settings.max_upload_size_mb} MB.",
-        )
+        raise ValidationError(f"File too large. Max {settings.max_upload_size_mb} MB.")
 
     engine_str = form.get("engine", Engine.PDFLATEX.value)
     try:
         engine = Engine(engine_str)
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid engine '{engine_str}'. Choose from: {[e.value for e in Engine]}",
+        raise ValidationError(
+            f"Invalid engine '{engine_str}'.",
+            detail={"valid_engines": [e.value for e in Engine]},
         ) from None
 
     main_file = form.get("main_file", "main.tex")
@@ -115,7 +105,7 @@ async def _parse_request(request: Request) -> _ParsedRequest:
     """Dispatch to JSON or multipart parser based on Content-Type.
 
     Raises:
-        HTTPException: 400 on unsupported content type.
+        ValidationError: On unsupported content type.
     """
     content_type = request.headers.get("content-type", "")
 
@@ -125,10 +115,7 @@ async def _parse_request(request: Request) -> _ParsedRequest:
     if "multipart/form-data" in content_type:
         return await _parse_multipart(request)
 
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Provide either JSON body with 'source' or multipart form with 'file'.",
-    )
+    raise ValidationError("Provide either JSON body with 'source' or multipart form with 'file'.")
 
 
 # ---------------------------------------------------------------------------
@@ -138,8 +125,8 @@ async def _parse_request(request: Request) -> _ParsedRequest:
     "/compile",
     responses={
         200: {"content": {"application/pdf": {}}},
-        400: {"model": ErrorResponse},
-        422: {"model": ErrorResponse},
+        400: {"model": ErrorEnvelope},
+        422: {"model": ErrorEnvelope},
     },
     summary="Compile LaTeX → PDF",
     description="Accepts raw .tex source (JSON) or a zipped project (multipart form). "
@@ -152,22 +139,30 @@ async def compile_endpoint(
     """Compile LaTeX source into PDF."""
     req = await _parse_request(request)
 
-    result = await compile_latex(
-        content=req.content,
+    logger.info(
+        "compile_request_parsed",
         engine=req.engine,
         main_file=req.main_file,
         draft=req.draft,
-        enable_cache=req.enable_cache,
         is_zip=req.is_zip,
     )
 
+    try:
+        result = await compile_latex(
+            content=req.content,
+            engine=req.engine,
+            main_file=req.main_file,
+            draft=req.draft,
+            enable_cache=req.enable_cache,
+            is_zip=req.is_zip,
+        )
+    except ValueError as e:
+        # main_file validation or zip extraction errors
+        raise ValidationError(str(e)) from None
+
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        raise CompilationError(
             detail={
-                "success": False,
-                "error": "Compilation failed",
-                "exit_code": 1,
                 "log": result.log,
                 "engine": result.engine,
                 "compilation_time": result.compilation_time,
