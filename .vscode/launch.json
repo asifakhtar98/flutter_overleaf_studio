@@ -1,0 +1,78 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "🚀 Dev (Web / Chrome)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d", "chrome",
+                "--web-port", "51496"
+            ]
+        },
+        {
+            "name": "🚀 Dev (WASM / Chrome)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d", "chrome",
+                "--wasm",
+                "--web-port", "51496"
+            ]
+        },
+        {
+            "name": "📱 Dev (iOS Simulator)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d", "iPhone 16 Pro Max"
+            ]
+        },
+        {
+            "name": "🖥️ Dev (macOS)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d", "macos"
+            ]
+        },
+        {
+            "name": "📊 Profile (Chrome)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "profile",
+            "args": [
+                "-d", "chrome",
+                "--web-port", "51496"
+            ]
+        },
+        {
+            "name": "🏭 Release (Chrome)",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "release",
+            "args": [
+                "-d", "chrome",
+                "--web-port", "51496"
+            ]
+        },
+        {
+            "name": "🔌 Attach to Flutter",
+            "cwd": "${workspaceFolder}/flutter_client",
+            "request": "attach",
+            "type": "dart"
+        }
+    ]
+}

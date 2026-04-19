@@ -1,0 +1,54 @@
+name: flutter_latex_client
+description: Minimal Overleaf-like LaTeX editor powered by TeX Live API.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management
+  flutter_bloc: ^9.1.0
+  hydrated_bloc: ^10.0.0
+  # Hooks
+  flutter_hooks: ^0.21.2
+  hooked_bloc: ^1.5.1
+  # DI
+  get_it: ^8.0.3
+  injectable: ^2.5.0
+  # Immutable models & code gen
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+  # Functional programming
+  fpdart: ^1.1.1
+  # Network
+  dio: ^5.8.0+1
+  # PDF viewer
+  pdfrx: ^2.2.24
+  # UI
+  multi_split_view: ^3.6.1
+  flutter_fancy_tree_view: ^1.6.0
+  google_fonts: ^6.2.1
+  # Zip
+  archive: ^4.0.9
+  # Storage (for hydrated_bloc)
+  path_provider: ^2.1.5
+  # Utils
+  equatable: ^2.0.7
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.14
+  freezed: ^3.0.0
+  json_serializable: ^6.9.4
+  injectable_generator: ^2.7.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+  very_good_analysis: ^7.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,15 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'editor_event.freezed.dart';
+
+@freezed
+sealed class EditorEvent with _$EditorEvent {
+  const factory EditorEvent.fileOpened({
+    required String path,
+    required String content,
+  }) = FileOpened;
+
+  const factory EditorEvent.contentChanged({
+    required String content,
+  }) = ContentChanged;
+}
