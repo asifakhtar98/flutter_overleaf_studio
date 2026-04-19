@@ -39,7 +39,6 @@ import 'package:flutter_latex_client/features/project/presentation/bloc/project_
     as _i625;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
-import 'package:talker/talker.dart' as _i993;
 import 'package:talker_flutter/talker_flutter.dart' as _i207;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -57,7 +56,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => talkerModule.talker(gh<_i706.ServerConfig>()),
     );
     gh.lazySingleton<_i361.Dio>(
-      () => dioModule.dio(gh<_i706.ServerConfig>(), gh<_i993.Talker>()),
+      () => dioModule.dio(gh<_i706.ServerConfig>(), gh<_i207.Talker>()),
     );
     gh.lazySingleton<_i982.CompilerRemoteDatasource>(
       () => _i982.CompilerRemoteDatasource(gh<_i361.Dio>()),
@@ -65,16 +64,16 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i867.HealthRemoteDatasource>(
       () => _i867.HealthRemoteDatasource(gh<_i361.Dio>()),
     );
-    gh.lazySingleton<_i689.HealthRepository>(
-      () => _i105.HealthRepositoryImpl(
-        gh<_i867.HealthRemoteDatasource>(),
-        gh<_i993.Talker>(),
-      ),
-    );
     gh.lazySingleton<_i572.CompilerRepository>(
       () => _i637.CompilerRepositoryImpl(
         gh<_i982.CompilerRemoteDatasource>(),
-        gh<_i993.Talker>(),
+        gh<_i207.Talker>(),
+      ),
+    );
+    gh.lazySingleton<_i689.HealthRepository>(
+      () => _i105.HealthRepositoryImpl(
+        gh<_i867.HealthRemoteDatasource>(),
+        gh<_i207.Talker>(),
       ),
     );
     gh.factory<_i938.CompileProject>(

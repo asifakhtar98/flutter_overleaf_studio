@@ -19,6 +19,7 @@ A cross-platform frontend (web, macOS, iOS) for the TeX Live REST API server in 
 | File tree | `flutter_fancy_tree_view` |
 | Layout | `multi_split_view` (3-pane desktop, tabs on mobile) |
 | Error handling | `fpdart` `Either<Failure, T>` |
+| Observability | `talker` + `talker_flutter` (Unified logging, Dio & Bloc interceptors, in-app log viewer) |
 
 ## Features
 
