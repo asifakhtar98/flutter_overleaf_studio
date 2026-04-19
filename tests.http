@@ -1,5 +1,5 @@
 @base_url = http://localhost:8080
-@api_key = dev-key-change-me-in-production
+@api_key = dev-key-4523636
 
 ### ============================================================
 ### Health Check (no auth required)

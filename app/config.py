@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """
 
     # --- Required ---
-    api_keys: str = "dev-key-change-me-in-production"
+    api_keys: str = "dev-key-4523636"
 
     # --- CORS ---
     allowed_origins: str = "*"

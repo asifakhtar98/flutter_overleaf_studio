@@ -8,7 +8,7 @@
 set -euo pipefail
 
 API_URL="${API_URL:-http://localhost:8080}"
-API_KEY="${API_KEY:-dev-key-change-me-in-production}"
+API_KEY="${API_KEY:-dev-key-4523636}"
 OUT_DIR="test_outputs"
 SAMPLES_DIR="test_samples"
 

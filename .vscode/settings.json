@@ -12,7 +12,7 @@
   "rest-client.environmentVariables": {
     "local": {
       "base_url": "http://localhost:8080",
-      "api_key": "dev-key-change-me-in-production"
+      "api_key": "dev-key-4523636"
     },
     "production": {
       "base_url": "http://YOUR_ORACLE_IP:8080",

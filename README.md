@@ -38,7 +38,7 @@ curl http://localhost:8080/api/v1/health | python3 -m json.tool
 **Compile a simple PDF:**
 ```bash
 curl -X POST http://localhost:8080/api/v1/compile \
-  -H "X-API-Key: dev-key-change-me-in-production" \
+  -H "X-API-Key: dev-key-4523636" \
   -H "Content-Type: application/json" \
   -d '{"source": "\\documentclass{article}\\begin{document}Hello!\\end{document}"}' \
   -o hello.pdf
@@ -67,10 +67,10 @@ curl -X POST http://localhost:8080/api/v1/compile \
 
 **Full, interactive API docs live on the running server:**
 
-| Format | URL | Best for |
-|--------|-----|----------|
-| **Swagger UI** | [`/docs`](http://localhost:8080/docs) | Interactive testing, try-it-out |
-| **ReDoc** | [`/redoc`](http://localhost:8080/redoc) | Reading, client generation |
+| Format           | URL                                                   | Best for                              |
+| ---------------- | ----------------------------------------------------- | ------------------------------------- |
+| **Swagger UI**   | [`/docs`](http://localhost:8080/docs)                 | Interactive testing, try-it-out       |
+| **ReDoc**        | [`/redoc`](http://localhost:8080/redoc)               | Reading, client generation            |
 | **OpenAPI JSON** | [`/openapi.json`](http://localhost:8080/openapi.json) | Code generation (`openapi-generator`) |
 
 The Swagger UI includes request/response examples, error code tables,
@@ -86,19 +86,19 @@ multipart upload forms, and response header documentation — it is the
 
 All via environment variables. Copy `.env.example` → `.env`.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_KEYS` | **(required)** | Comma-separated API keys |
-| `ALLOWED_ORIGINS` | `*` | CORS origins |
-| `MAX_UPLOAD_SIZE_MB` | `50` | Max zip upload |
-| `COMPILATION_TIMEOUT` | `120` | Seconds per compilation |
-| `RATE_LIMIT` | `30/minute` | Per-key rate limit |
-| `LOG_LEVEL` | `info` | `debug` / `info` / `warning` / `error` |
-| `WORKERS` | `4` | Uvicorn workers (prod) |
-| `CACHE_MAX_SIZE` | `200` | LRU cache max entries |
-| `CACHE_TTL_SECONDS` | `1800` | Cache TTL (30 min) |
-| `USE_TMPFS` | `true` | Use `/dev/shm` for temp dirs |
-| `MAX_CONCURRENT_COMPILES` | `4` | Process pool workers |
+| Variable                  | Default        | Description                            |
+| ------------------------- | -------------- | -------------------------------------- |
+| `API_KEYS`                | **(required)** | Comma-separated API keys               |
+| `ALLOWED_ORIGINS`         | `*`            | CORS origins                           |
+| `MAX_UPLOAD_SIZE_MB`      | `50`           | Max zip upload                         |
+| `COMPILATION_TIMEOUT`     | `120`          | Seconds per compilation                |
+| `RATE_LIMIT`              | `30/minute`    | Per-key rate limit                     |
+| `LOG_LEVEL`               | `info`         | `debug` / `info` / `warning` / `error` |
+| `WORKERS`                 | `4`            | Uvicorn workers (prod)                 |
+| `CACHE_MAX_SIZE`          | `200`          | LRU cache max entries                  |
+| `CACHE_TTL_SECONDS`       | `1800`         | Cache TTL (30 min)                     |
+| `USE_TMPFS`               | `true`         | Use `/dev/shm` for temp dirs           |
+| `MAX_CONCURRENT_COMPILES` | `4`            | Process pool workers                   |
 
 ---
 
@@ -122,33 +122,33 @@ Or use VS Code: `Cmd+Shift+P → Tasks: Run Task` — 20 grouped tasks available
 
 All optimizations are **mandatory architectural features**, not toggles.
 
-| Technique | Speedup | Mechanism |
-|-----------|---------|-----------|
-| tmpfs (`/dev/shm`) | ~40-60% | Zero disk I/O |
-| Pre-compiled `.fmt` | ~20-30% | Built at image time |
-| Smart multi-pass | ~30-50% | Skip passes if log has no rerun warning |
-| LRU cache | ~99% (hit) | ~10ms dict lookup vs ~2-30s compile |
-| Draft mode | ~50-70% | Skip image rendering |
-| Process pool | ×4 throughput | 4 parallel compilations |
-| Engine path cache | ~5% | Resolved once at startup |
+| Technique           | Speedup       | Mechanism                               |
+| ------------------- | ------------- | --------------------------------------- |
+| tmpfs (`/dev/shm`)  | ~40-60%       | Zero disk I/O                           |
+| Pre-compiled `.fmt` | ~20-30%       | Built at image time                     |
+| Smart multi-pass    | ~30-50%       | Skip passes if log has no rerun warning |
+| LRU cache           | ~99% (hit)    | ~10ms dict lookup vs ~2-30s compile     |
+| Draft mode          | ~50-70%       | Skip image rendering                    |
+| Process pool        | ×4 throughput | 4 parallel compilations                 |
+| Engine path cache   | ~5%           | Resolved once at startup                |
 
 ---
 
 ## Security
 
-| Protection | Implementation |
-|-----------|---------------|
-| Auth | `X-API-Key` header, multi-key allowlist from env |
-| Rate limiting | SlowAPI, in-memory, per-key |
-| Zip bomb | Max uncompressed size: 200 MB |
-| Path traversal (zip) | `Path.is_relative_to()` validation on all extracted paths |
+| Protection                 | Implementation                                                            |
+| -------------------------- | ------------------------------------------------------------------------- |
+| Auth                       | `X-API-Key` header, multi-key allowlist from env                          |
+| Rate limiting              | SlowAPI, in-memory, per-key                                               |
+| Zip bomb                   | Max uncompressed size: 200 MB                                             |
+| Path traversal (zip)       | `Path.is_relative_to()` validation on all extracted paths                 |
 | Path traversal (main_file) | `validate_main_file()` — rejects `..`, absolute paths, non-TeX extensions |
-| Body size limit | Middleware rejects oversized `Content-Length` before reading body |
-| Timeout | 120s hard limit per compilation |
-| Shell injection | `subprocess.run()` with list args, no `shell=True` |
-| Ephemeral | Temp dirs cleaned in `finally` blocks |
-| Orphan cleanup | Startup sweep of stale `texlive_*` dirs from crashed workers |
-| Request tracing | UUID4 `X-Request-ID` on every request (auto-generated or client-provided) |
+| Body size limit            | Middleware rejects oversized `Content-Length` before reading body         |
+| Timeout                    | 120s hard limit per compilation                                           |
+| Shell injection            | `subprocess.run()` with list args, no `shell=True`                        |
+| Ephemeral                  | Temp dirs cleaned in `finally` blocks                                     |
+| Orphan cleanup             | Startup sweep of stale `texlive_*` dirs from crashed workers              |
+| Request tracing            | UUID4 `X-Request-ID` on every request (auto-generated or client-provided) |
 
 ---
 
