@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import 'package:flutter_latex_client/core/error/exceptions.dart';
@@ -22,7 +24,14 @@ class ErrorInterceptor extends Interceptor {
     }
 
     if (response != null) {
-      final data = response.data;
+      dynamic data = response.data;
+      if (data is List<int>) {
+        try {
+          final str = utf8.decode(data);
+          data = jsonDecode(str);
+        } on FormatException catch (_) {}
+      }
+
       if (data is Map<String, dynamic>) {
         final errorCode = data['error_code'] as String? ?? 'UNKNOWN';
         final message = data['message'] as String? ?? 'Unknown error';

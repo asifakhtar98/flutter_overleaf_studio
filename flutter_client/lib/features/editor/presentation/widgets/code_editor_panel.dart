@@ -91,15 +91,32 @@ class CodeEditorPanel extends HookWidget {
                     event.logicalKey == LogicalKeyboardKey.tab) {
                   final text = controller.text;
                   final selection = controller.selection;
+                  if (!selection.isValid || selection.start < 0 || selection.end < 0) return;
+                  final start = selection.start;
+                  final end = selection.end;
                   final newText =
-                      '${text.substring(0, selection.baseOffset)}  '
-                      '${text.substring(selection.extentOffset)}';
+                      '${text.substring(0, start)}  '
+                      '${text.substring(end)}';
                   controller.value = TextEditingValue(
                     text: newText,
                     selection: TextSelection.collapsed(
-                      offset: selection.baseOffset + 2,
+                      offset: start + 2,
                     ),
                   );
+                  context.read<EditorBloc>().add(
+                        EditorEvent.contentChanged(
+                          content: newText,
+                        ),
+                      );
+                  final path = context.read<EditorBloc>().state.activeFilePath;
+                  if (path != null) {
+                    context.read<ProjectBloc>().add(
+                          ProjectEvent.updateFileContent(
+                            path: path,
+                            content: newText,
+                          ),
+                        );
+                  }
                 }
               },
               child: TextField(

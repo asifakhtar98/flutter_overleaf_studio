@@ -232,13 +232,14 @@ def validate_main_file(main_file: str) -> None:
 # ---------------------------------------------------------------------------
 # Hashing
 # ---------------------------------------------------------------------------
-def _compute_hash(content: bytes, engine: str, main_file: str, draft: bool) -> str:
+def _compute_hash(content: bytes, engine: str, main_file: str, draft: bool, is_zip: bool) -> str:
     """Compute SHA-256 hash of compilation inputs for cache keying."""
     h = hashlib.sha256()
     h.update(content)
     h.update(engine.encode())
     h.update(main_file.encode())
     h.update(b"draft" if draft else b"nodraft")
+    h.update(b"zip" if is_zip else b"tex")
     return h.hexdigest()
 
 
@@ -326,6 +327,8 @@ def _run_engine(
         cwd=cwd,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
     )
     elapsed = time.monotonic() - start
@@ -357,6 +360,8 @@ def _compile_sync(
     main_file: str,
     draft: bool,
     timeout: int,
+    content: bytes,
+    is_zip: bool,
 ) -> CompileResult:
     """Synchronous LaTeX compilation — runs in a separate process.
 
@@ -369,6 +374,17 @@ def _compile_sync(
     work_path = Path(work_dir)
     main_path = work_path / main_file
 
+    try:
+        # Write content to work dir
+        if is_zip:
+            _safe_extract_zip(content, work_path)
+        else:
+            main_path.parent.mkdir(parents=True, exist_ok=True)
+            main_path.write_bytes(content)
+    except ValueError:
+        # Zip bomb or traversal validation exception - bubble out
+        raise
+
     # --- Pre-flight checks ---
     if not main_path.exists():
         return _error_result(f"Main file not found: {main_file}", engine)
@@ -380,14 +396,14 @@ def _compile_sync(
     # --- Draft mode injection ---
     if draft:
         try:
-            src = main_path.read_text(errors="ignore")
-            main_path.write_text("\\PassOptionsToPackage{draft}{graphicx}\n" + src)
+            src = main_path.read_bytes()
+            main_path.write_bytes(b"\\PassOptionsToPackage{draft}{graphicx}\n" + src)
         except OSError as e:
             return _error_result(f"Failed to inject draft mode: {e}", engine)
 
     # --- Read source for bibliography detection ---
     try:
-        tex_source = main_path.read_text(errors="ignore")
+        tex_source = main_path.read_text(errors="replace")
     except OSError as e:
         return _error_result(f"Failed to read main file: {e}", engine)
     has_bib = _has_bibliography(tex_source)
@@ -558,7 +574,7 @@ async def compile_latex(
     # --- Cache lookup ---
     cache_key: str | None = None
     if enable_cache:
-        cache_key = _compute_hash(content, engine, main_file, draft)
+        cache_key = _compute_hash(content, engine, main_file, draft, is_zip)
         cached = compile_cache.get(cache_key)
         if cached is not None:
             logger.info("cache_hit", engine=engine, main_file=main_file)
@@ -579,17 +595,9 @@ async def compile_latex(
     logger.info("compilation_start", engine=engine, main_file=main_file, work_dir=work_dir)
 
     try:
-        # Write content to work dir
-        if is_zip:
-            _safe_extract_zip(content, work_path)
-        else:
-            target_path = work_path / main_file
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            target_path.write_bytes(content)
-
         # Delegate to process pool (with crash recovery)
         loop = asyncio.get_running_loop()
-        compile_args = (work_dir, engine, main_file, draft, settings.compilation_timeout)
+        compile_args = (work_dir, engine, main_file, draft, settings.compilation_timeout, content, is_zip)
         try:
             result = await loop.run_in_executor(get_executor(), _compile_sync, *compile_args)
         except BrokenProcessPool:
@@ -625,7 +633,5 @@ async def compile_latex(
         )
         return result
 
-    except ValueError as e:
-        return _error_result(str(e), engine)
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
