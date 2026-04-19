@@ -53,6 +53,7 @@
 | Lint | ruff (configured in `pyproject.toml`) |
 | Logging | structlog (structured, JSON-friendly) |
 | Docker | Multi-stage build (`Dockerfile`), dev with `--reload` (`Dockerfile.dev`) |
+| Python env | `venv` at `/opt/venv` — never `--break-system-packages` |
 
 ### API — exact endpoints
 
@@ -112,7 +113,7 @@ X-Passes-Run: 2
 │   ├── models.py                # Pydantic schemas (Engine, CompileRequest, etc.)
 │   └── routers/
 │       ├── __init__.py
-│       ├── compile.py           # POST /api/v1/compile
+│       ├── compile.py           # POST /api/v1/compile (Content-Type dispatch)
 │       └── health.py            # GET /api/v1/health
 ├── tests/
 │   ├── __init__.py
@@ -121,9 +122,18 @@ X-Passes-Run: 2
 │   ├── test_auth.py
 │   ├── test_compile.py
 │   └── fixtures/                # .tex, .bib test files
+├── test_samples/                # Sample .tex files for manual verification
+│   ├── 01_hello_world.tex
+│   ├── 02_multipage_toc.tex
+│   ├── 03_math_heavy.tex
+│   ├── 04_bibliography/        # Multi-file zip project
+│   ├── 05_images_tikz.tex
+│   └── 06_unicode_xelatex.tex
+├── test_outputs/                # ← gitignored, generated PDFs
 ├── scripts/
 │   ├── server-setup.sh          # One-time Oracle VM bootstrap
-│   └── deploy.sh                # Blue-green deploy
+│   ├── deploy.sh                # Blue-green deploy
+│   └── test_samples.sh          # Compiles all test_samples/ via API
 ├── .github/workflows/
 │   ├── ci.yml                   # Lint → Test → Build ARM64 → Push
 │   └── cd.yml                   # SSH deploy on main
@@ -131,7 +141,7 @@ X-Passes-Run: 2
 │   ├── extensions.json
 │   ├── settings.json
 │   └── tasks.json               # Dev/test/deploy task runner
-├── Dockerfile                   # Prod: multi-stage, fmtutil-sys --all
+├── Dockerfile                   # Prod: multi-stage, venv, fontconfig
 ├── Dockerfile.dev               # Dev: hot-reload, --reload-dir app
 ├── docker-compose.yml           # Local dev
 ├── docker-compose.prod.yml      # Production
@@ -164,6 +174,7 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 | 6 | **Process pool** | `compiler.py:get_executor` | `ProcessPoolExecutor(max_workers=4)` | True parallelism |
 | 7 | **Engine paths** | `compiler.py:ENGINE_PATHS` | `shutil.which()` once at import | Zero per-request PATH lookup |
 | 8 | **Health caching** | `health.py:_get_texlive_version` | `@lru_cache` — no shell-out per request | Instant health checks |
+| 9 | **Fontconfig** | `Dockerfile: fc-cache` | TeX Live fonts registered with fontconfig | XeLaTeX/LuaLaTeX font discovery |
 
 ---
 
@@ -197,12 +208,15 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 6. Use `_error_result()` helper for failure `CompileResult` — never construct manually.
 7. Use `_run_engine()` for subprocess calls in compiler — never inline `subprocess.run()`.
 8. Use `_ParsedRequest` dataclass in compile router — never parse request in endpoint body.
-9. Add tests for any new endpoint or compiler feature — no untested code ships.
-10. Use Pydantic `BaseModel` for all request/response schemas — no raw dicts.
-11. Use `StrEnum` for enums — not `str, Enum`.
-12. Clean up temp dirs in `finally` blocks — no cleanup-on-success-only.
-13. Follow existing module structure — new endpoints go in `app/routers/`, new models in `app/models.py`.
-14. Update this file when making architectural changes.
+9. Use `_parse_request(request)` with Content-Type dispatch — never mix FastAPI `Body` + `Form` defaults.
+10. Add tests for any new endpoint or compiler feature — no untested code ships.
+11. Use Pydantic `BaseModel` for all request/response schemas — no raw dicts.
+12. Use `StrEnum` for enums — not `str, Enum`.
+13. Clean up temp dirs in `finally` blocks — no cleanup-on-success-only.
+14. Follow existing module structure — new endpoints go in `app/routers/`, new models in `app/models.py`.
+15. Update this file and other `.md` files when making architectural or behavioral changes.
+16. Register TeX Live fonts with fontconfig in Dockerfiles — XeLaTeX/LuaLaTeX need `fc-cache`.
+17. Use `python3.11 -m venv /opt/venv` in Dockerfiles — never `pip install --break-system-packages`.
 
 ### MUST NOT
 
@@ -221,6 +235,8 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 13. Duplicate logic — use existing helpers (`_error_result`, `_run_engine`, `_collect_output`, `_parse_request`).
 14. Add `ENTRYPOINT` in Dockerfiles — use `CMD` (allows override for debugging).
 15. Hardcode worker counts — always use `$WORKERS` env var.
+16. Use `structlog.get_level_from_name()` — removed in v25.x. Use `logging.getLevelNamesMapping()` instead.
+17. Use `pip install --break-system-packages` — Ubuntu 22.04's pip 22.x doesn't support it.
 
 ### Code Conventions
 
@@ -292,5 +308,3 @@ Push to main       → CI + CD: above → push to Docker Hub → SSH deploy → 
 - `draft=true` → fast preview mode for live editing
 - `X-Cached` header → show cache badge in UI
 - Future: WebSocket for live compilation log streaming
-
-[Also we should update .md files and test files and non code files when needed from time to time]

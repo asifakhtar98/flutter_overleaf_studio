@@ -42,7 +42,7 @@ async def _parse_json(request: Request) -> _ParsedRequest:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid JSON body.",
-        )
+        ) from None
 
     body = CompileRequest(**raw)
 
@@ -89,7 +89,7 @@ async def _parse_multipart(request: Request) -> _ParsedRequest:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid engine '{engine_str}'. Choose from: {[e.value for e in Engine]}",
-        )
+        ) from None
 
     main_file = form.get("main_file", "main.tex")
     draft = str(form.get("draft", "false")).lower() in ("true", "1", "yes")

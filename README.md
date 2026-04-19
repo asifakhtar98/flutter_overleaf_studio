@@ -54,7 +54,7 @@ No auth required.
 ```json
 {
   "status": "healthy",
-  "texlive_version": "pdfTeX 3.141592653-2.6-1.40.26 (TeX Live 2025)",
+  "texlive_version": "pdfTeX 3.141592653-2.6-1.40.29 (TeX Live 2026)",
   "engines": ["pdflatex", "xelatex", "lualatex", "latexmk"],
   "uptime_seconds": 3600.0,
   "cache_stats": { "hits": 142, "misses": 58, "size": 47, "max_size": 200 }
