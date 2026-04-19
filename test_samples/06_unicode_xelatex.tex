@@ -1,0 +1,50 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath}
+
+\setmainfont{TeX Gyre Termes}
+
+\title{Unicode \& XeLaTeX Test}
+\author{TeX Live API — XeLaTeX Engine}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Latin Extended}
+Café, naïve, résumé, über, Ångström, Zürich, São Paulo.
+
+\section{Greek}
+The Greek alphabet: α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ σ τ υ φ χ ψ ω
+
+Uppercase: Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω
+
+\section{Cyrillic}
+Привет мир — Hello World in Russian.
+
+Доброе утро — Good morning.
+
+\section{Mathematical Symbols with Unicode}
+
+Einstein's field equations:
+\begin{equation}
+  G_{\mu\nu} + \Lambda g_{\mu\nu} = \frac{8\pi G}{c^4} T_{\mu\nu}
+\end{equation}
+
+\section{CJK Sample (if fonts available)}
+Basic CJK: 你好世界 (Hello World in Chinese).
+
+Note: CJK rendering depends on font availability in the container.
+
+\section{Arrows and Symbols}
+→ ← ↑ ↓ ↔ ⇒ ⇐ ⇔ ∀ ∃ ∈ ∉ ⊂ ⊃ ∪ ∩ ∅ ∞ ≈ ≠ ≤ ≥
+
+\section{Typography}
+``Double smart quotes'' and `single smart quotes.'
+
+Em dash — like this. En dash: pages 15–20.
+
+Ellipsis\ldots{} and proper spacing after Mr.\ Smith.
+
+\end{document}

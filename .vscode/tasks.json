@@ -93,6 +93,19 @@
       "problemMatcher": [],
       "detail": "Run tests with coverage report"
     },
+    {
+      "label": "🧪 Test: Compile All Samples",
+      "type": "shell",
+      "command": "bash scripts/test_samples.sh",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [],
+      "detail": "Compile all test_samples/ against local API → test_outputs/"
+    },
     // =====================================================================
     // 🔍 CODE QUALITY
     // =====================================================================

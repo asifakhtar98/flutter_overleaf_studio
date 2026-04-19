@@ -1,0 +1,33 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage[backend=bibtex, style=numeric, sorting=none]{biblatex}
+\addbibresource{refs.bib}
+
+\title{Bibliography Test Document}
+\author{TeX Live API}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+Einstein's theory of special relativity \cite{einstein1905} introduced the famous
+mass--energy equivalence relation $E = mc^2$.
+
+Newton's laws of motion \cite{newton1687} form the foundation of classical mechanics.
+The inverse-square law of gravitation was later unified with electromagnetism
+through Maxwell's equations \cite{maxwell1865}.
+
+Modern quantum mechanics builds upon these foundations, with the Schr\"odinger
+equation \cite{schrodinger1926} providing the wave-mechanical formulation.
+
+\section{Discussion}
+
+The interplay between classical and quantum physics, as discussed in
+\cite{einstein1905, newton1687}, continues to inspire new research.
+
+\printbibliography[heading=bibintoc, title={References}]
+
+\end{document}

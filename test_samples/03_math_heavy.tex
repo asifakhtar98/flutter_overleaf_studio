@@ -1,0 +1,83 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=2cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\title{Mathematics Typesetting Test}
+\author{TeX Live API}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Calculus}
+
+The Fundamental Theorem of Calculus:
+
+\begin{theorem}[Fundamental Theorem of Calculus]
+  If $f$ is continuous on $[a,b]$ and $F' = f$, then
+  \begin{equation}
+    \int_a^b f(x)\,dx = F(b) - F(a). \label{eq:ftc}
+  \end{equation}
+\end{theorem}
+
+\section{Maxwell's Equations}
+
+\begin{align}
+  \nabla \cdot \mathbf{E}  &= \frac{\rho}{\varepsilon_0}           \label{eq:gauss_e} \\
+  \nabla \cdot \mathbf{B}  &= 0                                     \label{eq:gauss_b} \\
+  \nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \label{eq:faraday} \\
+  \nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t} \label{eq:ampere}
+\end{align}
+
+\section{Linear Algebra}
+
+A matrix and its determinant:
+\begin{equation}
+  A = \begin{pmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ a_{31} & a_{32} & a_{33} \end{pmatrix}, \qquad
+  \det(A) = \sum_{\sigma \in S_3} \operatorname{sgn}(\sigma) \prod_{i=1}^{3} a_{i,\sigma(i)}
+\end{equation}
+
+\section{Piecewise Functions}
+
+\begin{equation}
+  f(x) = \begin{cases}
+    x^2        & \text{if } x \geq 0 \\
+    -x         & \text{if } x < 0 \\
+    \text{undefined} & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+\section{Series and Limits}
+
+Euler's identity and the Basel problem:
+\begin{gather}
+  e^{i\pi} + 1 = 0 \label{eq:euler} \\[6pt]
+  \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6} \label{eq:basel}
+\end{gather}
+
+\section{Quantum Mechanics}
+
+The time-independent Schr\"odinger equation:
+\begin{equation}
+  \hat{H}\Psi = E\Psi, \qquad \hat{H} = -\frac{\hbar^2}{2m}\nabla^2 + V(\mathbf{r})
+\end{equation}
+
+\begin{definition}[Hilbert Space]
+  A complete inner product space over $\mathbb{C}$ equipped with the norm
+  $\|\psi\| = \sqrt{\langle \psi | \psi \rangle}$.
+\end{definition}
+
+\begin{proof}
+  The completeness follows from the Riesz--Fischer theorem. \qedhere
+\end{proof}
+
+\end{document}

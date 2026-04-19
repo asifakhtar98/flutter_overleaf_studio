@@ -38,6 +38,7 @@ docker-compose.override.yml
 Thumbs.db
 
 # Output
+test_outputs/
 *.pdf
 *.aux
 *.log
