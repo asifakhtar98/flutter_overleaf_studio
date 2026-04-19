@@ -1,321 +1,203 @@
 # 📄 TeX Live Compilation API
 
-> A stateless REST API that compiles LaTeX source into PDF. Powered by TeX Live Full, containerized with Docker, deployed on Oracle Cloud ARM64.
+> Stateless REST API — LaTeX in, PDF out. TeX Live Full, Docker, Oracle Cloud ARM64.
 
-[![CI](https://github.com/YOUR_USERNAME/texlive-api/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/texlive-api/actions/workflows/ci.yml)
-[![CD](https://github.com/YOUR_USERNAME/texlive-api/actions/workflows/cd.yml/badge.svg)](https://github.com/YOUR_USERNAME/texlive-api/actions/workflows/cd.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## ✨ Features
+## Features
 
-- **Multiple engines**: `pdflatex`, `xelatex`, `lualatex`, `latexmk`
-- **Single file & multi-file**: Raw `.tex` source or zipped projects with images, `.bib`, custom `.sty`
-- **Smart compilation**: Parses `.aux` files to detect if extra passes are needed — never runs unnecessary passes
-- **In-memory caching**: SHA-256 hash-based LRU cache — identical inputs return instant results (~10ms)
-- **RAM-disk compilation**: All temp dirs in `/dev/shm` (tmpfs) — zero disk I/O
-- **Draft mode**: Skip image rendering for fast live preview in Flutter
-- **Concurrent**: `ProcessPoolExecutor` — 4 simultaneous compilations on 4 OCPUs
-- **Pre-compiled formats**: `.fmt` files built at image time — no per-request format parsing
-- **Stateless**: No file persistence — every compilation is ephemeral
-- **Secured**: API key authentication + rate limiting
-- **ARM64 native**: Built for Oracle Cloud Ampere (also runs natively on Apple Silicon)
+- **4 engines**: `pdflatex`, `xelatex`, `lualatex`, `latexmk`
+- **2 input modes**: raw `.tex` (JSON body) or zipped project (multipart form)
+- **Smart multi-pass**: parses `.aux` logs, auto-runs BibTeX/Biber, max 3 passes, min 1
+- **In-memory cache**: SHA-256 keyed `TTLCache` — identical inputs return in ~10ms
+- **RAM-disk compilation**: all temp dirs in `/dev/shm` — zero disk I/O
+- **Draft mode**: `draft=true` skips image rendering for fast live preview
+- **Concurrent**: `ProcessPoolExecutor(4)` — 4 simultaneous compilations
+- **Pre-compiled formats**: `fmtutil-sys --all` at Docker build time
+- **Stateless**: no file persistence — every compilation is ephemeral, cleanup in `finally`
+- **Secured**: API key auth (`X-API-Key`) + per-key rate limiting (SlowAPI)
+- **ARM64 native**: Oracle Ampere prod, Apple Silicon dev — no arch mismatch
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
-
-### Run Locally
+## Quick Start
 
 ```bash
-# Clone the repo
-git clone https://github.com/YOUR_USERNAME/texlive-api.git
-cd texlive-api
-
-# Configure environment
-cp .env.example .env
-# Edit .env — at minimum set API_KEYS
-
-# Start the server (with hot-reload)
-docker compose up --build
-
-# API available at http://localhost:8080
-# Swagger docs at http://localhost:8080/docs
+git clone https://github.com/YOUR_USERNAME/texlive-api.git && cd texlive-api
+cp .env.example .env          # Set API_KEYS
+docker compose up --build     # First build ~20-30 min (TeX Live)
+# http://localhost:8080/docs  — Swagger UI
 ```
-
-### Test It
 
 ```bash
 # Health check
-curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/api/v1/health | python3 -m json.tool
 
-# Compile a simple LaTeX document
+# Compile
 curl -X POST http://localhost:8080/api/v1/compile \
-  -H "X-API-Key: your-api-key" \
+  -H "X-API-Key: dev-key-change-me-in-production" \
   -H "Content-Type: application/json" \
-  -d '{"source": "\\documentclass{article}\\begin{document}Hello, World!\\end{document}"}' \
-  --output hello.pdf
+  -d '{"source": "\\documentclass{article}\\begin{document}Hello!\\end{document}"}' \
+  -o hello.pdf
 ```
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 ### `GET /api/v1/health`
 
-Health check endpoint. No authentication required.
+No auth required.
 
-**Response:**
 ```json
 {
   "status": "healthy",
-  "texlive_version": "2025",
+  "texlive_version": "pdfTeX 3.141592653-2.6-1.40.26 (TeX Live 2025)",
   "engines": ["pdflatex", "xelatex", "lualatex", "latexmk"],
-  "uptime_seconds": 3600,
-  "cache_stats": {
-    "hits": 142,
-    "misses": 58,
-    "size": 47,
-    "max_size": 200
-  }
+  "uptime_seconds": 3600.0,
+  "cache_stats": { "hits": 142, "misses": 58, "size": 47, "max_size": 200 }
 }
 ```
 
 ### `POST /api/v1/compile`
 
-Compile LaTeX source into PDF. Requires `X-API-Key` header.
+Requires `X-API-Key` header.
 
-#### Option A: Single File (JSON)
-
-```http
-POST /api/v1/compile HTTP/1.1
-X-API-Key: your-api-key
-Content-Type: application/json
-
-{
-  "source": "\\documentclass{article}\\begin{document}Hello!\\end{document}",
-  "engine": "pdflatex"
-}
-```
-
-#### Option B: Multi-File Project (Zip Upload)
-
-```http
-POST /api/v1/compile HTTP/1.1
-X-API-Key: your-api-key
-Content-Type: multipart/form-data
-
-file: project.zip
-engine: xelatex
-main_file: thesis.tex
-```
-
-#### Parameters
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `source` | string | ✅* | — | Raw LaTeX source code |
-| `file` | file | ✅* | — | Zip archive of project |
-| `engine` | string | ❌ | `pdflatex` | `pdflatex`, `xelatex`, `lualatex`, or `latexmk` |
-| `main_file` | string | ❌ | `main.tex` | Entry point file (zip mode) |
-| `draft` | bool | ❌ | `false` | Skip image rendering for fast preview |
-| `enable_cache` | bool | ❌ | `true` | Return cached PDF if identical input exists |
-
-*One of `source` or `file` is required.
-
-#### Success Response (200)
-
-Returns PDF bytes with headers:
-```
-Content-Type: application/pdf
-X-Compilation-Time: 4.2
-X-Engine: pdflatex
-X-Warnings-Count: 3
-X-Cached: false
-X-Passes-Run: 2
-```
-
-#### Error Response (422)
-
+**JSON body (single file):**
 ```json
 {
-  "success": false,
-  "error": "Compilation failed",
-  "exit_code": 1,
-  "log": "! Undefined control sequence.\nl.42 \\badcommand",
-  "engine": "pdflatex"
+  "source": "\\documentclass{article}\\begin{document}Hello!\\end{document}",
+  "engine": "pdflatex",
+  "draft": false,
+  "enable_cache": true
+}
+```
+
+**Multipart form (zip project):**
+```
+file=@project.zip  engine=xelatex  main_file=thesis.tex  draft=false  enable_cache=true
+```
+
+**Parameters:**
+
+| Param | Type | Default | Notes |
+|-------|------|---------|-------|
+| `source` | string | — | Required for JSON mode |
+| `file` | file | — | Required for multipart mode |
+| `engine` | string | `pdflatex` | `pdflatex` / `xelatex` / `lualatex` / `latexmk` |
+| `main_file` | string | `main.tex` | Entry point for zip projects |
+| `draft` | bool | `false` | Skip image rendering |
+| `enable_cache` | bool | `true` | Check/store in LRU cache |
+
+**Success (200):** PDF bytes in body. Metadata in response headers:
+
+| Header | Example |
+|--------|---------|
+| `X-Compilation-Time` | `4.20` |
+| `X-Engine` | `pdflatex` |
+| `X-Warnings-Count` | `3` |
+| `X-Cached` | `false` |
+| `X-Passes-Run` | `2` |
+
+**Failure (422):**
+```json
+{
+  "detail": {
+    "success": false,
+    "error": "Compilation failed",
+    "exit_code": 1,
+    "log": "! Undefined control sequence.\nl.42 \\badcommand",
+    "engine": "pdflatex",
+    "compilation_time": 2.31,
+    "passes_run": 1
+  }
 }
 ```
 
 ---
 
-## 🛠 Development
+## Configuration
 
-### Project Structure
-
-```
-├── app/
-│   ├── main.py              # FastAPI entry point
-│   ├── config.py            # Settings from env vars
-│   ├── auth.py              # API key authentication
-│   ├── compiler.py          # Core LaTeX compilation logic
-│   ├── cache.py             # In-memory LRU compile cache
-│   ├── models.py            # Pydantic models
-│   └── routers/
-│       ├── compile.py       # /api/v1/compile
-│       └── health.py        # /api/v1/health
-├── tests/
-│   ├── test_compile.py      # Compilation tests
-│   ├── test_health.py       # Health endpoint tests
-│   ├── test_auth.py         # Auth tests
-│   └── fixtures/            # Test .tex files
-├── scripts/
-│   ├── server-setup.sh      # One-time VM bootstrap
-│   └── deploy.sh            # Blue-green deploy
-├── docker-compose.yml       # Local development
-├── docker-compose.prod.yml  # Production
-├── Dockerfile               # Production image
-├── Dockerfile.dev           # Dev image (hot-reload)
-└── tests.http               # VS Code REST Client tests
-```
-
-### Running Tests
-
-```bash
-# All tests
-docker compose exec api pytest -v
-
-# With coverage
-docker compose exec api pytest --cov=app --cov-report=term-missing
-
-# Specific test
-docker compose exec api pytest tests/test_compile.py -v
-```
-
-### VS Code Setup
-
-**Recommended Extensions:**
-- [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) — for Oracle VM development
-- [Docker](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) — container management
-- [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) — test API with `tests.http`
-- [GitHub Actions](https://marketplace.visualstudio.com/items?itemName=github.vscode-github-actions) — pipeline visibility
-- [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) — linting, debugging
-
-### Hot Reload
-
-In local dev mode, the `app/` directory is volume-mounted. Any code change triggers an automatic restart via `uvicorn --reload`.
-
----
-
-## 🚢 Deployment
-
-### Prerequisites
-
-1. **Oracle Cloud VM** — `VM.Standard.A1.Flex` (ARM64, Ubuntu 22.04)
-2. **Docker Hub account** — free tier, public repo
-3. **GitHub repo** — with Actions enabled
-
-### Initial Server Setup
-
-```bash
-# SSH into your Oracle VM, then:
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/texlive-api/main/scripts/server-setup.sh | bash
-```
-
-This script installs Docker, configures firewall, sets up the deploy user, and prepares the environment.
-
-### GitHub Secrets
-
-Configure these in your repo → Settings → Secrets → Actions:
-
-| Secret | Description |
-|--------|-------------|
-| `DOCKERHUB_USERNAME` | Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token |
-| `ORACLE_HOST` | VM public IP address |
-| `ORACLE_SSH_KEY` | ED25519 private key for SSH |
-| `ORACLE_SSH_USER` | SSH user (e.g., `ubuntu`) |
-| `API_KEYS` | Comma-separated API keys |
-
-### CI/CD Pipeline
-
-```
-Push to any branch → CI (pytest + build ARM64 image + push to Docker Hub)
-Push to main        → CI + CD (SSH → pull → blue-green restart)
-```
-
----
-
-## ⚙️ Configuration
-
-All configuration is via environment variables. See `.env.example`:
+All via environment variables. Copy `.env.example` → `.env`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_KEYS` | — | Comma-separated API keys (required) |
-| `ALLOWED_ORIGINS` | `*` | CORS origins for Flutter frontend |
-| `MAX_UPLOAD_SIZE_MB` | `50` | Maximum zip upload size |
-| `COMPILATION_TIMEOUT` | `120` | Max seconds per compilation |
+| `API_KEYS` | **(required)** | Comma-separated API keys |
+| `ALLOWED_ORIGINS` | `*` | CORS origins |
+| `MAX_UPLOAD_SIZE_MB` | `50` | Max zip upload |
+| `COMPILATION_TIMEOUT` | `120` | Seconds per compilation |
 | `RATE_LIMIT` | `30/minute` | Per-key rate limit |
-| `LOG_LEVEL` | `info` | Logging verbosity |
-| `WORKERS` | `4` | Uvicorn workers (prod only) |
-| `CACHE_MAX_SIZE` | `200` | Max entries in compilation LRU cache |
-| `CACHE_TTL_SECONDS` | `1800` | Cache entry time-to-live (30 min) |
-| `USE_TMPFS` | `true` | Use `/dev/shm` for temp dirs (RAM-disk) |
-| `MAX_CONCURRENT_COMPILES` | `4` | ProcessPoolExecutor max workers |
+| `LOG_LEVEL` | `info` | `debug` / `info` / `warning` / `error` |
+| `WORKERS` | `4` | Uvicorn workers (prod) |
+| `CACHE_MAX_SIZE` | `200` | LRU cache max entries |
+| `CACHE_TTL_SECONDS` | `1800` | Cache TTL (30 min) |
+| `USE_TMPFS` | `true` | Use `/dev/shm` for temp dirs |
+| `MAX_CONCURRENT_COMPILES` | `4` | Process pool workers |
 
 ---
 
-## ⚡ Performance Architecture
+## Development
 
-All optimizations are **mandatory first-class features**, not optional:
-
-| Technique | Speedup | How |
-|-----------|---------|-----|
-| **tmpfs (`/dev/shm`)** | ~40-60% | All temp dirs in RAM — zero disk I/O |
-| **Pre-compiled `.fmt` files** | ~20-30% | `fmtutil-sys --all` at Docker build time |
-| **Smart multi-pass** | ~30-50% | Parse `.aux` files — skip passes if unchanged |
-| **In-memory LRU cache** | ~99% (hit) | SHA-256 keyed TTLCache — ~10ms cache hits |
-| **Draft mode** | ~50-70% | Skip image rendering for live preview |
-| **Concurrent compilation** | ×3-4 throughput | ProcessPoolExecutor — true parallelism |
-| **Engine path caching** | ~5% | `shutil.which()` once at startup |
-| **`latexmk` engine** | Optimal passes | Auto-detects exact passes needed |
-
-### Expected Performance
-
-```
-Simple document (1 page):    ~0.5-1.5s  (vs ~2-4s without optimizations)
-Complex document (50 pages):  ~5-12s    (vs ~15-30s)
-Cache hit:                    ~10-50ms   (dict lookup)
+```bash
+docker compose up --build                                      # Start
+docker compose exec api python3 -m pytest tests/ -v --tb=short # Test
+docker compose exec api python3 -m ruff check app/ tests/      # Lint
+docker compose exec api python3 -m ruff format app/ tests/     # Format
+docker compose down --remove-orphans                           # Stop
 ```
 
----
+Or use VS Code: `Cmd+Shift+P → Tasks: Run Task` — 20 grouped tasks available.
 
-## 🔒 Security
-
-- **API key auth** — every `/compile` request requires `X-API-Key` header
-- **Rate limiting** — in-memory per-key rate limiting via SlowAPI
-- **Zip bomb protection** — max uncompressed size enforced
-- **Path traversal prevention** — all extracted paths validated
-- **Compilation timeout** — hard 120s limit prevents resource exhaustion
-- **No shell injection** — `subprocess.run()` with list args, never `shell=True`
-- **Ephemeral compilation** — temp dirs cleaned up in `finally` blocks
+**Project structure:** see `agents.md` for the full canonical file tree.
 
 ---
 
-## 📋 License
+## Performance
 
-MIT — see [LICENSE](LICENSE) for details.
+All optimizations are **mandatory architectural features**, not toggles.
+
+| Technique | Speedup | Mechanism |
+|-----------|---------|-----------|
+| tmpfs (`/dev/shm`) | ~40-60% | Zero disk I/O |
+| Pre-compiled `.fmt` | ~20-30% | Built at image time |
+| Smart multi-pass | ~30-50% | Skip passes if log has no rerun warning |
+| LRU cache | ~99% (hit) | ~10ms dict lookup vs ~2-30s compile |
+| Draft mode | ~50-70% | Skip image rendering |
+| Process pool | ×4 throughput | 4 parallel compilations |
+| Engine path cache | ~5% | Resolved once at startup |
 
 ---
 
-## 🗺️ Roadmap
+## Security
 
-- [ ] WebSocket endpoint for live compilation log streaming
-- [ ] Prometheus metrics endpoint
-- [ ] Multi-tenant rate limiting with Redis (when scaling)
-- [ ] Optional persistent compilation history (opt-in)
+| Protection | Implementation |
+|-----------|---------------|
+| Auth | `X-API-Key` header, multi-key allowlist from env |
+| Rate limiting | SlowAPI, in-memory, per-key |
+| Zip bomb | Max uncompressed size: 200 MB |
+| Path traversal | All extracted paths validated against dest dir |
+| Timeout | 120s hard limit per compilation |
+| Shell injection | `subprocess.run()` with list args, no `shell=True` |
+| Ephemeral | Temp dirs cleaned in `finally` blocks |
+
+---
+
+## Deployment
+
+See [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md) for step-by-step Oracle Cloud deployment.
+
+**CI/CD flow:**
+```
+Push to any branch → Lint → Test → Build ARM64 → Push to Docker Hub
+Push to main       → above + SSH deploy to Oracle VM (blue-green)
+```
+
+**GitHub secrets required:** `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `ORACLE_HOST`, `ORACLE_SSH_USER`, `ORACLE_SSH_KEY`
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).

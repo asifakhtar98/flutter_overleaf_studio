@@ -1,0 +1,56 @@
+# =============================================================================
+# Development Dockerfile — Full parity with prod + hot-reload
+# =============================================================================
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    perl \
+    wget \
+    xz-utils \
+    fontconfig \
+    libfontconfig1 \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
+    curl \
+    ca-certificates \
+    ghostscript \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install TeX Live (same as prod for full parity)
+COPY texlive.profile /tmp/texlive.profile
+RUN wget -qO- "https://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz" \
+    | tar xz -C /tmp --strip-components=1 \
+    && /tmp/install-tl --profile=/tmp/texlive.profile \
+    && rm -rf /tmp/install-tl* /tmp/texlive.profile
+
+# Add TeX Live to PATH
+ENV PATH="/usr/local/texlive/bin/aarch64-linux:${PATH}"
+
+# Pre-compile format files
+RUN fmtutil-sys --all
+
+# Install dev dependencies
+COPY requirements-dev.txt /tmp/requirements-dev.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements-dev.txt
+
+WORKDIR /app
+
+# Copy app code (will be overridden by volume mount)
+COPY app/ ./app/
+COPY tests/ ./tests/
+COPY pyproject.toml .
+
+ENV LOG_LEVEL=debug
+
+EXPOSE 8080
+
+CMD ["python3", "-m", "uvicorn", "app.main:app", \
+    "--host", "0.0.0.0", \
+    "--port", "8080", \
+    "--reload", \
+    "--reload-dir", "app"]

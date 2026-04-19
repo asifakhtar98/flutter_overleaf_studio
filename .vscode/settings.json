@@ -1,0 +1,26 @@
+{
+  "python.defaultInterpreterPath": "python3",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests/", "-v"],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "rest-client.environmentVariables": {
+    "local": {
+      "base_url": "http://localhost:8080",
+      "api_key": "dev-key-change-me-in-production"
+    },
+    "production": {
+      "base_url": "http://YOUR_ORACLE_IP:8080",
+      "api_key": "YOUR_PROD_API_KEY"
+    }
+  },
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  }
+}

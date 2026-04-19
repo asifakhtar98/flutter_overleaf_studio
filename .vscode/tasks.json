@@ -1,0 +1,216 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // =====================================================================
+    // 🔨 LOCAL DEVELOPMENT
+    // =====================================================================
+    {
+      "label": "🚀 Dev: Start Server",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [],
+      "detail": "Build dev image & start with hot-reload on :8080"
+    },
+    {
+      "label": "🔄 Dev: Restart Server",
+      "type": "shell",
+      "command": "docker compose restart api",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Restart the running container (no rebuild)"
+    },
+    {
+      "label": "⏹️ Dev: Stop Server",
+      "type": "shell",
+      "command": "docker compose down --remove-orphans",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Stop all containers and remove orphans"
+    },
+    {
+      "label": "🪵 Dev: Logs (follow)",
+      "type": "shell",
+      "command": "docker compose logs -f --tail 100 api",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": [],
+      "detail": "Stream container logs"
+    },
+    // =====================================================================
+    // 🧪 TESTING
+    // =====================================================================
+    {
+      "label": "🧪 Test: Run All",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m pytest tests/ -v --tb=short",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": [],
+      "detail": "Run full pytest suite inside the container"
+    },
+    {
+      "label": "🧪 Test: Health Only",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m pytest tests/test_health.py -v",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Run health endpoint tests"
+    },
+    {
+      "label": "🧪 Test: Auth Only",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m pytest tests/test_auth.py -v",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Run authentication tests"
+    },
+    {
+      "label": "🧪 Test: Compile Only",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m pytest tests/test_compile.py -v",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Run compilation tests (requires TeX Live)"
+    },
+    {
+      "label": "🧪 Test: With Coverage",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m pytest tests/ -v --cov=app --cov-report=term-missing",
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": [],
+      "detail": "Run tests with coverage report"
+    },
+    // =====================================================================
+    // 🔍 CODE QUALITY
+    // =====================================================================
+    {
+      "label": "🔍 Lint: Check",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m ruff check app/ tests/",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Run ruff linter"
+    },
+    {
+      "label": "🔍 Lint: Fix",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m ruff check app/ tests/ --fix",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Auto-fix lint issues"
+    },
+    {
+      "label": "🔍 Format: Check",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m ruff format --check app/ tests/",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Check code formatting"
+    },
+    {
+      "label": "🔍 Format: Apply",
+      "type": "shell",
+      "command": "docker compose exec api python3 -m ruff format app/ tests/",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Auto-format code"
+    },
+    // =====================================================================
+    // 🏗️ DOCKER MANAGEMENT
+    // =====================================================================
+    {
+      "label": "🏗️ Docker: Build Dev Image",
+      "type": "shell",
+      "command": "docker compose build --no-cache",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Force rebuild dev image from scratch"
+    },
+    {
+      "label": "🏗️ Docker: Build Prod Image",
+      "type": "shell",
+      "command": "docker build -t texlive-api:local -f Dockerfile .",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Build production image locally for testing"
+    },
+    {
+      "label": "🧹 Docker: Prune",
+      "type": "shell",
+      "command": "docker system prune -f && docker image prune -f",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Clean up unused Docker resources"
+    },
+    {
+      "label": "📊 Docker: Stats",
+      "type": "shell",
+      "command": "docker stats --no-stream",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Show container resource usage"
+    },
+    // =====================================================================
+    // 🚀 DEPLOYMENT
+    // =====================================================================
+    {
+      "label": "🚀 Deploy: Push to Docker Hub",
+      "type": "shell",
+      "command": "echo 'Tag and push:' && read -p 'Docker Hub username: ' DH_USER && docker tag texlive-api:local $DH_USER/texlive-api:latest && docker push $DH_USER/texlive-api:latest",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Tag and push prod image to Docker Hub"
+    },
+    {
+      "label": "🚀 Deploy: SSH to Oracle VM",
+      "type": "shell",
+      "command": "echo 'Enter Oracle VM IP:' && read -p 'IP: ' VM_IP && ssh ubuntu@$VM_IP",
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": [],
+      "detail": "Open SSH session to production VM"
+    },
+    // =====================================================================
+    // 🩺 QUICK CHECKS
+    // =====================================================================
+    {
+      "label": "🩺 Health: Local",
+      "type": "shell",
+      "command": "curl -s http://localhost:8080/api/v1/health | python3 -m json.tool",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Check local health endpoint"
+    },
+    {
+      "label": "🩺 Quick Compile: Local",
+      "type": "shell",
+      "command": "curl -s -X POST http://localhost:8080/api/v1/compile -H 'X-API-Key: dev-key-change-me-in-production' -H 'Content-Type: application/json' -d '{\"source\": \"\\\\documentclass{article}\\\\begin{document}Hello!\\\\end{document}\"}' -o /tmp/test.pdf && echo 'PDF saved to /tmp/test.pdf' && file /tmp/test.pdf",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Quick compile test and save PDF"
+    },
+    // =====================================================================
+    // 📋 SETUP
+    // =====================================================================
+    {
+      "label": "📋 Setup: Copy .env",
+      "type": "shell",
+      "command": "cp -n .env.example .env && echo '.env created — edit API_KEYS before starting' || echo '.env already exists'",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": [],
+      "detail": "Create .env from template (won't overwrite existing)"
+    }
+  ]
+}

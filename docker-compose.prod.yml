@@ -1,0 +1,39 @@
+# =============================================================================
+# Production Docker Compose — Oracle Cloud VM
+# =============================================================================
+# Usage:
+#   IMAGE_TAG=latest docker compose -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  api:
+    image: ${DOCKERHUB_USERNAME:-yourusername}/texlive-api:${IMAGE_TAG:-latest}
+    container_name: texlive-api-prod
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - WORKERS=4
+      - LOG_LEVEL=info
+    deploy:
+      resources:
+        limits:
+          cpus: "3.5"
+          memory: 20G
+        reservations:
+          cpus: "1.0"
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    shm_size: "8gb"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"

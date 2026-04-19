@@ -1,0 +1,134 @@
+@base_url = http://localhost:8080
+@api_key = dev-key-change-me-in-production
+
+### ============================================================
+### Health Check (no auth required)
+### ============================================================
+
+GET {{base_url}}/api/v1/health
+
+### ============================================================
+### Compile — Simple Document (pdflatex)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\begin{document}\nHello, World!\n\\end{document}",
+  "engine": "pdflatex"
+}
+
+### ============================================================
+### Compile — XeLaTeX
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\usepackage{fontspec}\n\\begin{document}\nXeLaTeX test with Unicode: café, naïve, résumé.\n\\end{document}",
+  "engine": "xelatex"
+}
+
+### ============================================================
+### Compile — LuaLaTeX
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\begin{document}\nLuaLaTeX test.\n\\end{document}",
+  "engine": "lualatex"
+}
+
+### ============================================================
+### Compile — latexmk (auto-detect passes)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\begin{document}\nlatexmk auto-pass test.\n\\end{document}",
+  "engine": "latexmk"
+}
+
+### ============================================================
+### Compile — Draft Mode (skip images, fast preview)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\usepackage{graphicx}\n\\begin{document}\n\\includegraphics{nonexistent.png}\n\\end{document}",
+  "engine": "pdflatex",
+  "draft": true
+}
+
+### ============================================================
+### Compile — Cache Disabled (always fresh)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\begin{document}\nUncached compile.\n\\end{document}",
+  "enable_cache": false
+}
+
+### ============================================================
+### Compile — Invalid LaTeX (expect 422)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": "\\documentclass{article}\n\\begin{document}\n\\undefinedcommand\n\\end{document}"
+}
+
+### ============================================================
+### Auth — Missing API Key (expect 401)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+Content-Type: application/json
+
+{
+  "source": "test"
+}
+
+### ============================================================
+### Auth — Invalid API Key (expect 403)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: wrong-key
+Content-Type: application/json
+
+{
+  "source": "test"
+}
+
+### ============================================================
+### Compile — Empty Source (expect 400)
+### ============================================================
+
+POST {{base_url}}/api/v1/compile
+X-API-Key: {{api_key}}
+Content-Type: application/json
+
+{
+  "source": ""
+}

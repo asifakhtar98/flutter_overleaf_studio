@@ -1,0 +1,48 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Oracle VM
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_SSH_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            APP_DIR="$HOME/texlive-api"
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/texlive-api:latest"
+
+            echo "=== Pulling latest image ==="
+            docker pull "$IMAGE"
+
+            echo "=== Running deploy script ==="
+            cd "$APP_DIR"
+            bash scripts/deploy.sh "$IMAGE"
+
+            echo "=== Verifying health ==="
+            sleep 5
+            curl -sf http://localhost:8080/api/v1/health | python3 -m json.tool
+
+            echo "=== Deploy complete ==="
+
+      - name: Post deployment status
+        if: always()
+        run: |
+          echo "Deployment ${{ job.status }}"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/texlive-api:latest"
+          echo "Host: ${{ secrets.ORACLE_HOST }}"

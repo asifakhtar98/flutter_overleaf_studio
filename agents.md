@@ -1,6 +1,6 @@
 # 🤖 AI Agent Context — TeX Live Compilation API
 
-> **Purpose**: This file provides complete project context for AI agents (Copilot, Gemini, Claude, etc.) working on this codebase. Read this first before making any changes.
+> **Read this file in full before making any change.** It is the single source of truth for architecture, conventions, and constraints.
 
 ---
 
@@ -8,319 +8,289 @@
 
 **Product**: TeX Live Full REST API Server
 **Codename**: texlive-overleaf-minus-frontend
-**One-liner**: A stateless REST API that accepts LaTeX source and returns compiled PDFs — the backend engine for an Overleaf-like editor.
+**One-liner**: Stateless REST API — LaTeX in, PDF out. No database, no frontend, no file persistence.
 
-### What It Does
-- Accepts raw `.tex` source or zipped multi-file LaTeX projects via HTTP
-- Compiles using `pdflatex`, `xelatex`, or `lualatex` (user's choice)
-- Returns compiled PDF bytes with structured JSON metadata
-- Handles BibTeX/Biber automatically when `.bib` files are detected
-- Smart multi-pass compilation — only runs extra passes when actually needed
-- In-memory result caching (hash-based, no DB) — identical inputs return instant results
-- RAM-disk compilation (`/dev/shm`) — zero disk I/O during builds
-- Draft mode for fast previews — skips image rendering
+### Scope
 
-### What It Does NOT Do
-- No frontend (a Flutter Overleaf-clone frontend will consume this API separately)
-- No database
-- No persistent file storage — every compilation is ephemeral
-- No user management — auth is API-key-based only
+| In scope | Out of scope — do NOT add |
+|----------|--------------------------|
+| Raw `.tex` or `.zip` → PDF via HTTP | Frontend code of any kind |
+| `pdflatex`, `xelatex`, `lualatex`, `latexmk` | Database, ORM, or persistent storage |
+| API key auth (`X-API-Key` header) | User registration, login, or sessions |
+| In-memory LRU cache (TTL, hash-keyed) | Redis, Memcached, or external cache |
+| Rate limiting (SlowAPI, in-process) | Queue systems (Celery, RQ) |
+| tmpfs compilation (`/dev/shm`) | Disk-backed temp dirs |
+| `ProcessPoolExecutor` concurrency | Threading, `asyncio.subprocess`, or `shell=True` |
+| ARM64 Docker images only | x86/amd64 images |
 
 ---
 
-## Architecture
+## Architecture (Immutable)
 
-### Infrastructure
-| Component | Detail |
-|-----------|--------|
-| **Cloud** | Oracle Cloud Free Tier |
-| **VM** | VM.Standard.A1.Flex — 4 OCPU, 24 GB RAM, ARM64 (Ampere) |
-| **OS** | Ubuntu 22.04 LTS (aarch64) |
-| **Container** | Docker (single container, no orchestrator) |
-| **Port** | 8080 (HTTP, no TLS at app level) |
-| **Architecture** | ARM64 throughout (local dev, CI, prod) |
+### Infrastructure — no deviations
 
-### Application Stack
+| Component | Value | Non-negotiable |
+|-----------|-------|----------------|
+| Cloud | Oracle Cloud Free Tier | ✅ |
+| VM | VM.Standard.A1.Flex — 4 OCPU, 24 GB RAM | ✅ |
+| OS | Ubuntu 22.04 LTS (aarch64) | ✅ |
+| Container | Single Docker container | ✅ |
+| Port | 8080 | ✅ |
+| Arch | ARM64 everywhere (dev, CI, prod) | ✅ |
+
+### Stack — pinned, do not swap
+
 | Layer | Technology |
 |-------|-----------|
-| **Framework** | FastAPI (Python 3.11+) |
-| **ASGI Server** | Uvicorn |
-| **TeX Engine** | TeX Live (scheme-full, docs/sources stripped) |
-| **Auth** | API key via `X-API-Key` header, multi-key allowlist from env |
-| **Rate Limiting** | SlowAPI (in-memory, no Redis) |
-| **Testing** | pytest + httpx (async) |
-| **Containerization** | Docker multi-stage build |
+| Framework | FastAPI (Python 3.11+, async) |
+| ASGI | Uvicorn |
+| TeX | TeX Live scheme-full (no docs/sources) |
+| Auth | `X-API-Key` header → `settings.api_keys_set` |
+| Rate limit | SlowAPI (in-memory, keyed by API key or IP) |
+| Cache | `cachetools.TTLCache` in `app/cache.py` |
+| Compilation | `concurrent.futures.ProcessPoolExecutor` in `app/compiler.py` |
+| Tests | pytest + httpx (async), run inside container |
+| Lint | ruff (configured in `pyproject.toml`) |
+| Logging | structlog (structured, JSON-friendly) |
+| Docker | Multi-stage build (`Dockerfile`), dev with `--reload` (`Dockerfile.dev`) |
 
-### API Design
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/v1/health` | GET | Health check + TeX Live version |
-| `/api/v1/compile` | POST | Compile LaTeX → PDF |
-| `/docs` | GET | Auto-generated OpenAPI/Swagger docs |
+### API — exact endpoints
 
-### Compilation Modes
-1. **Single file**: JSON body with `source` field (raw `.tex` string)
-2. **Multi-file project**: `multipart/form-data` with `.zip` upload
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| `/api/v1/health` | GET | No | Status + TeX Live version + cache stats |
+| `/api/v1/compile` | POST | Yes (`X-API-Key`) | LaTeX → PDF |
+| `/docs` | GET | No | OpenAPI/Swagger |
+| `/redoc` | GET | No | ReDoc |
 
-### Compile Request Parameters
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `engine` | string | `pdflatex` | One of: `pdflatex`, `xelatex`, `lualatex` |
-| `main_file` | string | `main.tex` | Entry point `.tex` file (for zip uploads) |
-| `source` | string | — | Raw LaTeX source (for single-file mode) |
-| `file` | file | — | Zip archive (for multi-file mode) |
-| `draft` | bool | `false` | Skip image rendering for fast preview |
-| `enable_cache` | bool | `true` | Return cached PDF if identical input was compiled recently |
+### Request modes — two, no others
 
-### Response Structure
-**Success (200)**:
-```json
-{
-  "success": true,
-  "pdf": "<base64 or binary stream>",
-  "engine": "pdflatex",
-  "compilation_time": 4.2,
-  "warnings_count": 3,
-  "log_snippet": "..."
-}
+1. **JSON body**: `{"source": "...", "engine": "pdflatex", "draft": false, "enable_cache": true}`
+2. **Multipart form**: `file` (zip) + `engine` + `main_file` + `draft` + `enable_cache`
+
+### Response contract
+
+**Success (200)**: Raw PDF bytes in body. Metadata in headers only:
 ```
+Content-Type: application/pdf
+X-Compilation-Time: 4.20
+X-Engine: pdflatex
+X-Warnings-Count: 3
+X-Cached: false
+X-Passes-Run: 2
+```
+
 **Failure (422)**:
 ```json
 {
-  "success": false,
-  "error": "Compilation failed",
-  "exit_code": 1,
-  "log": "full stdout+stderr from compiler",
-  "engine": "pdflatex"
+  "detail": {
+    "success": false,
+    "error": "Compilation failed",
+    "exit_code": 1,
+    "log": "full stdout+stderr",
+    "engine": "pdflatex",
+    "compilation_time": 2.31,
+    "passes_run": 1
+  }
 }
 ```
 
+**Auth errors**: 401 (missing key), 403 (invalid key). Standard FastAPI format.
+
 ---
 
-## Project Structure
+## Project Structure (canonical)
 
 ```
-texlive_overleaf_minus_frontend/
-├── agents.md                    ← You are here
-├── README.md
-├── .env.example
-├── .gitignore
-├── docker-compose.yml           ← Local development
-├── docker-compose.prod.yml      ← Production on Oracle VM
-├── Dockerfile                   ← Production multi-stage build
-├── Dockerfile.dev               ← Dev with hot-reload support
-├── requirements.txt
-├── pyproject.toml
 ├── app/
-│   ├── __init__.py
-│   ├── main.py                  ← FastAPI app entry point
-│   ├── config.py                ← Settings from env vars
-│   ├── auth.py                  ← API key auth dependency
-│   ├── compiler.py              ← Core LaTeX compilation logic
-│   ├── models.py                ← Pydantic request/response models
+│   ├── __init__.py              # Package + __version__
+│   ├── main.py                  # FastAPI app, CORS, rate limiting, lifespan
+│   ├── config.py                # pydantic-settings from env vars
+│   ├── auth.py                  # API key dependency
+│   ├── cache.py                 # CompileCache (TTLCache wrapper)
+│   ├── compiler.py              # Core compilation: tmpfs, smart passes, pool
+│   ├── models.py                # Pydantic schemas (Engine, CompileRequest, etc.)
 │   └── routers/
 │       ├── __init__.py
-│       ├── compile.py           ← /api/v1/compile endpoint
-│       └── health.py            ← /api/v1/health endpoint
+│       ├── compile.py           # POST /api/v1/compile
+│       └── health.py            # GET /api/v1/health
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_compile.py
+│   ├── conftest.py              # Async client, fixtures, env setup
 │   ├── test_health.py
 │   ├── test_auth.py
-│   └── fixtures/
-│       ├── simple.tex
-│       └── multi_file.zip
+│   ├── test_compile.py
+│   └── fixtures/                # .tex, .bib test files
 ├── scripts/
-│   ├── server-setup.sh          ← One-time Oracle VM bootstrap
-│   └── deploy.sh                ← Blue-green deploy script
-├── .github/
-│   └── workflows/
-│       ├── ci.yml               ← Test + build + push
-│       └── cd.yml               ← SSH deploy to Oracle VM
-└── tests.http                   ← VS Code REST Client test file
+│   ├── server-setup.sh          # One-time Oracle VM bootstrap
+│   └── deploy.sh                # Blue-green deploy
+├── .github/workflows/
+│   ├── ci.yml                   # Lint → Test → Build ARM64 → Push
+│   └── cd.yml                   # SSH deploy on main
+├── .vscode/
+│   ├── extensions.json
+│   ├── settings.json
+│   └── tasks.json               # Dev/test/deploy task runner
+├── Dockerfile                   # Prod: multi-stage, fmtutil-sys --all
+├── Dockerfile.dev               # Dev: hot-reload, --reload-dir app
+├── docker-compose.yml           # Local dev
+├── docker-compose.prod.yml      # Production
+├── texlive.profile              # TeX Live installer profile (ARM64)
+├── requirements.txt             # Pinned prod deps
+├── requirements-dev.txt         # Extends requirements.txt + test/lint
+├── pyproject.toml               # ruff, pytest, coverage config
+├── .env.example                 # Template — copy to .env
+├── .gitignore
+├── tests.http                   # VS Code REST Client tests
+├── agents.md                    # ← This file
+├── README.md                    # Public docs
+├── DEPLOY_GUIDE.md              # Step-by-step production deployment
+└── LICENSE                      # MIT
 ```
 
 ---
 
-## Key Design Decisions
+## Performance Architecture (MANDATORY — all are load-bearing)
 
-### 1. Stateless Ephemeral Compilation
-Every request creates a temp dir → compiles → returns PDF → deletes everything. No `/tmp` leaks. Cleanup runs in a `finally` block + a background sweeper.
+These are **structural requirements**, not optimizations to toggle. Do not weaken, bypass, or make optional.
 
-### 2. Smart Multi-Pass Compilation
-Does NOT blindly run 3 passes. Instead:
-1. Run engine once
-2. Parse `.aux` / `.bcf` output to detect if citations or cross-refs are unresolved
-3. Run `bibtex` or `biber` ONLY if `.bib` referenced AND citations unresolved
-4. Run engine again ONLY if aux file changed between passes
-5. Maximum 3 passes, minimum 1 — no wasted CPU
-
-This saves 30-50% compile time on simple documents that don't need extra passes.
-
-### 3. Performance Architecture (MANDATORY)
-All performance optimizations are **first-class architectural requirements**, not optional features.
-
-#### 3a. RAM-Disk Compilation (`/dev/shm`)
-- ALL temp directories are created in `/dev/shm` (tmpfs), not `/tmp`
-- Zero disk I/O during compilation — everything in RAM
-- On the Oracle VM (24 GB RAM), this is free and eliminates the biggest bottleneck
-- Fallback to `/tmp` only if `/dev/shm` is unavailable
-- **~40-60% speedup** on I/O-bound compilations
-
-#### 3b. Pre-Compiled Format Files
-- `fmtutil-sys --all` runs at Docker image build time
-- Pre-dumps `.fmt` files for all engines (pdflatex, xelatex, lualatex)
-- Avoids re-parsing LaTeX base classes on every request
-- **~20-30% speedup** on first-pass compilation
-
-#### 3c. In-Memory LRU Cache
-- Input hash = `sha256(source_bytes + engine + main_file + draft_flag)`
-- Cache stores: `{hash: (pdf_bytes, metadata, timestamp)}`
-- `cachetools.TTLCache` — max 200 entries, 30-minute TTL
-- Cache hit returns PDF in ~10-50ms instead of 2-30 seconds
-- No database — pure in-process Python dict with eviction
-- Controllable per-request via `enable_cache` parameter
-- Cache is lost on container restart (by design — stateless)
-
-#### 3d. Draft Mode
-- `draft=true` adds `\PassOptionsToPackage{draft}{graphicx}` before `\documentclass`
-- Skips image file reading and rendering entirely
-- Replaces images with placeholder boxes (standard LaTeX draft behavior)
-- **~50-70% speedup** for image-heavy documents
-- Ideal for Flutter live preview while editing
-
-#### 3e. Concurrent Compilation
-- `asyncio` + `ProcessPoolExecutor(max_workers=4)` — matches 4 OCPUs
-- Each compilation runs in its own process — true parallelism, no GIL
-- 4 simultaneous compilations at full speed
-- Request queuing when all workers busy
-
-#### 3f. Engine Path Caching
-- `shutil.which('pdflatex')` etc. resolved ONCE at startup
-- Stored in module-level dict, reused for every request
-- Eliminates PATH traversal overhead per-request
-
-#### 3g. `latexmk` Support (Engine Option)
-- `latexmk` as a fourth "engine" option — auto-detects optimal number of passes
-- Smarter than manual pass logic for complex documents
-- Uses same tmpfs + timeout + security boundaries
-
-### 4. Security Boundaries
-- Zip bomb protection: max uncompressed size enforced
-- Path traversal prevention: all paths validated within temp dir
-- Compilation timeout: 120 seconds max
-- Max upload size: 50 MB
-- Shell injection prevention: `subprocess.run()` with list args, no `shell=True`
-
-### 5. CORS Configuration
-- Dev: `*` (allow all origins)
-- Prod: Configurable via `ALLOWED_ORIGINS` env var (for Flutter frontend)
-
-### 6. ARM64 Throughout
-- Local dev on Apple Silicon (M-series) = ARM64 native
-- CI builds ARM64 via QEMU cross-compilation
-- Production on Oracle Ampere = ARM64 native
-- No architecture mismatch surprises
+| # | Feature | Where | What it does | Impact |
+|---|---------|-------|-------------|--------|
+| 1 | **tmpfs** | `compiler.py:TMPFS_DIR` | All temp dirs in `/dev/shm` | ~40-60% speedup |
+| 2 | **Pre-compiled `.fmt`** | `Dockerfile: fmtutil-sys --all` | Avoids format parsing per-request | ~20-30% speedup |
+| 3 | **LRU cache** | `cache.py:compile_cache` | SHA-256 keyed `TTLCache(200, 1800s)` | ~10ms cache hits |
+| 4 | **Smart passes** | `compiler.py:_compile_sync` | Parse log for rerun warnings, max 3 | ~30-50% fewer passes |
+| 5 | **Draft mode** | `compiler.py:_compile_sync` | `\PassOptionsToPackage{draft}{graphicx}` | ~50-70% on image-heavy |
+| 6 | **Process pool** | `compiler.py:get_executor` | `ProcessPoolExecutor(max_workers=4)` | True parallelism |
+| 7 | **Engine paths** | `compiler.py:ENGINE_PATHS` | `shutil.which()` once at import | Zero per-request PATH lookup |
+| 8 | **Health caching** | `health.py:_get_texlive_version` | `@lru_cache` — no shell-out per request | Instant health checks |
 
 ---
 
-## Environment Variables
+## Environment Variables (complete list)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `API_KEYS` | ✅ | — | Comma-separated valid API keys |
-| `ALLOWED_ORIGINS` | ❌ | `*` | CORS allowed origins |
-| `MAX_UPLOAD_SIZE_MB` | ❌ | `50` | Max upload size in MB |
-| `COMPILATION_TIMEOUT` | ❌ | `120` | Max compilation time in seconds |
-| `RATE_LIMIT` | ❌ | `30/minute` | Rate limit per API key |
-| `LOG_LEVEL` | ❌ | `info` | Logging level |
-| `WORKERS` | ❌ | `4` | Uvicorn worker count (prod) |
-| `CACHE_MAX_SIZE` | ❌ | `200` | Max entries in LRU compile cache |
-| `CACHE_TTL_SECONDS` | ❌ | `1800` | Cache entry time-to-live (30 min) |
-| `USE_TMPFS` | ❌ | `true` | Use /dev/shm for temp dirs (RAM-disk) |
-| `MAX_CONCURRENT_COMPILES` | ❌ | `4` | ProcessPoolExecutor max workers |
+| Variable | Required | Default | Type | Description |
+|----------|----------|---------|------|-------------|
+| `API_KEYS` | **Yes** | — | CSV string | Comma-separated valid API keys |
+| `ALLOWED_ORIGINS` | No | `*` | CSV string | CORS origins |
+| `MAX_UPLOAD_SIZE_MB` | No | `50` | int | Max zip upload MB |
+| `COMPILATION_TIMEOUT` | No | `120` | int (seconds) | Hard timeout per compilation |
+| `RATE_LIMIT` | No | `30/minute` | SlowAPI format | Per-key rate limit |
+| `LOG_LEVEL` | No | `info` | string | `debug`, `info`, `warning`, `error` |
+| `WORKERS` | No | `4` | int | Uvicorn workers (prod CMD uses `$WORKERS`) |
+| `CACHE_MAX_SIZE` | No | `200` | int | Max LRU cache entries |
+| `CACHE_TTL_SECONDS` | No | `1800` | int (seconds) | Cache entry TTL |
+| `USE_TMPFS` | No | `true` | bool | Use `/dev/shm` for temp dirs |
+| `MAX_CONCURRENT_COMPILES` | No | `4` | int | ProcessPoolExecutor workers |
 
 ---
 
-## Development Workflow
+## Rules for AI Agents (STRICT)
 
-### Local Development
+### MUST
+
+1. Keep the API **stateless** — never persist files between requests.
+2. Use `subprocess.run()` with **list args** — never `shell=True`.
+3. Create temp dirs via `tempfile.mkdtemp(dir=TMPFS_DIR)` — never raw `/tmp`.
+4. Run compilation via `ProcessPoolExecutor` — never `subprocess` in async handlers.
+5. Use `ENGINE_PATHS` dict for engine binaries — never call `shutil.which()` per-request.
+6. Use `_error_result()` helper for failure `CompileResult` — never construct manually.
+7. Use `_run_engine()` for subprocess calls in compiler — never inline `subprocess.run()`.
+8. Use `_ParsedRequest` dataclass in compile router — never parse request in endpoint body.
+9. Add tests for any new endpoint or compiler feature — no untested code ships.
+10. Use Pydantic `BaseModel` for all request/response schemas — no raw dicts.
+11. Use `StrEnum` for enums — not `str, Enum`.
+12. Clean up temp dirs in `finally` blocks — no cleanup-on-success-only.
+13. Follow existing module structure — new endpoints go in `app/routers/`, new models in `app/models.py`.
+14. Update this file when making architectural changes.
+
+### MUST NOT
+
+1. Add a database, ORM, or migration system.
+2. Add user registration, login, OAuth, or JWT.
+3. Use `shell=True` in any subprocess call.
+4. Store files after compilation completes.
+5. Add frontend code to this repo.
+6. Change the port from 8080.
+7. Install system packages outside Docker.
+8. Use x86/amd64 base images.
+9. Compile in `/tmp` when `/dev/shm` is available.
+10. Run more than `MAX_PASSES` (3) compiler passes.
+11. Resolve engine paths per-request.
+12. Block the async event loop with synchronous compilation.
+13. Duplicate logic — use existing helpers (`_error_result`, `_run_engine`, `_collect_output`, `_parse_request`).
+14. Add `ENTRYPOINT` in Dockerfiles — use `CMD` (allows override for debugging).
+15. Hardcode worker counts — always use `$WORKERS` env var.
+
+### Code Conventions
+
+| Rule | Standard |
+|------|----------|
+| Python version | 3.11+ with type hints on every function |
+| Endpoints | `async def` in `app/routers/` |
+| Docstrings | Google-style |
+| Linter | `ruff` (config in `pyproject.toml`) |
+| Formatter | `ruff format` |
+| Logging | `structlog` structured logging |
+| Enums | `StrEnum` (not `str, Enum`) |
+| Config | `pydantic-settings` with `model_config` |
+| Tests | `pytest` + `httpx` async, run inside container |
+| Regex | Pre-compile at module level (`re.compile()`), never inline `re.search()` with string pattern |
+
+### Commit & PR Rules
+
+- Every PR must pass `ruff check app/ tests/` with zero errors.
+- Every new endpoint must have corresponding tests in `tests/`.
+- No `# TODO` or `# FIXME` in merged code — fix before merge or create a GitHub issue.
+
+---
+
+## Development Workflow (exact commands)
+
 ```bash
-cp .env.example .env          # Configure secrets
-docker compose up --build     # Start with hot-reload
-# API available at http://localhost:8080
-# Swagger docs at http://localhost:8080/docs
+# Setup
+cp .env.example .env                    # Edit API_KEYS at minimum
+
+# Start (first build ~20-30 min for TeX Live)
+docker compose up --build
+
+# Test
+docker compose exec api python3 -m pytest tests/ -v --tb=short
+
+# Lint
+docker compose exec api python3 -m ruff check app/ tests/
+
+# Format
+docker compose exec api python3 -m ruff format app/ tests/
+
+# Stop
+docker compose down --remove-orphans
 ```
 
-### Testing
-```bash
-docker compose exec api pytest -v              # Run all tests
-docker compose exec api pytest tests/test_compile.py -v  # Specific test
-```
-
-### VS Code REST Client
-Open `tests.http` in VS Code with the REST Client extension to test endpoints interactively.
-
-### CI/CD
-- Push to any branch → CI runs (test + build)
-- Push to `main` → CI + CD (deploy to Oracle VM)
+Or use VS Code: `Cmd+Shift+P → Tasks: Run Task` → pick from grouped task list.
 
 ---
 
-## Rules for AI Agents
+## CI/CD (exact flow)
 
-### DO
-- Keep the API stateless — never persist files between requests
-- Use `subprocess.run()` with list args for all shell commands
-- Add tests for any new endpoint or compiler feature
-- Follow existing patterns in `app/routers/` for new endpoints
-- Update this file when making architectural changes
-- Use Pydantic models for all request/response schemas
-- Handle cleanup in `finally` blocks
-- **ALWAYS** create temp dirs in `/dev/shm` (tmpfs) with fallback to `/tmp`
-- **ALWAYS** use the compile cache — hash inputs, check cache first
-- **ALWAYS** use smart pass detection — never blindly run 3 passes
-- **ALWAYS** run compilations via `ProcessPoolExecutor` — never block the async loop
-- **ALWAYS** use pre-resolved engine paths from startup cache
+```
+Push to any branch → CI: ruff check → pytest → build ARM64 image (QEMU)
+Push to main       → CI + CD: above → push to Docker Hub → SSH deploy → health check
+```
 
-### DON'T
-- Don't add a database or ORM
-- Don't add user registration/login — API keys only
-- Don't use `shell=True` in subprocess calls
-- Don't store files after compilation completes
-- Don't add frontend code to this repo
-- Don't change the port from 8080
-- Don't install system packages outside Docker
-- Don't use x86/amd64 base images — ARM64 only
-- Don't compile in `/tmp` — use `/dev/shm` (tmpfs) only
-- Don't run unnecessary compilation passes — parse `.aux` files first
-- Don't resolve engine paths per-request — use cached paths from startup
-- Don't run `subprocess` directly in async handlers — use `ProcessPoolExecutor`
-
-### Performance Rules (STRICT)
-- Temp dirs → `/dev/shm` always. Fallback `/tmp` only if tmpfs unavailable.
-- Format files → pre-compiled at Docker build time via `fmtutil-sys --all`
-- Compilation → `ProcessPoolExecutor` with max_workers matching OCPU count
-- Caching → `cachetools.TTLCache`, keyed by SHA-256 of input, 30-min TTL
-- Pass detection → parse `.aux`/`.bcf` between passes, skip if unchanged
-- Draft mode → inject `\PassOptionsToPackage{draft}{graphicx}` when requested
-- Engine paths → `shutil.which()` once at startup, cached in module-level dict
-
-### Code Style
-- Python 3.11+ with type hints everywhere
-- Async FastAPI endpoints
-- Google-style docstrings
-- `ruff` for linting (configured in `pyproject.toml`)
-- Structured logging with `structlog`
+- CI: `.github/workflows/ci.yml`
+- CD: `.github/workflows/cd.yml`
+- Deploy script: `scripts/deploy.sh` (blue-green with health check)
 
 ---
 
-## Future Flutter Frontend Notes
+## Flutter Frontend Integration (for reference only — no code here)
 
-This API is designed to be consumed by a Flutter Overleaf-clone frontend. Key integration points:
-- **OpenAPI spec** at `/docs` can generate Dart client code
-- **CORS** is pre-configured and configurable
-- **JSON responses** are structured for easy Dart model mapping
-- **Health endpoint** for connection status indicators
-- **Streaming**: Future consideration — WebSocket for live compilation log streaming
+- OpenAPI spec at `/docs` → generate Dart client with `openapi-generator`
+- CORS pre-configured via `ALLOWED_ORIGINS`
+- Health endpoint → connection status indicator
+- `draft=true` → fast preview mode for live editing
+- `X-Cached` header → show cache badge in UI
+- Future: WebSocket for live compilation log streaming
+
+[Also we should update .md files and test files and non code files when needed from time to time]
