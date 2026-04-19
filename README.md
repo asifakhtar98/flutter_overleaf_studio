@@ -6,6 +6,47 @@
 
 ---
 
+## 🚀 Quick Start (Run Locally)
+
+The easiest way to get the API running on your machine is using Docker. 
+
+**1. Clone the repository**
+```bash
+git clone https://github.com/YOUR_USERNAME/texlive-api.git 
+cd texlive-api
+```
+
+**2. Configure environment**
+```bash
+cp .env.example .env
+```
+*Open the `.env` file and set the `API_KEYS` variable if needed.*
+
+**3. Start the server (Docker)**
+```bash
+# Note: The first build will take ~20-30 minutes as it installs TeX Live Full
+docker compose up --build
+```
+
+**4. Test the API**
+
+**Health check:**
+```bash
+curl http://localhost:8080/api/v1/health | python3 -m json.tool
+```
+
+**Compile a simple PDF:**
+```bash
+curl -X POST http://localhost:8080/api/v1/compile \
+  -H "X-API-Key: dev-key-change-me-in-production" \
+  -H "Content-Type: application/json" \
+  -d '{"source": "\\documentclass{article}\\begin{document}Hello!\\end{document}"}' \
+  -o hello.pdf
+```
+*(You should now have a `hello.pdf` file in your directory!)*
+
+---
+
 ## Features
 
 - **4 engines**: `pdflatex`, `xelatex`, `lualatex`, `latexmk`
@@ -19,28 +60,6 @@
 - **Stateless**: no file persistence — every compilation is ephemeral, cleanup in `finally`
 - **Secured**: API key auth, rate limiting, body size limits, path traversal protection
 - **ARM64 native**: Oracle Ampere prod, Apple Silicon dev — no arch mismatch
-
----
-
-## Quick Start
-
-```bash
-git clone https://github.com/YOUR_USERNAME/texlive-api.git && cd texlive-api
-cp .env.example .env          # Set API_KEYS
-docker compose up --build     # First build ~20-30 min (TeX Live)
-```
-
-```bash
-# Health check
-curl http://localhost:8080/api/v1/health | python3 -m json.tool
-
-# Compile
-curl -X POST http://localhost:8080/api/v1/compile \
-  -H "X-API-Key: dev-key-change-me-in-production" \
-  -H "Content-Type: application/json" \
-  -d '{"source": "\\documentclass{article}\\begin{document}Hello!\\end{document}"}' \
-  -o hello.pdf
-```
 
 ---
 
