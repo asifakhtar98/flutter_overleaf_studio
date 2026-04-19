@@ -42,6 +42,8 @@ dependencies:
   talker_flutter: ^5.1.16
   talker_dio_logger: ^5.1.16
   talker_bloc_logger: ^5.1.16
+  rxdart: ^0.28.0
+  bloc_concurrency: ^0.3.0
 
 dev_dependencies:
   flutter_test:

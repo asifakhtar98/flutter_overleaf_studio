@@ -48,7 +48,7 @@ class FileTreePanel extends HookWidget {
     for (final file in files) {
       final parts = file.path.split('/');
       if (parts.length == 1) {
-        rootNodes.add(_TreeNode(name: file.name, path: file.path, file: file));
+        rootNodes.add(_TreeNode(name: parts.last, path: file.path, file: file));
       } else {
         var currentPath = '';
         var currentChildren = rootNodes;
@@ -63,7 +63,7 @@ class FileTreePanel extends HookWidget {
           currentChildren = folder.children;
         }
         currentChildren.add(
-          _TreeNode(name: file.name, path: file.path, file: file),
+          _TreeNode(name: parts.last, path: file.path, file: file),
         );
       }
     }
@@ -140,26 +140,36 @@ class _FileTree extends HookWidget {
                 final isActive = node.path == activeFilePath;
                 final isMain = node.path == mainFilePath;
 
-                return InkWell(
-                  onTap: () {
-                    if (node.isFolder) {
-                      treeController.toggleExpansion(node);
-                    } else {
-                      context.read<ProjectBloc>().add(
-                            ProjectEvent.selectFile(path: node.path),
-                          );
-                      context.read<EditorBloc>().add(
-                            EditorEvent.fileOpened(
-                              path: node.path,
-                              content: node.file?.content ?? '',
-                            ),
-                          );
-                    }
-                  },
-                  onSecondaryTap: node.file != null
-                      ? () => _showContextMenu(context, node)
-                      : null,
-                  child: Container(
+                Offset? lastPosition;
+                return Listener(
+                  onPointerDown: (event) => lastPosition = event.position,
+                  child: InkWell(
+                    onTap: () {
+                      if (node.isFolder) {
+                        treeController.toggleExpansion(node);
+                      } else {
+                        context.read<ProjectBloc>().add(
+                              ProjectEvent.selectFile(path: node.path),
+                            );
+                        context.read<EditorBloc>().add(
+                              EditorEvent.fileOpened(
+                                path: node.path,
+                                content: node.file?.content ?? '',
+                              ),
+                            );
+                      }
+                    },
+                    onSecondaryTapDown: node.file != null
+                        ? (details) => _showContextMenu(context, node, details.globalPosition)
+                        : null,
+                    onLongPress: node.file != null
+                        ? () {
+                            if (lastPosition != null) {
+                              _showContextMenu(context, node, lastPosition!);
+                            }
+                          }
+                        : null,
+                    child: Container(
                     color: isActive
                         ? LatexTheme.primaryLight
                         : Colors.transparent,
@@ -218,6 +228,7 @@ class _FileTree extends HookWidget {
                       ],
                     ),
                   ),
+                ),
                 );
               },
             ),
@@ -289,11 +300,17 @@ class _FileTree extends HookWidget {
   Future<void> _showContextMenu(
     BuildContext context,
     _TreeNode node,
+    Offset globalPosition,
   ) async {
     final bloc = context.read<ProjectBloc>();
     final value = await showMenu<String>(
       context: context,
-      position: RelativeRect.fill,
+      position: RelativeRect.fromLTRB(
+        globalPosition.dx,
+        globalPosition.dy,
+        globalPosition.dx + 1,
+        globalPosition.dy + 1,
+      ),
       items: [
         const PopupMenuItem(
           value: 'main',
@@ -305,6 +322,9 @@ class _FileTree extends HookWidget {
         ),
       ],
     );
+    
+    if (!context.mounted) return;
+    
     if (value == 'main') {
       bloc.add(ProjectEvent.setMainFile(path: node.path));
     } else if (value == 'delete') {

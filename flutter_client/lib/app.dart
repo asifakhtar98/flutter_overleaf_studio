@@ -20,7 +20,26 @@ class App extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => getIt<ProjectBloc>()),
-        BlocProvider(create: (_) => getIt<EditorBloc>()),
+        BlocProvider(
+          create: (context) {
+            final projectBloc = context.read<ProjectBloc>();
+            final editorBloc = getIt<EditorBloc>();
+            
+            final activeFile = projectBloc.state.files
+                .where((f) => f.path == projectBloc.state.activeFilePath)
+                .firstOrNull;
+                
+            if (activeFile != null) {
+              editorBloc.add(
+                EditorEvent.fileOpened(
+                  path: activeFile.path,
+                  content: activeFile.content,
+                ),
+              );
+            }
+            return editorBloc;
+          },
+        ),
         BlocProvider(
           create: (context) {
             final bloc = getIt<CompilerBloc>();

@@ -21,6 +21,7 @@ abstract class TalkerModule {
         settings: TalkerLoggerSettings(
           level: isDev ? LogLevel.verbose : LogLevel.warning,
           enableColors: true,
+          maxLineWidth: 120,
         ),
       ),
     );

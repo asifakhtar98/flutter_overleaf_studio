@@ -1,6 +1,8 @@
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:rxdart/rxdart.dart';
+
 import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart';
@@ -35,7 +37,12 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     on<RemoveFile>(_onRemoveFile);
     on<RenameFile>(_onRenameFile);
     on<SelectFile>(_onSelectFile);
-    on<UpdateFileContent>(_onUpdateFileContent);
+    on<UpdateFileContent>(
+      _onUpdateFileContent,
+      transformer: (events, mapper) => events
+          .groupBy((e) => e.path)
+          .flatMap((group) => group.debounceTime(const Duration(milliseconds: 300)).switchMap(mapper)),
+    );
     on<SetMainFile>(_onSetMainFile);
     on<AddFolder>(_onAddFolder);
     on<ToggleFolder>(_onToggleFolder);

@@ -6,6 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_bloc.dart';
 import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_event.dart';
+import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_state.dart';
 import 'package:flutter_latex_client/features/editor/presentation/hooks/use_line_count.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
@@ -20,22 +21,6 @@ class CodeEditorPanel extends HookWidget {
     final lineScrollController = useScrollController();
     final focusNode = useFocusNode();
     final lineCount = useLineCount(controller);
-
-    // Sync editor content when file changes
-    final editorBloc = context.watch<EditorBloc>();
-    final editorState = editorBloc.state;
-    final previousPath = useRef<String?>(null);
-
-    useEffect(
-      () {
-        if (editorState.activeFilePath != previousPath.value) {
-          controller.text = editorState.content;
-          previousPath.value = editorState.activeFilePath;
-        }
-        return null;
-      },
-      [editorState.activeFilePath],
-    );
 
     // Sync scroll controllers
     useEffect(
@@ -52,11 +37,16 @@ class CodeEditorPanel extends HookWidget {
       [scrollController, lineScrollController],
     );
 
-    return ColoredBox(
-      color: LatexTheme.editorBg,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return BlocListener<EditorBloc, EditorState>(
+      listenWhen: (previous, current) => previous.activeFilePath != current.activeFilePath,
+      listener: (context, state) {
+        controller.text = state.content;
+      },
+      child: ColoredBox(
+        color: LatexTheme.editorBg,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Line numbers gutter
           Container(
             width: 56,
@@ -84,23 +74,37 @@ class CodeEditorPanel extends HookWidget {
           Container(width: 1, color: LatexTheme.border),
           // Editor
           Expanded(
-            child: KeyboardListener(
-              focusNode: FocusNode(),
-              onKeyEvent: (event) {
+            child: Focus(
+              onKeyEvent: (node, event) {
                 if (event is KeyDownEvent &&
                     event.logicalKey == LogicalKeyboardKey.tab) {
                   final text = controller.text;
                   final selection = controller.selection;
-                  if (!selection.isValid || selection.start < 0 || selection.end < 0) return;
+                  if (!selection.isValid || selection.start < 0 || selection.end < 0) return KeyEventResult.ignored;
                   final start = selection.start;
                   final end = selection.end;
-                  final newText =
-                      '${text.substring(0, start)}  '
-                      '${text.substring(end)}';
+                  
+                  String newText;
+                  int newSelectionStart;
+                  int newSelectionEnd;
+
+                  if (start == end) {
+                    newText = '${text.substring(0, start)}  ${text.substring(end)}';
+                    newSelectionStart = start + 2;
+                    newSelectionEnd = start + 2;
+                  } else {
+                    final selectedText = text.substring(start, end);
+                    final indentedText = selectedText.split('\n').map((line) => '  $line').join('\n');
+                    newText = '${text.substring(0, start)}$indentedText${text.substring(end)}';
+                    newSelectionStart = start;
+                    newSelectionEnd = start + indentedText.length;
+                  }
+
                   controller.value = TextEditingValue(
                     text: newText,
-                    selection: TextSelection.collapsed(
-                      offset: start + 2,
+                    selection: TextSelection(
+                      baseOffset: newSelectionStart,
+                      extentOffset: newSelectionEnd,
                     ),
                   );
                   context.read<EditorBloc>().add(
@@ -117,41 +121,54 @@ class CodeEditorPanel extends HookWidget {
                           ),
                         );
                   }
+                  return KeyEventResult.handled;
                 }
+                return KeyEventResult.ignored;
               },
-              child: TextField(
-                controller: controller,
-                scrollController: scrollController,
-                focusNode: focusNode,
-                maxLines: null,
-                expands: true,
-                style: LatexTheme.monoStyle,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(12),
-                  isCollapsed: true,
-                ),
-                onChanged: (value) {
-                  context.read<EditorBloc>().add(
-                        EditorEvent.contentChanged(
-                          content: value,
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: IntrinsicWidth(
+                      child: TextField(
+                        controller: controller,
+                        scrollController: scrollController,
+                        focusNode: focusNode,
+                        maxLines: null,
+                        expands: true,
+                        style: LatexTheme.monoStyle,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12),
+                          isCollapsed: true,
                         ),
-                      );
-                  final path =
-                      context.read<EditorBloc>().state.activeFilePath;
-                  if (path != null) {
-                    context.read<ProjectBloc>().add(
-                          ProjectEvent.updateFileContent(
-                            path: path,
-                            content: value,
-                          ),
-                        );
-                  }
-                },
+                        onChanged: (value) {
+                          context.read<EditorBloc>().add(
+                                EditorEvent.contentChanged(
+                                  content: value,
+                                ),
+                              );
+                          final path =
+                              context.read<EditorBloc>().state.activeFilePath;
+                          if (path != null) {
+                            context.read<ProjectBloc>().add(
+                                  ProjectEvent.updateFileContent(
+                                    path: path,
+                                    content: value,
+                                  ),
+                                );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ],
+        ),
       ),
     );
   }

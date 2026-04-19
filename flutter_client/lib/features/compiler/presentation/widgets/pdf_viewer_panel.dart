@@ -1,31 +1,54 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
 
-class PdfViewerPanel extends StatelessWidget {
+class PdfViewerPanel extends HookWidget {
   const PdfViewerPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CompilerBloc, CompilerState>(
+    final pdfController = useMemoized(PdfViewerController.new);
+    
+    final lastPdfBytes = useState<Uint8List?>(null);
+
+    return BlocConsumer<CompilerBloc, CompilerState>(
+      listener: (context, state) {
+        if (state is CompilerSuccess) {
+          lastPdfBytes.value = state.result.pdfBytes;
+        }
+      },
       builder: (context, state) {
-        return switch (state) {
-          CompilerInitial() => const _EmptyState(),
+        final hasPdf = lastPdfBytes.value != null;
+        
+        final stateLayer = switch (state) {
+          CompilerInitial() => hasPdf ? const SizedBox.shrink() : const _EmptyState(),
           CompilerLoading(:final engine) =>
-            _LoadingState(engine: engine),
-          CompilerSuccess(:final result) => PdfViewer.data(
-              result.pdfBytes,
-              sourceName: 'output.pdf',
-              params: const PdfViewerParams(
-                backgroundColor: LatexTheme.surface,
-              ),
-            ),
+            _LoadingOverlay(engine: engine, hasBackground: hasPdf),
+          CompilerSuccess() => const SizedBox.shrink(),
           CompilerFailure() => _ErrorState(state: state),
         };
+
+        return Stack(
+          children: [
+            if (hasPdf)
+              PdfViewer.data(
+                lastPdfBytes.value!,
+                sourceName: 'output.pdf',
+                controller: pdfController,
+                params: const PdfViewerParams(
+                  backgroundColor: LatexTheme.surface,
+                ),
+              ),
+            Positioned.fill(child: stateLayer),
+          ],
+        );
       },
     );
   }
@@ -62,15 +85,18 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _LoadingState extends StatelessWidget {
-  const _LoadingState({required this.engine});
+class _LoadingOverlay extends StatelessWidget {
+  const _LoadingOverlay({required this.engine, required this.hasBackground});
 
   final String engine;
+  final bool hasBackground;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: LatexTheme.surface,
+      color: hasBackground 
+          ? LatexTheme.surface.withValues(alpha: 0.7)
+          : LatexTheme.surface,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

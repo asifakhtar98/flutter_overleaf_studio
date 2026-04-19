@@ -8,7 +8,11 @@ int useLineCount(TextEditingController controller) {
   useEffect(
     () {
       void listener() {
-        final count = '\n'.allMatches(controller.text).length + 1;
+        int count = 1;
+        final text = controller.text;
+        for (int i = 0; i < text.length; i++) {
+          if (text.codeUnitAt(i) == 10) count++;
+        }
         if (lineCount.value != count) {
           lineCount.value = count;
         }
