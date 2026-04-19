@@ -6,7 +6,11 @@ from fastapi.security import APIKeyHeader
 from app.config import settings
 from app.errors import ErrorCode, TexLiveError
 
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    auto_error=False,
+    description="Enter your API key here to authenticate requests from Swagger UI.",
+)
 
 
 async def require_api_key(

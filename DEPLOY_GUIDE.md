@@ -197,7 +197,7 @@ bash scripts/deploy.sh YOUR_DOCKERHUB_USERNAME/texlive-api:latest
 ### Verify deployment
 
 ```bash
-# From your local machine
+# From your local machine — health check
 curl -s http://YOUR_ORACLE_IP:8080/api/v1/health | python3 -m json.tool
 
 # Test compilation
@@ -210,6 +210,10 @@ curl -X POST http://YOUR_ORACLE_IP:8080/api/v1/compile \
 # Verify PDF
 file /tmp/test.pdf
 # Expected: /tmp/test.pdf: PDF document, version 1.5
+
+# Interactive API docs (open in browser)
+# http://YOUR_ORACLE_IP:8080/docs   — Swagger UI
+# http://YOUR_ORACLE_IP:8080/redoc  — ReDoc
 ```
 
 ---
@@ -218,9 +222,15 @@ file /tmp/test.pdf
 
 ### View logs
 
+Logs are structured JSON (via `structlog` + `orjson`). Each line includes
+`request_id`, `event`, `level`, and timing information.
+
 ```bash
 ssh ubuntu@YOUR_ORACLE_IP
 docker logs texlive-api-blue --tail 100 -f
+
+# Pipe through jq for formatted output
+docker logs texlive-api-blue --tail 20 2>&1 | jq .
 ```
 
 ### Restart the container

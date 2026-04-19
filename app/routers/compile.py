@@ -124,13 +124,103 @@ async def _parse_request(request: Request) -> _ParsedRequest:
 @router.post(
     "/compile",
     responses={
-        200: {"content": {"application/pdf": {}}},
-        400: {"model": ErrorEnvelope},
-        422: {"model": ErrorEnvelope},
+        200: {
+            "description": "Compilation successful. PDF returned natively.",
+            "content": {"application/pdf": {}},
+            "headers": {
+                "X-Compilation-Time": {
+                    "description": "Time taken to compile in seconds",
+                    "schema": {"type": "string", "example": "2.31"},
+                },
+                "X-Engine": {
+                    "description": "Engine used (e.g. pdflatex)",
+                    "schema": {"type": "string", "example": "pdflatex"},
+                },
+                "X-Warnings-Count": {
+                    "description": "Number of LaTeX warnings found in the log",
+                    "schema": {"type": "string", "example": "3"},
+                },
+                "X-Cached": {
+                    "description": "true if served from LRU cache, false if freshly compiled",
+                    "schema": {"type": "string", "example": "false"},
+                },
+                "X-Passes-Run": {
+                    "description": "Number of multi-pass iterations run (1-3)",
+                    "schema": {"type": "string", "example": "2"},
+                },
+                "X-Request-ID": {
+                    "description": "Request correlation ID",
+                    "schema": {"type": "string", "example": "a1b2c3d4..."},
+                },
+            },
+        },
+        400: {"model": ErrorEnvelope, "description": "Invalid input"},
+        401: {"model": ErrorEnvelope, "description": "Missing API Key"},
+        403: {"model": ErrorEnvelope, "description": "Invalid API Key"},
+        413: {"model": ErrorEnvelope, "description": "Zip upload too large"},
+        422: {"model": ErrorEnvelope, "description": "LaTeX compilation failed"},
+        429: {"model": ErrorEnvelope, "description": "Rate limited"},
     },
     summary="Compile LaTeX → PDF",
-    description="Accepts raw .tex source (JSON) or a zipped project (multipart form). "
-    "Returns PDF bytes on success with metadata headers.",
+    description=(
+        "Compiles LaTeX source code into a PDF document.\n\n"
+        "### Input Modes\n"
+        "1. **Single File (JSON)**: Send `application/json` with the raw `source` code. "
+        "Best for simple text documents.\n"
+        "2. **Multi-File Project (Multipart)**: Send `multipart/form-data` with a zip archive "
+        "in the `file` field. Best for documents with images, custom `.cls` files, "
+        "or BibTeX `.bib` files.\n\n"
+        "### Optimization\n"
+        "- Use `enable_cache=true` to get ~10ms responses for unchanged inputs.\n"
+        "- Use `draft=true` to replace images with fast-rendering placeholder boxes "
+        "during live preview editing.\n\n"
+        "**Note:** To test the multipart upload mode via Swagger UI, expand the endpoint "
+        "and select `multipart/form-data` in the dropdown below."
+    ),
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": {"$ref": "#/components/schemas/CompileRequest"}
+                },
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "file": {
+                                "type": "string",
+                                "format": "binary",
+                                "description": "ZIP archive containing your LaTeX project (.tex, images, .bib, etc.)",
+                            },
+                            "engine": {
+                                "type": "string",
+                                "enum": ["pdflatex", "xelatex", "lualatex", "latexmk"],
+                                "default": "pdflatex",
+                                "description": "Compilation engine",
+                            },
+                            "main_file": {
+                                "type": "string",
+                                "default": "main.tex",
+                                "description": "Entry point .tex file inside the zip archive",
+                            },
+                            "draft": {
+                                "type": "boolean",
+                                "default": False,
+                                "description": "Skip image rendering for faster previews",
+                            },
+                            "enable_cache": {
+                                "type": "boolean",
+                                "default": True,
+                                "description": "Use LRU compilation cache",
+                            },
+                        },
+                        "required": ["file"],
+                    }
+                },
+            },
+            "required": True,
+        }
+    },
 )
 async def compile_endpoint(
     request: Request,

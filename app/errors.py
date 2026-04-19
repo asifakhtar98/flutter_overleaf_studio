@@ -19,7 +19,7 @@ from asgi_correlation_id import correlation_id
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import ORJSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi.errors import RateLimitExceeded
 
 logger = structlog.get_logger()
@@ -29,7 +29,21 @@ logger = structlog.get_logger()
 # Error codes — machine-readable identifiers
 # ---------------------------------------------------------------------------
 class ErrorCode(StrEnum):
-    """Machine-readable error codes returned in every error response."""
+    """Machine-readable error codes returned in every error response.
+
+    Use these codes — not HTTP status codes — to programmatically
+    distinguish error types in your frontend/client code.
+
+    | Code | HTTP | Meaning |
+    |------|------|---------|
+    | COMPILATION_FAILED | 422 | LaTeX compilation produced errors |
+    | INVALID_REQUEST | 400 | Malformed input, bad engine, empty source |
+    | MISSING_API_KEY | 401 | No `X-API-Key` header provided |
+    | INVALID_API_KEY | 403 | API key not in the server's allowlist |
+    | UPLOAD_TOO_LARGE | 413 | Request body exceeds `MAX_UPLOAD_SIZE_MB` |
+    | RATE_LIMITED | 429 | Too many requests — see `RATE_LIMIT` config |
+    | INTERNAL_ERROR | 500 | Unexpected server error — file a bug report |
+    """
 
     COMPILATION_FAILED = "COMPILATION_FAILED"
     INVALID_REQUEST = "INVALID_REQUEST"
@@ -44,19 +58,101 @@ class ErrorCode(StrEnum):
 # Error envelope — unified response shape
 # ---------------------------------------------------------------------------
 class ErrorEnvelope(BaseModel):
-    """Unified error response returned by all error handlers.
+    """Unified error response body.
 
-    Attributes:
-        request_id: Correlation ID for the failing request.
-        error_code: Machine-readable error code from ``ErrorCode``.
-        message: Human-readable error summary.
-        detail: Optional dict with extra context (compilation log, etc.).
+    **Every** error response from this API — regardless of status code —
+    uses this exact JSON shape. Parse it consistently in your frontend
+    error handler.
+
+    The ``request_id`` matches the ``X-Request-ID`` response header and
+    can be used for log correlation and support requests.
     """
 
-    request_id: str
-    error_code: ErrorCode
-    message: str
-    detail: dict[str, Any] | None = None
+    request_id: str = Field(
+        ...,
+        description=(
+            "UUID4 hex string identifying this request. Matches the "
+            "`X-Request-ID` response header. Use for log correlation "
+            "and when reporting issues."
+        ),
+        json_schema_extra={"example": "a1b2c3d4e5f647a8b9c0d1e2f3a4b5c6"},
+    )
+    error_code: ErrorCode = Field(
+        ...,
+        description=(
+            "Machine-readable error code. Use this — not the HTTP status — "
+            "to programmatically distinguish error types in your client."
+        ),
+        json_schema_extra={"example": "COMPILATION_FAILED"},
+    )
+    message: str = Field(
+        ...,
+        description="Human-readable error summary. Safe to display to end users.",
+        json_schema_extra={"example": "Compilation failed"},
+    )
+    detail: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Optional extra context. For `COMPILATION_FAILED`, contains "
+            "`log` (full TeX output), `engine`, `compilation_time`, and "
+            "`passes_run`. For `INVALID_REQUEST`, may contain `hint` or "
+            "`valid_engines`. `null` for auth and rate limit errors."
+        ),
+        json_schema_extra={
+            "example": {
+                "log": "! Undefined control sequence.\nl.42 \\badcommand",
+                "engine": "pdflatex",
+                "compilation_time": 2.31,
+                "passes_run": 1,
+            }
+        },
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "summary": "Compilation failure",
+                    "value": {
+                        "request_id": "a1b2c3d4e5f647a8b9c0d1e2f3a4b5c6",
+                        "error_code": "COMPILATION_FAILED",
+                        "message": "Compilation failed",
+                        "detail": {
+                            "log": "! Undefined control sequence.\nl.42 \\badcommand",
+                            "engine": "pdflatex",
+                            "compilation_time": 2.31,
+                            "passes_run": 1,
+                        },
+                    },
+                },
+                {
+                    "summary": "Invalid request",
+                    "value": {
+                        "request_id": "f1e2d3c4b5a647a8b9c0d1e2f3a4b5c6",
+                        "error_code": "INVALID_REQUEST",
+                        "message": "Invalid engine 'notanengine'.",
+                        "detail": {
+                            "valid_engines": [
+                                "pdflatex",
+                                "xelatex",
+                                "lualatex",
+                                "latexmk",
+                            ]
+                        },
+                    },
+                },
+                {
+                    "summary": "Missing API key",
+                    "value": {
+                        "request_id": "c3d4e5f6a7b847a8b9c0d1e2f3a4b5c6",
+                        "error_code": "MISSING_API_KEY",
+                        "message": "Missing API key. Provide X-API-Key header.",
+                        "detail": None,
+                    },
+                },
+            ]
+        }
+    }
 
 
 # ---------------------------------------------------------------------------

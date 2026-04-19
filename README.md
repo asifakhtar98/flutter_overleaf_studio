@@ -17,7 +17,7 @@
 - **Concurrent**: `ProcessPoolExecutor(4)` — 4 simultaneous compilations
 - **Pre-compiled formats**: `fmtutil-sys --all` at Docker build time
 - **Stateless**: no file persistence — every compilation is ephemeral, cleanup in `finally`
-- **Secured**: API key auth (`X-API-Key`) + per-key rate limiting (SlowAPI)
+- **Secured**: API key auth, rate limiting, body size limits, path traversal protection
 - **ARM64 native**: Oracle Ampere prod, Apple Silicon dev — no arch mismatch
 
 ---
@@ -28,7 +28,6 @@
 git clone https://github.com/YOUR_USERNAME/texlive-api.git && cd texlive-api
 cp .env.example .env          # Set API_KEYS
 docker compose up --build     # First build ~20-30 min (TeX Live)
-# http://localhost:8080/docs  — Swagger UI
 ```
 
 ```bash
@@ -45,87 +44,22 @@ curl -X POST http://localhost:8080/api/v1/compile \
 
 ---
 
-## API Reference
+## API Documentation
 
-### `GET /api/v1/health`
+**Full, interactive API docs live on the running server:**
 
-No auth required.
+| Format | URL | Best for |
+|--------|-----|----------|
+| **Swagger UI** | [`/docs`](http://localhost:8080/docs) | Interactive testing, try-it-out |
+| **ReDoc** | [`/redoc`](http://localhost:8080/redoc) | Reading, client generation |
+| **OpenAPI JSON** | [`/openapi.json`](http://localhost:8080/openapi.json) | Code generation (`openapi-generator`) |
 
-```json
-{
-  "status": "healthy",
-  "texlive_version": "pdfTeX 3.141592653-2.6-1.40.29 (TeX Live 2026)",
-  "engines": ["pdflatex", "xelatex", "lualatex", "latexmk"],
-  "uptime_seconds": 3600.0,
-  "cache_stats": { "hits": 142, "misses": 58, "size": 47, "max_size": 200 }
-}
-```
+The Swagger UI includes request/response examples, error code tables,
+multipart upload forms, and response header documentation — it is the
+**single source of truth** for the API contract.
 
-### `POST /api/v1/compile`
-
-Requires `X-API-Key` header.
-
-**JSON body (single file):**
-```json
-{
-  "source": "\\documentclass{article}\\begin{document}Hello!\\end{document}",
-  "engine": "pdflatex",
-  "draft": false,
-  "enable_cache": true
-}
-```
-
-**Multipart form (zip project):**
-```
-file=@project.zip  engine=xelatex  main_file=thesis.tex  draft=false  enable_cache=true
-```
-
-**Parameters:**
-
-| Param | Type | Default | Notes |
-|-------|------|---------|-------|
-| `source` | string | — | Required for JSON mode |
-| `file` | file | — | Required for multipart mode |
-| `engine` | string | `pdflatex` | `pdflatex` / `xelatex` / `lualatex` / `latexmk` |
-| `main_file` | string | `main.tex` | Entry point for zip projects |
-| `draft` | bool | `false` | Skip image rendering |
-| `enable_cache` | bool | `true` | Check/store in LRU cache |
-
-**Success (200):** PDF bytes in body. Metadata in response headers:
-
-| Header | Example |
-|--------|---------|
-| `X-Compilation-Time` | `4.20` |
-| `X-Engine` | `pdflatex` |
-| `X-Warnings-Count` | `3` |
-| `X-Cached` | `false` |
-| `X-Passes-Run` | `2` |
-| `X-Request-ID` | `a1b2c3d4...` |
-
-**All errors** use a unified `ErrorEnvelope` format:
-```json
-{
-  "request_id": "a1b2c3d4e5f6...",
-  "error_code": "COMPILATION_FAILED",
-  "message": "Compilation failed",
-  "detail": {
-    "log": "! Undefined control sequence.\nl.42 \\badcommand",
-    "engine": "pdflatex",
-    "compilation_time": 2.31,
-    "passes_run": 1
-  }
-}
-```
-
-| Error Code | HTTP Status | When |
-|------------|-------------|------|
-| `COMPILATION_FAILED` | 422 | LaTeX compilation failed |
-| `INVALID_REQUEST` | 400 | Bad input, invalid engine/main_file |
-| `MISSING_API_KEY` | 401 | No `X-API-Key` header |
-| `INVALID_API_KEY` | 403 | Wrong API key |
-| `UPLOAD_TOO_LARGE` | 413 | Body exceeds max upload size |
-| `RATE_LIMITED` | 429 | Too many requests |
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
+> **Frontend devs:** click the **Authorize** 🔒 button in Swagger UI to set your
+> `X-API-Key` header, then use **Try it out** on any endpoint.
 
 ---
 

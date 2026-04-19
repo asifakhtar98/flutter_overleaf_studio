@@ -66,13 +66,45 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("shutdown")
 
 
+# --- App Metadata & Tags ---
+tags_metadata = [
+    {
+        "name": "compile",
+        "description": "Core LaTeX compilation endpoints. Accepts JSON or Multipart.",
+    },
+    {
+        "name": "health",
+        "description": "Server diagnostics, installed engines, and cache performance.",
+    },
+]
+
 # --- App ---
 app = FastAPI(
     title="TeX Live Compilation API",
-    description="Stateless REST API for LaTeX → PDF compilation",
+    description=(
+        "Stateless, high-performance REST API for LaTeX → PDF compilation.\n\n"
+        "### Features\n"
+        "- **4 Engines**: `pdflatex`, `xelatex`, `lualatex`, `latexmk`\n"
+        "- **RAM-disk compilation**: All compilation runs in `/dev/shm` for zero disk I/O.\n"
+        "- **Smart multi-pass**: Auto-parses `.aux` to run BibTeX/Biber and extra passes only when needed.\n"
+        "- **LRU Cache**: Unchanged inputs return instantly.\n"
+        "- **Zip Support**: Multi-file projects with images and bibliographies.\n\n"
+        "### Authentication\n"
+        "All `/compile` requests require an `X-API-Key` header. "
+        "Click the **Authorize** button below to set it for your Swagger UI session."
+    ),
     version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=tags_metadata,
+    contact={
+        "name": "API Support",
+        "url": "https://github.com/YOUR_USERNAME/texlive-api",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
     lifespan=lifespan,
     default_response_class=ORJSONResponse,
 )
