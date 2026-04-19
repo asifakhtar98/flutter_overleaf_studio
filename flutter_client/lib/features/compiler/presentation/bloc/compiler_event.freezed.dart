@@ -119,10 +119,10 @@ return reset(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String engine,  bool draft)?  compileRequested,TResult Function()?  reset,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String engine,  bool draft,  String source,  List<ProjectFile> files,  String mainFile)?  compileRequested,TResult Function()?  reset,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CompileRequested() when compileRequested != null:
-return compileRequested(_that.engine,_that.draft);case CompileReset() when reset != null:
+return compileRequested(_that.engine,_that.draft,_that.source,_that.files,_that.mainFile);case CompileReset() when reset != null:
 return reset();case _:
   return orElse();
 
@@ -141,10 +141,10 @@ return reset();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String engine,  bool draft)  compileRequested,required TResult Function()  reset,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String engine,  bool draft,  String source,  List<ProjectFile> files,  String mainFile)  compileRequested,required TResult Function()  reset,}) {final _that = this;
 switch (_that) {
 case CompileRequested():
-return compileRequested(_that.engine,_that.draft);case CompileReset():
+return compileRequested(_that.engine,_that.draft,_that.source,_that.files,_that.mainFile);case CompileReset():
 return reset();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -159,10 +159,10 @@ return reset();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String engine,  bool draft)?  compileRequested,TResult? Function()?  reset,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String engine,  bool draft,  String source,  List<ProjectFile> files,  String mainFile)?  compileRequested,TResult? Function()?  reset,}) {final _that = this;
 switch (_that) {
 case CompileRequested() when compileRequested != null:
-return compileRequested(_that.engine,_that.draft);case CompileReset() when reset != null:
+return compileRequested(_that.engine,_that.draft,_that.source,_that.files,_that.mainFile);case CompileReset() when reset != null:
 return reset();case _:
   return null;
 
@@ -175,11 +175,20 @@ return reset();case _:
 
 
 class CompileRequested implements CompilerEvent {
-  const CompileRequested({required this.engine, required this.draft});
+  const CompileRequested({required this.engine, required this.draft, required this.source, required final  List<ProjectFile> files, required this.mainFile}): _files = files;
   
 
  final  String engine;
  final  bool draft;
+ final  String source;
+ final  List<ProjectFile> _files;
+ List<ProjectFile> get files {
+  if (_files is EqualUnmodifiableListView) return _files;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_files);
+}
+
+ final  String mainFile;
 
 /// Create a copy of CompilerEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -191,16 +200,16 @@ $CompileRequestedCopyWith<CompileRequested> get copyWith => _$CompileRequestedCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileRequested&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileRequested&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.source, source) || other.source == source)&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,engine,draft);
+int get hashCode => Object.hash(runtimeType,engine,draft,source,const DeepCollectionEquality().hash(_files),mainFile);
 
 @override
 String toString() {
-  return 'CompilerEvent.compileRequested(engine: $engine, draft: $draft)';
+  return 'CompilerEvent.compileRequested(engine: $engine, draft: $draft, source: $source, files: $files, mainFile: $mainFile)';
 }
 
 
@@ -211,7 +220,7 @@ abstract mixin class $CompileRequestedCopyWith<$Res> implements $CompilerEventCo
   factory $CompileRequestedCopyWith(CompileRequested value, $Res Function(CompileRequested) _then) = _$CompileRequestedCopyWithImpl;
 @useResult
 $Res call({
- String engine, bool draft
+ String engine, bool draft, String source, List<ProjectFile> files, String mainFile
 });
 
 
@@ -228,11 +237,14 @@ class _$CompileRequestedCopyWithImpl<$Res>
 
 /// Create a copy of CompilerEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? engine = null,Object? draft = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? engine = null,Object? draft = null,Object? source = null,Object? files = null,Object? mainFile = null,}) {
   return _then(CompileRequested(
 engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
 as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
+as String,files: null == files ? _self._files : files // ignore: cast_nullable_to_non_nullable
+as List<ProjectFile>,mainFile: null == mainFile ? _self.mainFile : mainFile // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

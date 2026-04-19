@@ -89,15 +89,18 @@ class CodeEditorPanel extends HookWidget {
                   int newSelectionEnd;
 
                   if (start == end) {
+                    // No selection — insert two spaces at cursor
                     newText = '${text.substring(0, start)}  ${text.substring(end)}';
                     newSelectionStart = start + 2;
                     newSelectionEnd = start + 2;
                   } else {
-                    final selectedText = text.substring(start, end);
-                    final indentedText = selectedText.split('\n').map((line) => '  $line').join('\n');
-                    newText = '${text.substring(0, start)}$indentedText${text.substring(end)}';
-                    newSelectionStart = start;
-                    newSelectionEnd = start + indentedText.length;
+                    // Multiline selection — indent each full line from its beginning
+                    final lineStart = text.lastIndexOf('\n', start - 1) + 1;
+                    final selectedLines = text.substring(lineStart, end);
+                    final indentedLines = selectedLines.split('\n').map((line) => '  $line').join('\n');
+                    newText = '${text.substring(0, lineStart)}$indentedLines${text.substring(end)}';
+                    newSelectionStart = start + 2; // cursor shifts by one indent
+                    newSelectionEnd = lineStart + indentedLines.length;
                   }
 
                   controller.value = TextEditingValue(

@@ -41,18 +41,7 @@ class App extends StatelessWidget {
           },
         ),
         BlocProvider(
-          create: (context) {
-            final bloc = getIt<CompilerBloc>();
-            final projectBloc = context.read<ProjectBloc>();
-
-            // Wire up project access for compiler
-            bloc.getProjectFiles = () => projectBloc.state.files;
-            bloc.getMainFileName = () => projectBloc.state.mainFilePath ?? 'main.tex';
-            bloc.getActiveContent = () =>
-                context.read<EditorBloc>().state.content;
-
-            return bloc;
-          },
+          create: (_) => getIt<CompilerBloc>(),
         ),
       ],
       child: _AppContent(),

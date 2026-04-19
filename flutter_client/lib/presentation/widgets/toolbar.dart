@@ -9,6 +9,8 @@ import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
+import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_bloc.dart';
+import 'package:flutter_latex_client/features/project/presentation/bloc/project_bloc.dart';
 
 class Toolbar extends HookWidget {
   const Toolbar({super.key});
@@ -95,10 +97,18 @@ class Toolbar extends HookWidget {
                 onPressed: isLoading
                     ? null
                     : () {
+                        final projectState =
+                            context.read<ProjectBloc>().state;
+                        final editorState =
+                            context.read<EditorBloc>().state;
                         context.read<CompilerBloc>().add(
                               CompilerEvent.compileRequested(
                                 engine: selectedEngine.value,
                                 draft: draftMode.value,
+                                source: editorState.content,
+                                files: projectState.files,
+                                mainFile:
+                                    projectState.mainFilePath ?? 'main.tex',
                               ),
                             );
                       },

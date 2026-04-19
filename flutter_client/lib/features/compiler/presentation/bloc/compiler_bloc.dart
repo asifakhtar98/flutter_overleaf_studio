@@ -6,7 +6,6 @@ import 'package:flutter_latex_client/features/compiler/domain/usecases/compile_p
 import 'package:flutter_latex_client/features/compiler/domain/usecases/compile_single.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
-import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
 
 @injectable
 class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
@@ -23,25 +22,16 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
   final CompileSingle _compileSingle;
   final CompileProject _compileProject;
 
-  /// Set externally by the editor page to access current project files.
-  List<ProjectFile> Function()? getProjectFiles;
-  String Function()? getActiveContent;
-  String Function()? getMainFileName;
-
   Future<void> _onCompileRequested(
     CompileRequested event,
     Emitter<CompilerState> emit,
   ) async {
     emit(CompilerState.loading(engine: event.engine));
 
-    final files = getProjectFiles?.call() ?? [];
-    final mainFile = getMainFileName?.call() ?? 'main.tex';
-
-    if (files.length <= 1) {
-      final source = getActiveContent?.call() ?? '';
+    if (event.files.length <= 1) {
       final result = await _compileSingle(
         CompileSingleParams(
-          source: source,
+          source: event.source,
           engine: event.engine,
           draft: event.draft,
         ),
@@ -54,8 +44,8 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
     } else {
       final result = await _compileProject(
         CompileProjectParams(
-          files: files,
-          mainFile: mainFile,
+          files: event.files,
+          mainFile: event.mainFile,
           engine: event.engine,
           draft: event.draft,
         ),

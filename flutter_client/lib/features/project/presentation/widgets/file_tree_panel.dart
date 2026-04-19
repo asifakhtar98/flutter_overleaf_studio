@@ -159,16 +159,16 @@ class _FileTree extends HookWidget {
                             );
                       }
                     },
-                    onSecondaryTapDown: node.file != null
-                        ? (details) => _showContextMenu(context, node, details.globalPosition)
-                        : null,
-                    onLongPress: node.file != null
-                        ? () {
+                    onSecondaryTapDown: (details) => node.isFolder
+                        ? _showFolderContextMenu(context, node, details.globalPosition)
+                        : _showContextMenu(context, node, details.globalPosition),
+                    onLongPress: () {
                             if (lastPosition != null) {
-                              _showContextMenu(context, node, lastPosition!);
+                              node.isFolder
+                                  ? _showFolderContextMenu(context, node, lastPosition!)
+                                  : _showContextMenu(context, node, lastPosition!);
                             }
-                          }
-                        : null,
+                          },
                     child: Container(
                     color: isActive
                         ? LatexTheme.primaryLight
@@ -250,25 +250,31 @@ class _FileTree extends HookWidget {
     return Icons.insert_drive_file_outlined;
   }
 
-  void _showNewFileDialog(BuildContext context) {
+  void _showNewFileDialog(BuildContext context, {String? parentFolderPath}) {
     final controller = TextEditingController();
+    final prefix = parentFolderPath != null ? '$parentFolderPath/' : '';
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('New File'),
+        title: Text(parentFolderPath != null
+            ? 'New File in $parentFolderPath/'
+            : 'New File'),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'filename.tex',
-            border: OutlineInputBorder(),
+            prefixText: prefix.isNotEmpty ? prefix : null,
+            border: const OutlineInputBorder(),
           ),
           onSubmitted: (value) {
             if (value.trim().isNotEmpty) {
+              final fileName = value.trim();
+              final fullPath = '$prefix$fileName';
               context.read<ProjectBloc>().add(
                     ProjectEvent.addFile(
-                      name: value.trim(),
-                      path: value.trim(),
+                      name: fileName,
+                      path: fullPath,
                     ),
                   );
               Navigator.of(ctx).pop();
@@ -282,10 +288,11 @@ class _FileTree extends HookWidget {
           ),
           FilledButton(
             onPressed: () {
-              final value = controller.text.trim();
-              if (value.isNotEmpty) {
+              final fileName = controller.text.trim();
+              if (fileName.isNotEmpty) {
+                final fullPath = '$prefix$fileName';
                 context.read<ProjectBloc>().add(
-                      ProjectEvent.addFile(name: value, path: value),
+                      ProjectEvent.addFile(name: fileName, path: fullPath),
                     );
                 Navigator.of(ctx).pop();
               }
@@ -295,6 +302,34 @@ class _FileTree extends HookWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showFolderContextMenu(
+    BuildContext context,
+    _TreeNode node,
+    Offset globalPosition,
+  ) async {
+    final value = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        globalPosition.dx,
+        globalPosition.dy,
+        globalPosition.dx + 1,
+        globalPosition.dy + 1,
+      ),
+      items: const [
+        PopupMenuItem(
+          value: 'new_file',
+          child: Text('New File'),
+        ),
+      ],
+    );
+
+    if (!context.mounted) return;
+
+    if (value == 'new_file') {
+      _showNewFileDialog(context, parentFolderPath: node.path);
+    }
   }
 
   Future<void> _showContextMenu(
