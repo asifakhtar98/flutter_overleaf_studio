@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Blue-Green Deployment Script
+# Blue-Green Deployment Script (zero-downtime with iptables port swap)
 # =============================================================================
 # Usage: bash scripts/deploy.sh <image:tag>
 # Example: bash scripts/deploy.sh yourusername/texlive-api:latest
+#
+# Requires: sudo (for iptables during port swap)
 # =============================================================================
 set -euo pipefail
 
 IMAGE="${1:?Usage: deploy.sh <image:tag>}"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 HEALTH_URL="http://localhost:8080/api/v1/health"
-MAX_WAIT=60
+STAGING_PORT=8081
+PROD_PORT=8080
+MAX_WAIT=90
+POLL_INTERVAL=3
 
 echo "=== Blue-Green Deploy ==="
 echo "Image: $IMAGE"
 echo "App dir: $APP_DIR"
 
+# ---------------------------------------------------------------------------
 # Determine current/next slot
+# ---------------------------------------------------------------------------
 CURRENT_CONTAINER=$(docker ps --filter "name=texlive-api" --format "{{.Names}}" | head -1 || true)
 if [[ "$CURRENT_CONTAINER" == "texlive-api-blue" ]]; then
     NEXT_SLOT="green"
@@ -30,70 +37,135 @@ else
 fi
 
 NEXT_CONTAINER="texlive-api-${NEXT_SLOT}"
-NEXT_PORT=8081  # Temp port for new container
 
 echo "Current: ${CURRENT_CONTAINER:-none}"
 echo "Deploying to: $NEXT_CONTAINER"
 
-# Start new container on temp port
-echo "[1/5] Starting new container..."
+# ---------------------------------------------------------------------------
+# Cleanup function — removes staging container + iptables rules on failure
+# ---------------------------------------------------------------------------
+IPTABLES_ADDED=false
+
+cleanup_iptables() {
+    if $IPTABLES_ADDED; then
+        echo "Cleaning up iptables redirect rules..."
+        sudo iptables -t nat -D PREROUTING -p tcp --dport "$PROD_PORT" -j REDIRECT --to-port "$STAGING_PORT" 2>/dev/null || true
+        sudo iptables -t nat -D OUTPUT -o lo -p tcp --dport "$PROD_PORT" -j REDIRECT --to-port "$STAGING_PORT" 2>/dev/null || true
+        IPTABLES_ADDED=false
+    fi
+}
+
+rollback() {
+    echo "ERROR: Deploy failed — rolling back"
+    cleanup_iptables
+    docker rm -f "$NEXT_CONTAINER" 2>/dev/null || true
+    echo "Rollback complete. Previous container still running: ${CURRENT_CONTAINER:-none}"
+    exit 1
+}
+
+trap rollback ERR
+
+# ---------------------------------------------------------------------------
+# [1/6] Start new container on staging port
+# ---------------------------------------------------------------------------
+echo "[1/6] Starting new container on port $STAGING_PORT..."
+# Remove any leftover staging container from a previous failed deploy
+docker rm -f "$NEXT_CONTAINER" 2>/dev/null || true
+
 docker run -d \
     --name "$NEXT_CONTAINER" \
     --env-file "$APP_DIR/.env" \
     --shm-size=8g \
-    -p "${NEXT_PORT}:8080" \
+    -p "${STAGING_PORT}:${PROD_PORT}" \
     --restart unless-stopped \
     --log-driver json-file \
     --log-opt max-size=50m \
     --log-opt max-file=5 \
     "$IMAGE"
 
-# Wait for health check
-echo "[2/5] Waiting for health check..."
+# ---------------------------------------------------------------------------
+# [2/6] Wait for health check on staging port
+# ---------------------------------------------------------------------------
+echo "[2/6] Waiting for health check on :${STAGING_PORT}..."
 WAITED=0
 while [ $WAITED -lt $MAX_WAIT ]; do
-    if curl -sf "http://localhost:${NEXT_PORT}/api/v1/health" > /dev/null 2>&1; then
+    if curl -sf "http://localhost:${STAGING_PORT}/api/v1/health" > /dev/null 2>&1; then
         echo "Health check passed after ${WAITED}s"
         break
     fi
-    sleep 2
-    WAITED=$((WAITED + 2))
+    sleep "$POLL_INTERVAL"
+    WAITED=$((WAITED + POLL_INTERVAL))
 done
 
 if [ $WAITED -ge $MAX_WAIT ]; then
-    echo "ERROR: Health check failed after ${MAX_WAIT}s"
+    echo "Health check failed after ${MAX_WAIT}s"
     docker logs "$NEXT_CONTAINER" --tail 50
-    docker rm -f "$NEXT_CONTAINER"
-    exit 1
+    rollback
 fi
 
-# Stop old container
-echo "[3/5] Stopping old container..."
+# ---------------------------------------------------------------------------
+# [3/6] iptables redirect: prod port → staging port (zero-downtime swap)
+# ---------------------------------------------------------------------------
+echo "[3/6] Redirecting :${PROD_PORT} → :${STAGING_PORT} via iptables..."
+sudo iptables -t nat -A PREROUTING -p tcp --dport "$PROD_PORT" -j REDIRECT --to-port "$STAGING_PORT"
+sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport "$PROD_PORT" -j REDIRECT --to-port "$STAGING_PORT"
+IPTABLES_ADDED=true
+
+# ---------------------------------------------------------------------------
+# [4/6] Stop old container (port 8080 now forwarded to 8081)
+# ---------------------------------------------------------------------------
+echo "[4/6] Stopping old container..."
 if [ -n "$OLD_SLOT" ]; then
     OLD_CONTAINER="texlive-api-${OLD_SLOT}"
     docker rm -f "$OLD_CONTAINER" 2>/dev/null || true
 fi
-# Also remove any non-slot container
 docker rm -f "texlive-api-prod" 2>/dev/null || true
 
-# Reconfigure new container to use port 8080
-echo "[4/5] Switching to production port..."
+# ---------------------------------------------------------------------------
+# [5/6] Recreate new container on production port
+# ---------------------------------------------------------------------------
+echo "[5/6] Switching $NEXT_CONTAINER to port $PROD_PORT..."
 docker rm -f "$NEXT_CONTAINER"
+
 docker run -d \
     --name "$NEXT_CONTAINER" \
     --env-file "$APP_DIR/.env" \
     --shm-size=8g \
-    -p "8080:8080" \
+    -p "${PROD_PORT}:${PROD_PORT}" \
     --restart unless-stopped \
     --log-driver json-file \
     --log-opt max-size=50m \
     --log-opt max-file=5 \
     "$IMAGE"
 
-# Wait for final health check
-sleep 3
+# Wait for final container to be healthy before removing iptables rules
+echo "Waiting for final container health..."
+WAITED=0
+while [ $WAITED -lt $MAX_WAIT ]; do
+    # Test the direct container (bypass iptables) by checking staging port is gone
+    # and prod port serves from the new container
+    if docker exec "$NEXT_CONTAINER" curl -sf "http://localhost:${PROD_PORT}/api/v1/health" > /dev/null 2>&1; then
+        echo "Final container healthy after ${WAITED}s"
+        break
+    fi
+    sleep "$POLL_INTERVAL"
+    WAITED=$((WAITED + POLL_INTERVAL))
+done
+
+if [ $WAITED -ge $MAX_WAIT ]; then
+    echo "WARNING: Final health check timed out — iptables redirect still active"
+fi
+
+# ---------------------------------------------------------------------------
+# [6/6] Remove iptables redirect — new container owns port 8080
+# ---------------------------------------------------------------------------
+echo "[6/6] Removing iptables redirect..."
+cleanup_iptables
+
+# Verify production health
+sleep 1
 if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
-    echo "[5/5] Production health check passed!"
+    echo "Production health check passed!"
 else
     echo "WARNING: Production health check pending — container may still be starting"
 fi

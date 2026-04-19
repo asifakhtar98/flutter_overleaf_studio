@@ -171,10 +171,14 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 | 3 | **LRU cache** | `cache.py:compile_cache` | SHA-256 keyed `TTLCache(200, 1800s)` | ~10ms cache hits |
 | 4 | **Smart passes** | `compiler.py:_compile_sync` | Parse log for rerun warnings, max 3 | ~30-50% fewer passes |
 | 5 | **Draft mode** | `compiler.py:_compile_sync` | `\PassOptionsToPackage{draft}{graphicx}` | ~50-70% on image-heavy |
-| 6 | **Process pool** | `compiler.py:get_executor` | `ProcessPoolExecutor(max_workers=4)` | True parallelism |
+| 6 | **Process pool** | `compiler.py:get_executor` | `ProcessPoolExecutor(max_workers=4)` + crash recovery | True parallelism |
 | 7 | **Engine paths** | `compiler.py:ENGINE_PATHS` | `shutil.which()` once at import | Zero per-request PATH lookup |
 | 8 | **Health caching** | `health.py:_get_texlive_version` | `@lru_cache` — no shell-out per request | Instant health checks |
 | 9 | **Fontconfig** | `Dockerfile: fc-cache` | TeX Live fonts registered with fontconfig | XeLaTeX/LuaLaTeX font discovery |
+| 10 | **Body size limit** | `main.py` middleware | Rejects oversized `Content-Length` (JSON+multipart) | Prevents OOM |
+| 11 | **Cache entry cap** | `compiler.py:MAX_CACHE_ENTRY_SIZE` | Skip caching PDFs > 10 MB | Protects cache budget |
+| 12 | **Graceful shutdown** | `Dockerfile: --timeout-graceful-shutdown 30` | In-flight compiles finish on SIGTERM | No zombie temp dirs |
+| 13 | **Pool crash recovery** | `compiler.py:_recreate_executor` | Catches `BrokenProcessPool`, rebuilds | Survives TeX segfaults |
 
 ---
 
@@ -217,6 +221,9 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 15. Update this file and other `.md` files when making architectural or behavioral changes.
 16. Register TeX Live fonts with fontconfig in Dockerfiles — XeLaTeX/LuaLaTeX need `fc-cache`.
 17. Use `python3.11 -m venv /opt/venv` in Dockerfiles — never `pip install --break-system-packages`.
+18. Use `Path.is_relative_to()` for path containment checks — never `str.startswith()`.
+19. Catch `BrokenProcessPool` around `run_in_executor` calls — recreate pool on crash.
+20. Skip caching PDFs larger than `MAX_CACHE_ENTRY_SIZE` — protect cache memory budget.
 
 ### MUST NOT
 

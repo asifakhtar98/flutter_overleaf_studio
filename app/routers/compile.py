@@ -34,7 +34,7 @@ async def _parse_json(request: Request) -> _ParsedRequest:
     """Parse a JSON body compile request.
 
     Raises:
-        HTTPException: 400 on missing or empty source.
+        HTTPException: 400 on missing or empty source, or invalid fields.
     """
     try:
         raw = await request.json()
@@ -44,7 +44,13 @@ async def _parse_json(request: Request) -> _ParsedRequest:
             detail="Invalid JSON body.",
         ) from None
 
-    body = CompileRequest(**raw)
+    try:
+        body = CompileRequest(**raw)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request fields: {e}",
+        ) from None
 
     if not body.source or not body.source.strip():
         raise HTTPException(

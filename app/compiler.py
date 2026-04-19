@@ -10,6 +10,7 @@ Performance features:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import io
 import os
@@ -20,6 +21,7 @@ import tempfile
 import time
 import zipfile
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,6 +38,7 @@ logger = structlog.get_logger()
 MAX_UNCOMPRESSED_SIZE = 200 * 1024 * 1024  # 200 MB zip bomb limit
 MAX_PASSES = 3
 BIB_TOOL_TIMEOUT = 60  # seconds for bibtex/biber
+MAX_CACHE_ENTRY_SIZE = 10 * 1024 * 1024  # 10 MB — skip caching oversized PDFs
 
 _ENGINE_NAMES = ("pdflatex", "xelatex", "lualatex", "latexmk")
 _BIB_TOOL_NAMES = ("bibtex", "biber")
@@ -98,6 +101,16 @@ def shutdown_executor() -> None:
     if _executor is not None:
         _executor.shutdown(wait=False)
         _executor = None
+
+
+def _recreate_executor() -> None:
+    """Recreate the ProcessPoolExecutor after a worker crash."""
+    global _executor
+    if _executor is not None:
+        with contextlib.suppress(Exception):
+            _executor.shutdown(wait=False)
+    _executor = ProcessPoolExecutor(max_workers=settings.max_concurrent_compiles)
+    logger.warning("process_pool_recreated", max_workers=settings.max_concurrent_compiles)
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +186,7 @@ def _safe_extract_zip(zip_bytes: bytes, dest: str) -> None:
         dest_path = Path(dest).resolve()
         for info in zf.infolist():
             target = (dest_path / info.filename).resolve()
-            if not str(target).startswith(str(dest_path)):
+            if not target.is_relative_to(dest_path):
                 raise ValueError(f"Path traversal detected: {info.filename}")
 
         zf.extractall(dest)
@@ -458,20 +471,22 @@ async def compile_latex(
             with open(target_path, "wb") as f:
                 f.write(content)
 
-        # Delegate to process pool
+        # Delegate to process pool (with crash recovery)
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
-            get_executor(),
-            _compile_sync,
-            work_dir,
-            engine,
-            main_file,
-            draft,
-            settings.compilation_timeout,
-        )
+        compile_args = (work_dir, engine, main_file, draft, settings.compilation_timeout)
+        try:
+            result = await loop.run_in_executor(
+                get_executor(), _compile_sync, *compile_args
+            )
+        except BrokenProcessPool:
+            logger.error("process_pool_broken", msg="Worker crashed, recreating pool")
+            _recreate_executor()
+            result = await loop.run_in_executor(
+                get_executor(), _compile_sync, *compile_args
+            )
 
-        # Cache store on success
-        if result.success and cache_key is not None:
+        # Cache store on success (skip oversized PDFs)
+        if result.success and cache_key is not None and len(result.pdf_bytes) <= MAX_CACHE_ENTRY_SIZE:
             compile_cache.put(
                 cache_key,
                 CachedResult(

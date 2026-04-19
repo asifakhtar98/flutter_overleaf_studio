@@ -85,6 +85,20 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+# Request body size limit — protects both JSON and multipart paths
+@app.middleware("http")
+async def limit_request_body(request: Request, call_next):
+    """Reject requests that declare a body larger than max_upload_size_bytes."""
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > settings.max_upload_size_bytes:
+        return JSONResponse(
+            status_code=413,
+            content={"detail": f"Request body too large. Max {settings.max_upload_size_mb} MB."},
+        )
+    return await call_next(request)
+
+
 # Routers
 app.include_router(health.router)
 app.include_router(compile_router.router)
