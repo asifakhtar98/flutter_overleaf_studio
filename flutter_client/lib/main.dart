@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:talker_bloc_logger/talker_bloc_logger.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import 'package:flutter_latex_client/app.dart';
 import 'package:flutter_latex_client/core/config/server_config.dart';
@@ -25,5 +30,19 @@ void main() async {
     ),
   );
 
-  runApp(const App());
+  final talker = getIt<Talker>();
+
+  // Auto-log every Bloc event, transition, and error
+  Bloc.observer = TalkerBlocObserver(talker: talker);
+
+  // Catch Flutter framework errors (rendering, layout, etc.)
+  FlutterError.onError = (details) {
+    talker.handle(details.exception, details.stack);
+  };
+
+  // Catch uncaught async errors (unhandled futures, isolates)
+  runZonedGuarded(
+    () => runApp(const App()),
+    talker.handle,
+  );
 }

@@ -11,6 +11,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:dio/dio.dart' as _i361;
 import 'package:flutter_latex_client/core/config/server_config.dart' as _i706;
+import 'package:flutter_latex_client/core/logging/talker_service.dart' as _i909;
 import 'package:flutter_latex_client/core/network/dio_client.dart' as _i127;
 import 'package:flutter_latex_client/features/compiler/data/datasources/compiler_remote_datasource.dart'
     as _i982;
@@ -38,6 +39,8 @@ import 'package:flutter_latex_client/features/project/presentation/bloc/project_
     as _i625;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+import 'package:talker/talker.dart' as _i993;
+import 'package:talker_flutter/talker_flutter.dart' as _i207;
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -46,10 +49,16 @@ extension GetItInjectableX on _i174.GetIt {
     _i526.EnvironmentFilter? environmentFilter,
   }) {
     final gh = _i526.GetItHelper(this, environment, environmentFilter);
+    final talkerModule = _$TalkerModule();
     final dioModule = _$DioModule();
     gh.factory<_i294.EditorBloc>(() => _i294.EditorBloc());
     gh.factory<_i625.ProjectBloc>(() => _i625.ProjectBloc());
-    gh.lazySingleton<_i361.Dio>(() => dioModule.dio(gh<_i706.ServerConfig>()));
+    gh.lazySingleton<_i207.Talker>(
+      () => talkerModule.talker(gh<_i706.ServerConfig>()),
+    );
+    gh.lazySingleton<_i361.Dio>(
+      () => dioModule.dio(gh<_i706.ServerConfig>(), gh<_i993.Talker>()),
+    );
     gh.lazySingleton<_i982.CompilerRemoteDatasource>(
       () => _i982.CompilerRemoteDatasource(gh<_i361.Dio>()),
     );
@@ -57,10 +66,16 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i867.HealthRemoteDatasource(gh<_i361.Dio>()),
     );
     gh.lazySingleton<_i689.HealthRepository>(
-      () => _i105.HealthRepositoryImpl(gh<_i867.HealthRemoteDatasource>()),
+      () => _i105.HealthRepositoryImpl(
+        gh<_i867.HealthRemoteDatasource>(),
+        gh<_i993.Talker>(),
+      ),
     );
     gh.lazySingleton<_i572.CompilerRepository>(
-      () => _i637.CompilerRepositoryImpl(gh<_i982.CompilerRemoteDatasource>()),
+      () => _i637.CompilerRepositoryImpl(
+        gh<_i982.CompilerRemoteDatasource>(),
+        gh<_i993.Talker>(),
+      ),
     );
     gh.factory<_i938.CompileProject>(
       () => _i938.CompileProject(gh<_i572.CompilerRepository>()),
@@ -80,5 +95,7 @@ extension GetItInjectableX on _i174.GetIt {
     return this;
   }
 }
+
+class _$TalkerModule extends _i909.TalkerModule {}
 
 class _$DioModule extends _i127.DioModule {}

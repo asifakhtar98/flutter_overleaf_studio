@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
+import 'package:talker_dio_logger/talker_dio_logger.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import 'package:flutter_latex_client/core/config/server_config.dart';
 import 'package:flutter_latex_client/core/network/api_interceptor.dart';
@@ -8,7 +10,9 @@ import 'package:flutter_latex_client/core/network/error_interceptor.dart';
 @module
 abstract class DioModule {
   @lazySingleton
-  Dio dio(ServerConfig config) {
+  Dio dio(ServerConfig config, Talker talker) {
+    final isDev = config.environment == ServerEnvironment.development;
+
     final dio = Dio(
       BaseOptions(
         baseUrl: config.baseUrl,
@@ -21,13 +25,14 @@ abstract class DioModule {
     dio.interceptors.addAll([
       ApiInterceptor(apiKey: config.apiKey),
       ErrorInterceptor(),
-      if (config.environment == ServerEnvironment.development)
-        LogInterceptor(
-          requestBody: true,
-          responseBody: false,
-          // ignore: avoid_print — LogInterceptor needs a print callback for dev.
-          logPrint: print,
+      TalkerDioLogger(
+        talker: talker,
+        settings: TalkerDioLoggerSettings(
+          printRequestHeaders: isDev,
+          printResponseHeaders: isDev,
+          printResponseMessage: true,
         ),
+      ),
     ]);
 
     return dio;

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import 'package:flutter_latex_client/core/error/exceptions.dart';
 import 'package:flutter_latex_client/core/error/failures.dart';
@@ -12,9 +13,10 @@ import 'package:flutter_latex_client/features/project/domain/entities/project_fi
 
 @LazySingleton(as: CompilerRepository)
 class CompilerRepositoryImpl implements CompilerRepository {
-  const CompilerRepositoryImpl(this._datasource);
+  const CompilerRepositoryImpl(this._datasource, this._talker);
 
   final CompilerRemoteDatasource _datasource;
+  final Talker _talker;
 
   @override
   FutureEither<CompileResult> compileSingle({
@@ -28,10 +30,12 @@ class CompilerRepositoryImpl implements CompilerRepository {
         engine: engine,
         draft: draft,
       );
+      _logSuccess(result);
       return Right(result);
     } on DioException catch (e) {
       return Left(_mapException(e));
-    } on Exception catch (e) {
+    } on Exception catch (e, st) {
+      _talker.handle(e, st, 'Unexpected compilation error');
       return Left(Failure.unknown(message: e.toString()));
     }
   }
@@ -50,17 +54,33 @@ class CompilerRepositoryImpl implements CompilerRepository {
         engine: engine,
         draft: draft,
       );
+      _logSuccess(result);
       return Right(result);
     } on DioException catch (e) {
       return Left(_mapException(e));
-    } on Exception catch (e) {
+    } on Exception catch (e, st) {
+      _talker.handle(e, st, 'Unexpected compilation error');
       return Left(Failure.unknown(message: e.toString()));
     }
+  }
+
+  void _logSuccess(CompileResult result) {
+    _talker.info(
+      'Compilation OK: ${result.compilationTime.toStringAsFixed(2)}s '
+      '| engine=${result.engine} '
+      '| cached=${result.cached} '
+      '| passes=${result.passesRun} '
+      '| warnings=${result.warningsCount}',
+    );
   }
 
   Failure _mapException(DioException e) {
     final error = e.error;
     if (error is CompilationException) {
+      _talker.error(
+        'Compilation failed: ${error.errorCode} '
+        '| time=${error.compilationTime?.toStringAsFixed(2) ?? "?"}s',
+      );
       return Failure.compilation(
         log: error.log,
         errorCode: error.errorCode,
@@ -68,14 +88,20 @@ class CompilerRepositoryImpl implements CompilerRepository {
       );
     }
     if (error is NetworkException) {
+      _talker.warning('Network error: ${error.message}');
       return Failure.network(message: error.message);
     }
     if (error is ServerException) {
+      _talker.error(
+        'Server error ${error.statusCode}: '
+        '${error.errorCode} — ${error.message}',
+      );
       return Failure.server(
         message: error.message,
         errorCode: error.errorCode,
       );
     }
+    _talker.warning('Unknown DioException: ${e.message}');
     return Failure.unknown(message: e.message);
   }
 }

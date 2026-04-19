@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
+import 'package:flutter_latex_client/core/config/server_config.dart';
+import 'package:flutter_latex_client/core/di/injection.dart';
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
@@ -121,6 +124,31 @@ class Toolbar extends HookWidget {
           ),
 
           const Spacer(),
+
+          // Debug log viewer (dev only)
+          if (getIt<ServerConfig>().environment ==
+              ServerEnvironment.development)
+            IconButton(
+              icon: const Icon(Icons.bug_report_outlined, size: 18),
+              tooltip: 'Open log viewer',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => TalkerScreen(
+                      talker: getIt<Talker>(),
+                    ),
+                  ),
+                );
+              },
+              color: LatexTheme.textSecondary,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 32,
+                minHeight: 32,
+              ),
+            ),
+
+          const SizedBox(width: 8),
 
           // Compile time
           BlocBuilder<CompilerBloc, CompilerState>(

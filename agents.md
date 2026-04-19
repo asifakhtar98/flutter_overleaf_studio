@@ -1,4 +1,5 @@
-# 🤖 AI Agent Context — TeX Live Compilation API
+#TeX Live Compilation Server (plus Flutter overlead clone)
+-No backward compatibility needed as we don't have any user base yet.
 
 > **Read this file in full before making any change.** It is the single source of truth for architecture, conventions, and constraints.
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
+import 'package:flutter_latex_client/core/config/server_config.dart';
 import 'package:flutter_latex_client/core/di/injection.dart';
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_bloc.dart';
@@ -42,6 +44,10 @@ class App extends StatelessWidget {
 class _AppContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final talker = getIt<Talker>();
+    final isDev = getIt<ServerConfig>().environment ==
+        ServerEnvironment.development;
+
     // Auto-open first file on start
     return BlocListener<ProjectBloc, ProjectState>(
       listenWhen: (previous, current) =>
@@ -59,11 +65,20 @@ class _AppContent extends StatelessWidget {
               );
         }
       },
-      child: MaterialApp(
-        title: 'LaTeX Editor',
-        theme: LatexTheme.lightTheme,
-        debugShowCheckedModeBanner: false,
-        home: const EditorPage(),
+      child: TalkerWrapper(
+        talker: talker,
+        options: TalkerWrapperOptions(
+          enableErrorAlerts: isDev,
+        ),
+        child: MaterialApp(
+          title: 'LaTeX Editor',
+          theme: LatexTheme.lightTheme,
+          debugShowCheckedModeBanner: false,
+          navigatorObservers: [
+            TalkerRouteObserver(talker),
+          ],
+          home: const EditorPage(),
+        ),
       ),
     );
   }
