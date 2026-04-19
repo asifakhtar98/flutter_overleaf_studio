@@ -3,6 +3,8 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import logging
+
 import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +20,7 @@ from app.routers import health
 
 structlog.configure(
     wrapper_class=structlog.make_filtering_bound_logger(
-        structlog.get_level_from_name(settings.log_level)
+        logging.getLevelNamesMapping()[settings.log_level.upper()]
     ),
 )
 logger = structlog.get_logger()

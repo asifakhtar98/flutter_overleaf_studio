@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 import structlog
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import Response
 
 from app.auth import require_api_key
@@ -30,53 +30,94 @@ class _ParsedRequest:
     is_zip: bool
 
 
-async def _parse_request(
-    body: CompileRequest | None,
-    file: UploadFile | None,
-    engine: Engine,
-    main_file: str,
-    draft: bool,
-    enable_cache: bool,
-) -> _ParsedRequest:
-    """Parse and validate the incoming compile request.
-
-    Supports two modes:
-    1. JSON body with ``source`` field → single-file compilation.
-    2. Multipart form with ``file`` field → zip project upload.
+async def _parse_json(request: Request) -> _ParsedRequest:
+    """Parse a JSON body compile request.
 
     Raises:
-        HTTPException: 400 on missing input or oversized upload.
+        HTTPException: 400 on missing or empty source.
     """
-    if file is not None:
-        content = await file.read()
-        if len(content) > settings.max_upload_size_bytes:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File too large. Max {settings.max_upload_size_mb} MB.",
-            )
-        return _ParsedRequest(
-            content=content,
-            engine=engine.value,
-            main_file=main_file,
-            draft=draft,
-            enable_cache=enable_cache,
-            is_zip=True,
+    try:
+        raw = await request.json()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON body.",
         )
 
-    if body is not None:
-        if not body.source or not body.source.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Empty source. Provide LaTeX source code.",
-            )
-        return _ParsedRequest(
-            content=body.source.encode("utf-8"),
-            engine=body.engine.value,
-            main_file=body.main_file,
-            draft=body.draft,
-            enable_cache=body.enable_cache,
-            is_zip=False,
+    body = CompileRequest(**raw)
+
+    if not body.source or not body.source.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Empty source. Provide LaTeX source code.",
         )
+    return _ParsedRequest(
+        content=body.source.encode("utf-8"),
+        engine=body.engine.value,
+        main_file=body.main_file,
+        draft=body.draft,
+        enable_cache=body.enable_cache,
+        is_zip=False,
+    )
+
+
+async def _parse_multipart(request: Request) -> _ParsedRequest:
+    """Parse a multipart form compile request.
+
+    Raises:
+        HTTPException: 400 on missing file or oversized upload.
+    """
+    form = await request.form()
+    file = form.get("file")
+    if file is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Multipart form must include a 'file' field.",
+        )
+
+    content = await file.read()
+    if len(content) > settings.max_upload_size_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Max {settings.max_upload_size_mb} MB.",
+        )
+
+    engine_str = form.get("engine", Engine.PDFLATEX.value)
+    try:
+        engine = Engine(engine_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid engine '{engine_str}'. Choose from: {[e.value for e in Engine]}",
+        )
+
+    main_file = form.get("main_file", "main.tex")
+    draft = str(form.get("draft", "false")).lower() in ("true", "1", "yes")
+    enable_cache = str(form.get("enable_cache", "true")).lower() in ("true", "1", "yes")
+
+    return _ParsedRequest(
+        content=content,
+        engine=engine.value,
+        main_file=main_file,
+        draft=draft,
+        enable_cache=enable_cache,
+        is_zip=True,
+    )
+
+
+async def _parse_request(request: Request) -> _ParsedRequest:
+    """Dispatch to JSON or multipart parser based on Content-Type.
+
+    Raises:
+        HTTPException: 400 on unsupported content type.
+    """
+    content_type = request.headers.get("content-type", "")
+
+    if "application/json" in content_type:
+        return await _parse_json(request)
+
+    if "multipart/form-data" in content_type:
+        return await _parse_multipart(request)
 
     raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,19 +140,11 @@ async def _parse_request(
     "Returns PDF bytes on success with metadata headers.",
 )
 async def compile_endpoint(
-    # JSON body (single file)
-    body: CompileRequest | None = None,
-    # Multipart form (zip upload)
-    file: UploadFile | None = File(default=None),  # noqa: B008
-    engine: Engine = Form(default=Engine.PDFLATEX),  # noqa: B008
-    main_file: str = Form(default="main.tex"),  # noqa: B008
-    draft: bool = Form(default=False),  # noqa: B008
-    enable_cache: bool = Form(default=True),  # noqa: B008
-    # Auth
+    request: Request,
     api_key: str = Depends(require_api_key),
 ) -> Response:
     """Compile LaTeX source into PDF."""
-    req = await _parse_request(body, file, engine, main_file, draft, enable_cache)
+    req = await _parse_request(request)
 
     result = await compile_latex(
         content=req.content,

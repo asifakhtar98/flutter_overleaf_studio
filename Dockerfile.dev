@@ -34,9 +34,18 @@ ENV PATH="/usr/local/texlive/bin/aarch64-linux:${PATH}"
 # Pre-compile format files
 RUN fmtutil-sys --all
 
-# Install dev dependencies
+# Register TeX Live fonts with fontconfig (required for XeLaTeX/LuaLaTeX)
+RUN ln -s /usr/local/texlive/texmf-dist/fonts/opentype /usr/share/fonts/texlive-opentype \
+    && ln -s /usr/local/texlive/texmf-dist/fonts/truetype /usr/share/fonts/texlive-truetype \
+    && fc-cache -fsv
+
+# Install dev dependencies in a venv
+COPY requirements.txt /tmp/requirements.txt
 COPY requirements-dev.txt /tmp/requirements-dev.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements-dev.txt
+RUN python3.11 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements-dev.txt
+ENV PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /app
 

@@ -77,9 +77,11 @@ compile_zip() {
 
     printf "${CYAN}[%02d]${NC} %-45s engine=%-10s zip=true  " "$TOTAL" "$label" "$engine"
 
-    # Create zip from directory
+    # Create zip from directory (macOS-compatible mktemp)
     local tmp_zip
-    tmp_zip=$(mktemp /tmp/textest_XXXXXX.zip)
+    tmp_zip=$(mktemp /tmp/textest_XXXXXX)
+    rm -f "$tmp_zip"
+    tmp_zip="${tmp_zip}.zip"
     (cd "$zip_dir" && zip -q -r "$tmp_zip" .)
 
     local http_code

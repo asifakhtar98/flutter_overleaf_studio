@@ -33,9 +33,17 @@ ENV PATH="/usr/local/texlive/bin/aarch64-linux:${PATH}"
 # Pre-compile format files for all engines (20-30% speedup)
 RUN fmtutil-sys --all
 
-# Install Python dependencies
+# Register TeX Live fonts with fontconfig (required for XeLaTeX/LuaLaTeX)
+RUN ln -s /usr/local/texlive/texmf-dist/fonts/opentype /usr/share/fonts/texlive-opentype \
+    && ln -s /usr/local/texlive/texmf-dist/fonts/truetype /usr/share/fonts/texlive-truetype \
+    && fc-cache -fsv
+
+# Install Python dependencies in a venv
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
+RUN python3.11 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
+ENV PATH="/opt/venv/bin:${PATH}"
 
 # =============================================================================
 # Stage 2: Runtime — Slim production image
@@ -61,10 +69,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /usr/local/texlive /usr/local/texlive
 ENV PATH="/usr/local/texlive/bin/aarch64-linux:${PATH}"
 
-# Copy Python packages from builder
-COPY --from=builder /usr/lib/python3 /usr/lib/python3
-COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Register TeX Live fonts with fontconfig (required for XeLaTeX/LuaLaTeX)
+RUN ln -s /usr/local/texlive/texmf-dist/fonts/opentype /usr/share/fonts/texlive-opentype \
+    && ln -s /usr/local/texlive/texmf-dist/fonts/truetype /usr/share/fonts/texlive-truetype \
+    && fc-cache -fsv
+
+# Copy Python venv from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser -m appuser
