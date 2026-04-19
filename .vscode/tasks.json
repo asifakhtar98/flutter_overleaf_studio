@@ -18,6 +18,17 @@
       "detail": "Build dev image & start with hot-reload on :8080"
     },
     {
+      "label": "🚀 Dev: Start Server (Background)",
+      "type": "shell",
+      "command": "docker compose up -d --build",
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": [],
+      "detail": "Start the server in background (for preLaunchTask)"
+    },
+    {
       "label": "🔄 Dev: Restart Server",
       "type": "shell",
       "command": "docker compose restart api",
