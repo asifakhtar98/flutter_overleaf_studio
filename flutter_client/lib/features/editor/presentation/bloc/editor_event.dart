@@ -23,6 +23,4 @@ sealed class EditorEvent with _$EditorEvent {
     required String path,
     required String content,
   }) = TabSwitched;
-
-  const factory EditorEvent.fileSaved() = FileSaved;
 }

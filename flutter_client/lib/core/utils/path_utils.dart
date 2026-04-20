@@ -1,7 +1,7 @@
-final invalidChars = RegExp(r'[<>:"|?*\\/\x00-\x1F]');
+final _invalidChars = RegExp(r'[<>:"|?*\\/\x00-\x1F]');
 
 bool isValidFileName(String name) {
-  return !invalidChars.hasMatch(name) && name.isNotEmpty;
+  return !_invalidChars.hasMatch(name) && name.isNotEmpty;
 }
 
 bool isValidFolderName(String name) {

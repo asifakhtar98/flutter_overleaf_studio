@@ -101,10 +101,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => _i96.CheckHealth(gh<_i689.HealthRepository>()),
     );
     gh.factory<_i251.CompilerBloc>(
-      () => _i251.CompilerBloc(
-        compileSingle: gh<_i607.CompileSingle>(),
-        compileProject: gh<_i938.CompileProject>(),
-      ),
+      () => _i251.CompilerBloc(compileProject: gh<_i938.CompileProject>()),
     );
     return this;
   }

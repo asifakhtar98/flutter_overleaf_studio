@@ -14,7 +14,7 @@ class FileTreeDialogs {
     String? parentFolderPath,
   }) async {
     final controller = TextEditingController();
-    final prefix = parentFolderPath != null ? '$parentFolderPath/' : '';
+    final prefix = parentFolderPath ?? '';
 
     await showDialog<void>(
       context: context,
@@ -87,7 +87,7 @@ class FileTreeDialogs {
     String? parentFolderPath,
   }) async {
     final controller = TextEditingController();
-    final prefix = parentFolderPath != null ? '$parentFolderPath/' : '';
+    final prefix = parentFolderPath ?? '';
 
     await showDialog<void>(
       context: context,

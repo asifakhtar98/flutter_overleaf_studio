@@ -10,6 +10,7 @@
 **Product**: TeX Live Full REST API Server
 **Codename**: texlive-overleaf-minus-frontend
 **One-liner**: Stateless REST API — LaTeX in, PDF out. No database, no frontend, no file persistence.
+**Frontend**: Flutter web & Flutter mobile only
 
 ### Scope
 

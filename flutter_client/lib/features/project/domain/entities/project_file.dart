@@ -30,18 +30,3 @@ extension ProjectFileX on ProjectFile {
     return utf8.encode(content);
   }
 }
-
-@freezed
-sealed class ProjectNode with _$ProjectNode {
-  const factory ProjectNode.file({required ProjectFile file}) = ProjectFileNode;
-
-  const factory ProjectNode.folder({
-    required String name,
-    required String path,
-    @Default([]) List<ProjectNode> children,
-    @Default(false) bool isExpanded,
-  }) = ProjectFolderNode;
-
-  factory ProjectNode.fromJson(Map<String, dynamic> json) =>
-      _$ProjectNodeFromJson(json);
-}

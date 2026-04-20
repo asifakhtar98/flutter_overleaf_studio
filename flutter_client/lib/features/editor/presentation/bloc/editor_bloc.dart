@@ -12,7 +12,6 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     on<TabOpened>(_onTabOpened);
     on<TabClosed>(_onTabClosed);
     on<TabSwitched>(_onTabSwitched);
-    on<FileSaved>(_onFileSaved);
   }
 
   void _onFileOpened(FileOpened event, Emitter<EditorState> emit) {
@@ -22,7 +21,6 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     emit(
       EditorState(
         content: event.content,
-        activeFilePath: event.path,
         openTabs: newTabs,
         currentTabPath: event.path,
       ),
@@ -30,7 +28,7 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
   }
 
   void _onContentChanged(ContentChanged event, Emitter<EditorState> emit) {
-    emit(state.copyWith(content: event.content, isDirty: true));
+    emit(state.copyWith(content: event.content));
   }
 
   void _onTabOpened(TabOpened event, Emitter<EditorState> emit) {
@@ -40,7 +38,6 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     emit(
       state.copyWith(
         content: event.content,
-        activeFilePath: event.path,
         openTabs: newTabs,
         currentTabPath: event.path,
       ),
@@ -49,31 +46,30 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
 
   void _onTabClosed(TabClosed event, Emitter<EditorState> emit) {
     final newTabs = state.openTabs.where((p) => p != event.path).toList();
-    final newCurrentTab = state.currentTabPath == event.path
-        ? (newTabs.isNotEmpty ? newTabs.last : null)
-        : state.currentTabPath;
-    emit(state.copyWith(openTabs: newTabs, currentTabPath: newCurrentTab));
+
+    if (state.currentTabPath != event.path) {
+      emit(state.copyWith(openTabs: newTabs));
+      return;
+    }
+
+    // Active tab was closed — pick replacement but don't load content here.
+    // The UI layer (BlocListener) handles loading replacement content.
+    final newCurrentTab = newTabs.isNotEmpty ? newTabs.last : null;
+    emit(state.copyWith(
+      openTabs: newTabs,
+      currentTabPath: newCurrentTab,
+      content: '',
+    ));
   }
 
   void _onTabSwitched(TabSwitched event, Emitter<EditorState> emit) {
     if (state.openTabs.contains(event.path)) {
       emit(
         state.copyWith(
-          activeFilePath: event.path,
           currentTabPath: event.path,
           content: event.content,
         ),
       );
     }
-  }
-
-  void _onFileSaved(FileSaved event, Emitter<EditorState> emit) {
-    emit(
-      state.copyWith(
-        isDirty: false,
-        isSaving: false,
-        lastSaved: DateTime.now(),
-      ),
-    );
   }
 }

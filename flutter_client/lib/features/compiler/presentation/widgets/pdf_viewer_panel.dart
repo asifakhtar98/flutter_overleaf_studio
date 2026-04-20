@@ -49,7 +49,7 @@ class PdfViewerPanel extends HookWidget {
                   backgroundColor: LatexTheme.surface,
                 ),
               ),
-            if (state is CompilerLoading) stateLayer,
+            if (state is! CompilerSuccess) stateLayer,
           ],
         );
       },
@@ -62,23 +62,25 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: LatexTheme.surface,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.picture_as_pdf_outlined,
-              size: 64,
-              color: LatexTheme.textSecondary.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Compile to see PDF preview',
-              style: TextStyle(color: LatexTheme.textSecondary, fontSize: 14),
-            ),
-          ],
+    return Positioned.fill(
+      child: ColoredBox(
+        color: LatexTheme.surface,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.picture_as_pdf_outlined,
+                size: 64,
+                color: LatexTheme.textSecondary.withValues(alpha: 0.4),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Compile to see PDF preview',
+                style: TextStyle(color: LatexTheme.textSecondary, fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -93,10 +95,7 @@ class _LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
+    return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
           color: LatexTheme.surface,
@@ -150,37 +149,39 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: LatexTheme.surface,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 48,
-                color: LatexTheme.error,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Compilation Failed',
-                style: TextStyle(
+    return Positioned.fill(
+      child: ColoredBox(
+        color: LatexTheme.surface,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
                   color: LatexTheme.error,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                state.errorCode,
-                style: const TextStyle(
-                  color: LatexTheme.textSecondary,
-                  fontSize: 12,
+                const SizedBox(height: 16),
+                const Text(
+                  'Compilation Failed',
+                  style: TextStyle(
+                    color: LatexTheme.error,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  state.errorCode,
+                  style: const TextStyle(
+                    color: LatexTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

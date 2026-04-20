@@ -9,7 +9,6 @@ sealed class CompilerEvent with _$CompilerEvent {
   const factory CompilerEvent.compileRequested({
     required String engine,
     required bool draft,
-    required String source,
     required List<ProjectFile> files,
     required String mainFile,
   }) = CompileRequested;

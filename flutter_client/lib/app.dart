@@ -55,22 +55,41 @@ class _AppContent extends StatelessWidget {
         getIt<ServerConfig>().environment == ServerEnvironment.development;
 
     // Auto-open first file on start
-    return BlocListener<ProjectBloc, ProjectState>(
-      listenWhen: (previous, current) =>
-          previous.activeFilePath != current.activeFilePath,
-      listener: (context, state) {
-        final activeFile = state.files
-            .where((f) => f.path == state.activeFilePath)
-            .firstOrNull;
-        if (activeFile != null) {
-          context.read<EditorBloc>().add(
-            EditorEvent.fileOpened(
-              path: activeFile.path,
-              content: activeFile.content,
-            ),
-          );
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        // Sync project → editor when active file changes
+        BlocListener<ProjectBloc, ProjectState>(
+          listenWhen: (previous, current) =>
+              previous.activeFilePath != current.activeFilePath,
+          listener: (context, state) {
+            final activeFile = state.files
+                .where((f) => f.path == state.activeFilePath)
+                .firstOrNull;
+            if (activeFile != null) {
+              context.read<EditorBloc>().add(
+                EditorEvent.fileOpened(
+                  path: activeFile.path,
+                  content: activeFile.content,
+                ),
+              );
+            }
+          },
+        ),
+        // OL5: Show snackbar on import/export errors
+        BlocListener<ProjectBloc, ProjectState>(
+          listenWhen: (prev, curr) =>
+              curr.importError != null &&
+              prev.importError != curr.importError,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.importError!),
+                backgroundColor: LatexTheme.error,
+              ),
+            );
+          },
+        ),
+      ],
       child: TalkerWrapper(
         talker: talker,
         options: TalkerWrapperOptions(enableErrorAlerts: isDev),

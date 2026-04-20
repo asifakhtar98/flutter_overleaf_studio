@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -117,13 +116,13 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
 
     for (final xFile in files) {
       final path = xFile.path;
-      final fileName = path.split(Platform.pathSeparator).last;
+      final fileName = path.split('/').last;
 
       if (fileName.endsWith('.zip')) {
         final bytes = await xFile.readAsBytes();
         bloc.add(ProjectEvent.importProject(bytes: bytes));
       } else if (fileName.endsWith('.tex')) {
-        final content = await File(path).readAsString();
+        final content = await xFile.readAsString();
         bloc.add(
           ProjectEvent.addFile(
             name: fileName,
@@ -142,38 +141,50 @@ class _MobileLayout extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final tabIndex = useState(0);
+    final scaffoldKey = useState(GlobalKey<ScaffoldState>());
 
-    return Column(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            color: LatexTheme.background,
-            border: Border(bottom: BorderSide(color: LatexTheme.border)),
+    return Scaffold(
+      key: scaffoldKey.value,
+      drawer: const Drawer(
+        child: FileTreePanel(),
+      ),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: LatexTheme.background,
+              border: Border(bottom: BorderSide(color: LatexTheme.border)),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.menu, size: 20),
+                  color: LatexTheme.textSecondary,
+                  onPressed: () => scaffoldKey.value.currentState?.openDrawer(),
+                ),
+                _Tab(
+                  label: 'Editor',
+                  icon: Icons.edit_note,
+                  isSelected: tabIndex.value == 0,
+                  onTap: () => tabIndex.value = 0,
+                ),
+                _Tab(
+                  label: 'Preview',
+                  icon: Icons.picture_as_pdf,
+                  isSelected: tabIndex.value == 1,
+                  onTap: () => tabIndex.value = 1,
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              _Tab(
-                label: 'Editor',
-                icon: Icons.edit_note,
-                isSelected: tabIndex.value == 0,
-                onTap: () => tabIndex.value = 0,
-              ),
-              _Tab(
-                label: 'Preview',
-                icon: Icons.picture_as_pdf,
-                isSelected: tabIndex.value == 1,
-                onTap: () => tabIndex.value = 1,
-              ),
-            ],
+          Expanded(
+            child: IndexedStack(
+              index: tabIndex.value,
+              children: const [CodeEditorPanel(), PdfViewerPanel()],
+            ),
           ),
-        ),
-        Expanded(
-          child: IndexedStack(
-            index: tabIndex.value,
-            children: const [CodeEditorPanel(), PdfViewerPanel()],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

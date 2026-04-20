@@ -64,6 +64,7 @@ class Toolbar extends HookWidget {
                   DropdownMenuItem(value: 'pdflatex', child: Text('pdflatex')),
                   DropdownMenuItem(value: 'xelatex', child: Text('xelatex')),
                   DropdownMenuItem(value: 'lualatex', child: Text('lualatex')),
+                  DropdownMenuItem(value: 'latexmk', child: Text('latexmk')),
                 ],
                 onChanged: (v) => selectedEngine.value = v!,
               ),
@@ -100,79 +101,82 @@ class Toolbar extends HookWidget {
 
           // Compile button
           BlocBuilder<CompilerBloc, CompilerState>(
-            builder: (context, state) {
-              final isLoading = state is CompilerLoading;
-              return Builder(
-                builder: (innerContext) {
-                  final projectState = innerContext.read<ProjectBloc>().state;
-                  final mainFilePath = projectState.mainFilePath;
-                  final hasMainFile =
-                      mainFilePath != null &&
-                      projectState.files.any((f) => f.path == mainFilePath);
-                  final canCompile = !isLoading && hasMainFile;
+            builder: (context, compilerState) {
+              final isLoading = compilerState is CompilerLoading;
+              return BlocBuilder<ProjectBloc, ProjectState>(
+                builder: (context, projectState) {
+                  return BlocBuilder<EditorBloc, EditorState>(
+                    builder: (context, editorState) {
+                      // Overleaf: active file is the entry point,
+                      // mainFilePath is fallback.
+                      final activePath = editorState.currentTabPath;
+                      final entryFile =
+                          projectState.mainFilePath ?? activePath;
+                      final hasEntry = entryFile != null &&
+                          projectState.files.any((f) => f.path == entryFile);
+                      final canCompile = !isLoading && hasEntry;
 
-                  return FilledButton.icon(
-                    onPressed: canCompile
-                        ? () {
-                            final editorState = innerContext
-                                .read<EditorBloc>()
-                                .state;
-                            final activePath = editorState.activeFilePath;
-                            final updatedFiles = activePath != null
-                                ? projectState.files.map((f) {
-                                    if (f.path == activePath) {
-                                      return f.copyWith(content: editorState.content);
-                                    }
-                                    return f;
-                                  }).toList()
-                                : projectState.files;
-                            innerContext.read<CompilerBloc>().add(
-                              CompilerEvent.compileRequested(
-                                engine: selectedEngine.value,
-                                draft: draftMode.value,
-                                source: editorState.content,
-                                files: updatedFiles,
-                                mainFile: mainFilePath,
-                              ),
-                            );
-                          }
-                        : null,
-                    icon: isLoading
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Icon(
-                            hasMainFile
-                                ? Icons.play_arrow
-                                : Icons.warning_amber_rounded,
-                            size: 18,
+                      return FilledButton.icon(
+                        onPressed: canCompile
+                            ? () {
+                                // Flush active editor content to project
+                                if (activePath != null) {
+                                  context.read<ProjectBloc>().add(
+                                    ProjectEvent.updateFileContent(
+                                      path: activePath,
+                                      content: editorState.content,
+                                    ),
+                                  );
+                                }
+
+                                // Build files with active content overlaid
+                                final files = activePath != null
+                                    ? projectState.files.map((f) {
+                                        if (f.path == activePath) {
+                                          return f.copyWith(
+                                              content: editorState.content);
+                                        }
+                                        return f;
+                                      }).toList()
+                                    : projectState.files;
+
+                                context.read<CompilerBloc>().add(
+                                  CompilerEvent.compileRequested(
+                                    engine: selectedEngine.value,
+                                    draft: draftMode.value,
+                                    files: files,
+                                    mainFile: entryFile!,
+                                  ),
+                                );
+                              }
+                            : null,
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.play_arrow, size: 18),
+                        label: Text(
+                          isLoading ? 'Compiling…' : 'Compile',
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: LatexTheme.primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 0,
                           ),
-                    label: Text(
-                      isLoading
-                          ? 'Compiling…'
-                          : hasMainFile
-                          ? 'Compile'
-                          : 'Set Main File',
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: hasMainFile
-                          ? LatexTheme.primary
-                          : LatexTheme.warning,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 0,
-                      ),
-                      minimumSize: const Size(0, 34),
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                          minimumSize: const Size(0, 34),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -243,36 +247,6 @@ class Toolbar extends HookWidget {
           ),
 
           const Spacer(),
-
-          // Save state indicator
-          BlocBuilder<EditorBloc, EditorState>(
-            builder: (context, state) {
-              if (state.isDirty) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: LatexTheme.warning,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Unsaved',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: LatexTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
 
           const SizedBox(width: 16),
 

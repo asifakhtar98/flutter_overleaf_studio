@@ -55,7 +55,7 @@ extension ProjectEventPatterns on ProjectEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AddFile value)?  addFile,TResult Function( RemoveFile value)?  removeFile,TResult Function( RenameFile value)?  renameFile,TResult Function( SelectFile value)?  selectFile,TResult Function( UpdateFileContent value)?  updateFileContent,TResult Function( SetMainFile value)?  setMainFile,TResult Function( AddFolder value)?  addFolder,TResult Function( RenameFolder value)?  renameFolder,TResult Function( DeleteFolder value)?  deleteFolder,TResult Function( ToggleFolder value)?  toggleFolder,TResult Function( ImportProjectEvent value)?  importProject,TResult Function( ExportProjectEvent value)?  exportProject,TResult Function( LoadFiles value)?  loadFiles,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AddFile value)?  addFile,TResult Function( RemoveFile value)?  removeFile,TResult Function( RenameFile value)?  renameFile,TResult Function( SelectFile value)?  selectFile,TResult Function( UpdateFileContent value)?  updateFileContent,TResult Function( SetMainFile value)?  setMainFile,TResult Function( AddFolder value)?  addFolder,TResult Function( RenameFolder value)?  renameFolder,TResult Function( DeleteFolder value)?  deleteFolder,TResult Function( ImportProjectEvent value)?  importProject,TResult Function( ExportProjectEvent value)?  exportProject,TResult Function( LoadFiles value)?  loadFiles,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
@@ -67,8 +67,7 @@ return updateFileContent(_that);case SetMainFile() when setMainFile != null:
 return setMainFile(_that);case AddFolder() when addFolder != null:
 return addFolder(_that);case RenameFolder() when renameFolder != null:
 return renameFolder(_that);case DeleteFolder() when deleteFolder != null:
-return deleteFolder(_that);case ToggleFolder() when toggleFolder != null:
-return toggleFolder(_that);case ImportProjectEvent() when importProject != null:
+return deleteFolder(_that);case ImportProjectEvent() when importProject != null:
 return importProject(_that);case ExportProjectEvent() when exportProject != null:
 return exportProject(_that);case LoadFiles() when loadFiles != null:
 return loadFiles(_that);case _:
@@ -89,7 +88,7 @@ return loadFiles(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AddFile value)  addFile,required TResult Function( RemoveFile value)  removeFile,required TResult Function( RenameFile value)  renameFile,required TResult Function( SelectFile value)  selectFile,required TResult Function( UpdateFileContent value)  updateFileContent,required TResult Function( SetMainFile value)  setMainFile,required TResult Function( AddFolder value)  addFolder,required TResult Function( RenameFolder value)  renameFolder,required TResult Function( DeleteFolder value)  deleteFolder,required TResult Function( ToggleFolder value)  toggleFolder,required TResult Function( ImportProjectEvent value)  importProject,required TResult Function( ExportProjectEvent value)  exportProject,required TResult Function( LoadFiles value)  loadFiles,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AddFile value)  addFile,required TResult Function( RemoveFile value)  removeFile,required TResult Function( RenameFile value)  renameFile,required TResult Function( SelectFile value)  selectFile,required TResult Function( UpdateFileContent value)  updateFileContent,required TResult Function( SetMainFile value)  setMainFile,required TResult Function( AddFolder value)  addFolder,required TResult Function( RenameFolder value)  renameFolder,required TResult Function( DeleteFolder value)  deleteFolder,required TResult Function( ImportProjectEvent value)  importProject,required TResult Function( ExportProjectEvent value)  exportProject,required TResult Function( LoadFiles value)  loadFiles,}){
 final _that = this;
 switch (_that) {
 case AddFile():
@@ -101,8 +100,7 @@ return updateFileContent(_that);case SetMainFile():
 return setMainFile(_that);case AddFolder():
 return addFolder(_that);case RenameFolder():
 return renameFolder(_that);case DeleteFolder():
-return deleteFolder(_that);case ToggleFolder():
-return toggleFolder(_that);case ImportProjectEvent():
+return deleteFolder(_that);case ImportProjectEvent():
 return importProject(_that);case ExportProjectEvent():
 return exportProject(_that);case LoadFiles():
 return loadFiles(_that);}
@@ -119,7 +117,7 @@ return loadFiles(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AddFile value)?  addFile,TResult? Function( RemoveFile value)?  removeFile,TResult? Function( RenameFile value)?  renameFile,TResult? Function( SelectFile value)?  selectFile,TResult? Function( UpdateFileContent value)?  updateFileContent,TResult? Function( SetMainFile value)?  setMainFile,TResult? Function( AddFolder value)?  addFolder,TResult? Function( RenameFolder value)?  renameFolder,TResult? Function( DeleteFolder value)?  deleteFolder,TResult? Function( ToggleFolder value)?  toggleFolder,TResult? Function( ImportProjectEvent value)?  importProject,TResult? Function( ExportProjectEvent value)?  exportProject,TResult? Function( LoadFiles value)?  loadFiles,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AddFile value)?  addFile,TResult? Function( RemoveFile value)?  removeFile,TResult? Function( RenameFile value)?  renameFile,TResult? Function( SelectFile value)?  selectFile,TResult? Function( UpdateFileContent value)?  updateFileContent,TResult? Function( SetMainFile value)?  setMainFile,TResult? Function( AddFolder value)?  addFolder,TResult? Function( RenameFolder value)?  renameFolder,TResult? Function( DeleteFolder value)?  deleteFolder,TResult? Function( ImportProjectEvent value)?  importProject,TResult? Function( ExportProjectEvent value)?  exportProject,TResult? Function( LoadFiles value)?  loadFiles,}){
 final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
@@ -131,8 +129,7 @@ return updateFileContent(_that);case SetMainFile() when setMainFile != null:
 return setMainFile(_that);case AddFolder() when addFolder != null:
 return addFolder(_that);case RenameFolder() when renameFolder != null:
 return renameFolder(_that);case DeleteFolder() when deleteFolder != null:
-return deleteFolder(_that);case ToggleFolder() when toggleFolder != null:
-return toggleFolder(_that);case ImportProjectEvent() when importProject != null:
+return deleteFolder(_that);case ImportProjectEvent() when importProject != null:
 return importProject(_that);case ExportProjectEvent() when exportProject != null:
 return exportProject(_that);case LoadFiles() when loadFiles != null:
 return loadFiles(_that);case _:
@@ -152,7 +149,7 @@ return loadFiles(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String name,  String path,  String content)?  addFile,TResult Function( String path)?  removeFile,TResult Function( String oldPath,  String newName)?  renameFile,TResult Function( String path)?  selectFile,TResult Function( String path,  String content)?  updateFileContent,TResult Function( String path)?  setMainFile,TResult Function( String name,  String path)?  addFolder,TResult Function( String oldPath,  String newName)?  renameFolder,TResult Function( String path)?  deleteFolder,TResult Function( String path)?  toggleFolder,TResult Function( List<int>? bytes)?  importProject,TResult Function()?  exportProject,TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String name,  String path,  String content)?  addFile,TResult Function( String path)?  removeFile,TResult Function( String oldPath,  String newName)?  renameFile,TResult Function( String path)?  selectFile,TResult Function( String path,  String content)?  updateFileContent,TResult Function( String path)?  setMainFile,TResult Function( String name,  String path)?  addFolder,TResult Function( String oldPath,  String newName)?  renameFolder,TResult Function( String path)?  deleteFolder,TResult Function( List<int>? bytes)?  importProject,TResult Function()?  exportProject,TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
 return addFile(_that.name,_that.path,_that.content);case RemoveFile() when removeFile != null:
@@ -163,8 +160,7 @@ return updateFileContent(_that.path,_that.content);case SetMainFile() when setMa
 return setMainFile(_that.path);case AddFolder() when addFolder != null:
 return addFolder(_that.name,_that.path);case RenameFolder() when renameFolder != null:
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder() when deleteFolder != null:
-return deleteFolder(_that.path);case ToggleFolder() when toggleFolder != null:
-return toggleFolder(_that.path);case ImportProjectEvent() when importProject != null:
+return deleteFolder(_that.path);case ImportProjectEvent() when importProject != null:
 return importProject(_that.bytes);case ExportProjectEvent() when exportProject != null:
 return exportProject();case LoadFiles() when loadFiles != null:
 return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);case _:
@@ -185,7 +181,7 @@ return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String name,  String path,  String content)  addFile,required TResult Function( String path)  removeFile,required TResult Function( String oldPath,  String newName)  renameFile,required TResult Function( String path)  selectFile,required TResult Function( String path,  String content)  updateFileContent,required TResult Function( String path)  setMainFile,required TResult Function( String name,  String path)  addFolder,required TResult Function( String oldPath,  String newName)  renameFolder,required TResult Function( String path)  deleteFolder,required TResult Function( String path)  toggleFolder,required TResult Function( List<int>? bytes)  importProject,required TResult Function()  exportProject,required TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)  loadFiles,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String name,  String path,  String content)  addFile,required TResult Function( String path)  removeFile,required TResult Function( String oldPath,  String newName)  renameFile,required TResult Function( String path)  selectFile,required TResult Function( String path,  String content)  updateFileContent,required TResult Function( String path)  setMainFile,required TResult Function( String name,  String path)  addFolder,required TResult Function( String oldPath,  String newName)  renameFolder,required TResult Function( String path)  deleteFolder,required TResult Function( List<int>? bytes)  importProject,required TResult Function()  exportProject,required TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)  loadFiles,}) {final _that = this;
 switch (_that) {
 case AddFile():
 return addFile(_that.name,_that.path,_that.content);case RemoveFile():
@@ -196,8 +192,7 @@ return updateFileContent(_that.path,_that.content);case SetMainFile():
 return setMainFile(_that.path);case AddFolder():
 return addFolder(_that.name,_that.path);case RenameFolder():
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder():
-return deleteFolder(_that.path);case ToggleFolder():
-return toggleFolder(_that.path);case ImportProjectEvent():
+return deleteFolder(_that.path);case ImportProjectEvent():
 return importProject(_that.bytes);case ExportProjectEvent():
 return exportProject();case LoadFiles():
 return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);}
@@ -214,7 +209,7 @@ return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String name,  String path,  String content)?  addFile,TResult? Function( String path)?  removeFile,TResult? Function( String oldPath,  String newName)?  renameFile,TResult? Function( String path)?  selectFile,TResult? Function( String path,  String content)?  updateFileContent,TResult? Function( String path)?  setMainFile,TResult? Function( String name,  String path)?  addFolder,TResult? Function( String oldPath,  String newName)?  renameFolder,TResult? Function( String path)?  deleteFolder,TResult? Function( String path)?  toggleFolder,TResult? Function( List<int>? bytes)?  importProject,TResult? Function()?  exportProject,TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String name,  String path,  String content)?  addFile,TResult? Function( String path)?  removeFile,TResult? Function( String oldPath,  String newName)?  renameFile,TResult? Function( String path)?  selectFile,TResult? Function( String path,  String content)?  updateFileContent,TResult? Function( String path)?  setMainFile,TResult? Function( String name,  String path)?  addFolder,TResult? Function( String oldPath,  String newName)?  renameFolder,TResult? Function( String path)?  deleteFolder,TResult? Function( List<int>? bytes)?  importProject,TResult? Function()?  exportProject,TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,}) {final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
 return addFile(_that.name,_that.path,_that.content);case RemoveFile() when removeFile != null:
@@ -225,8 +220,7 @@ return updateFileContent(_that.path,_that.content);case SetMainFile() when setMa
 return setMainFile(_that.path);case AddFolder() when addFolder != null:
 return addFolder(_that.name,_that.path);case RenameFolder() when renameFolder != null:
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder() when deleteFolder != null:
-return deleteFolder(_that.path);case ToggleFolder() when toggleFolder != null:
-return toggleFolder(_that.path);case ImportProjectEvent() when importProject != null:
+return deleteFolder(_that.path);case ImportProjectEvent() when importProject != null:
 return importProject(_that.bytes);case ExportProjectEvent() when exportProject != null:
 return exportProject();case LoadFiles() when loadFiles != null:
 return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);case _:
@@ -835,72 +829,6 @@ class _$DeleteFolderCopyWithImpl<$Res>
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
   return _then(DeleteFolder(
-path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class ToggleFolder implements ProjectEvent {
-  const ToggleFolder({required this.path});
-  
-
- final  String path;
-
-/// Create a copy of ProjectEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$ToggleFolderCopyWith<ToggleFolder> get copyWith => _$ToggleFolderCopyWithImpl<ToggleFolder>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToggleFolder&&(identical(other.path, path) || other.path == path));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,path);
-
-@override
-String toString() {
-  return 'ProjectEvent.toggleFolder(path: $path)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class $ToggleFolderCopyWith<$Res> implements $ProjectEventCopyWith<$Res> {
-  factory $ToggleFolderCopyWith(ToggleFolder value, $Res Function(ToggleFolder) _then) = _$ToggleFolderCopyWithImpl;
-@useResult
-$Res call({
- String path
-});
-
-
-
-
-}
-/// @nodoc
-class _$ToggleFolderCopyWithImpl<$Res>
-    implements $ToggleFolderCopyWith<$Res> {
-  _$ToggleFolderCopyWithImpl(this._self, this._then);
-
-  final ToggleFolder _self;
-  final $Res Function(ToggleFolder) _then;
-
-/// Create a copy of ProjectEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
-  return _then(ToggleFolder(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
   ));

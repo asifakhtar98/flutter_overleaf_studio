@@ -55,7 +55,7 @@ extension EditorEventPatterns on EditorEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,TResult Function( TabOpened value)?  tabOpened,TResult Function( TabClosed value)?  tabClosed,TResult Function( TabSwitched value)?  tabSwitched,TResult Function( FileSaved value)?  fileSaved,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,TResult Function( TabOpened value)?  tabOpened,TResult Function( TabClosed value)?  tabClosed,TResult Function( TabSwitched value)?  tabSwitched,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
@@ -63,8 +63,7 @@ return fileOpened(_that);case ContentChanged() when contentChanged != null:
 return contentChanged(_that);case TabOpened() when tabOpened != null:
 return tabOpened(_that);case TabClosed() when tabClosed != null:
 return tabClosed(_that);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that);case FileSaved() when fileSaved != null:
-return fileSaved(_that);case _:
+return tabSwitched(_that);case _:
   return orElse();
 
 }
@@ -82,7 +81,7 @@ return fileSaved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,required TResult Function( TabOpened value)  tabOpened,required TResult Function( TabClosed value)  tabClosed,required TResult Function( TabSwitched value)  tabSwitched,required TResult Function( FileSaved value)  fileSaved,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,required TResult Function( TabOpened value)  tabOpened,required TResult Function( TabClosed value)  tabClosed,required TResult Function( TabSwitched value)  tabSwitched,}){
 final _that = this;
 switch (_that) {
 case FileOpened():
@@ -90,8 +89,7 @@ return fileOpened(_that);case ContentChanged():
 return contentChanged(_that);case TabOpened():
 return tabOpened(_that);case TabClosed():
 return tabClosed(_that);case TabSwitched():
-return tabSwitched(_that);case FileSaved():
-return fileSaved(_that);}
+return tabSwitched(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -105,7 +103,7 @@ return fileSaved(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,TResult? Function( TabOpened value)?  tabOpened,TResult? Function( TabClosed value)?  tabClosed,TResult? Function( TabSwitched value)?  tabSwitched,TResult? Function( FileSaved value)?  fileSaved,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,TResult? Function( TabOpened value)?  tabOpened,TResult? Function( TabClosed value)?  tabClosed,TResult? Function( TabSwitched value)?  tabSwitched,}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
@@ -113,8 +111,7 @@ return fileOpened(_that);case ContentChanged() when contentChanged != null:
 return contentChanged(_that);case TabOpened() when tabOpened != null:
 return tabOpened(_that);case TabClosed() when tabClosed != null:
 return tabClosed(_that);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that);case FileSaved() when fileSaved != null:
-return fileSaved(_that);case _:
+return tabSwitched(_that);case _:
   return null;
 
 }
@@ -131,15 +128,14 @@ return fileSaved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path,  String content)?  tabSwitched,TResult Function()?  fileSaved,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path,  String content)?  tabSwitched,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path,_that.content);case FileSaved() when fileSaved != null:
-return fileSaved();case _:
+return tabSwitched(_that.path,_that.content);case _:
   return orElse();
 
 }
@@ -157,15 +153,14 @@ return fileSaved();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path,  String content)  tabSwitched,required TResult Function()  fileSaved,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path,  String content)  tabSwitched,}) {final _that = this;
 switch (_that) {
 case FileOpened():
 return fileOpened(_that.path,_that.content);case ContentChanged():
 return contentChanged(_that.content);case TabOpened():
 return tabOpened(_that.path,_that.content);case TabClosed():
 return tabClosed(_that.path);case TabSwitched():
-return tabSwitched(_that.path,_that.content);case FileSaved():
-return fileSaved();}
+return tabSwitched(_that.path,_that.content);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -179,15 +174,14 @@ return fileSaved();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path,  String content)?  tabSwitched,TResult? Function()?  fileSaved,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path,  String content)?  tabSwitched,}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path,_that.content);case FileSaved() when fileSaved != null:
-return fileSaved();case _:
+return tabSwitched(_that.path,_that.content);case _:
   return null;
 
 }
@@ -530,37 +524,5 @@ as String,
 
 
 }
-
-/// @nodoc
-
-
-class FileSaved implements EditorEvent {
-  const FileSaved();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is FileSaved);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'EditorEvent.fileSaved()';
-}
-
-
-}
-
-
-
 
 // dart format on

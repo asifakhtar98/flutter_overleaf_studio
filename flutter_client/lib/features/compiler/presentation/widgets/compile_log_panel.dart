@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_bloc.dart';
+import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
 
 class CompileLogPanel extends StatelessWidget {
@@ -71,20 +72,80 @@ class CompileLogPanel extends StatelessWidget {
                         '${result.compilationTime.toStringAsFixed(2)}s',
                         style: LatexTheme.monoSmall,
                       ),
+                    const SizedBox(width: 8),
+                    // RM3: Close button
+                    InkWell(
+                      onTap: () => context
+                          .read<CompilerBloc>()
+                          .add(const CompilerEvent.reset()),
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.all(2),
+                        child: Icon(
+                          Icons.close,
+                          size: 14,
+                          color: LatexTheme.logText,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              // Log content
+              // Log content — RM4: auto-scroll to bottom
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(12),
-                  child: SelectableText(log, style: LatexTheme.monoSmall),
-                ),
+                child: _AutoScrollLog(log: log),
               ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _AutoScrollLog extends StatefulWidget {
+  const _AutoScrollLog({required this.log});
+  final String log;
+
+  @override
+  State<_AutoScrollLog> createState() => _AutoScrollLogState();
+}
+
+class _AutoScrollLogState extends State<_AutoScrollLog> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  @override
+  void didUpdateWidget(_AutoScrollLog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.log != oldWidget.log) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(12),
+      child: SelectableText(widget.log, style: LatexTheme.monoSmall),
     );
   }
 }

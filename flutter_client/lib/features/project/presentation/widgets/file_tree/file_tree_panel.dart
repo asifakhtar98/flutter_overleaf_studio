@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'package:flutter_latex_client/core/theme/latex_theme.dart';
 import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_bloc.dart';
@@ -32,14 +31,33 @@ const _textExtensions = {
   '.bat',
 };
 
+const _binaryExtensions = {
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.bmp',
+  '.pdf',
+  '.zip',
+  '.tar',
+  '.gz',
+  '.mp4',
+  '.mp3',
+  '.wav',
+};
+
 bool _isTextFile(String fileName) {
   final dotIndex = fileName.lastIndexOf('.');
-  if (dotIndex == -1) return false;
+  if (dotIndex == -1) return true; // Extensionless files are treated as text
   final ext = fileName.toLowerCase().substring(dotIndex);
-  return _textExtensions.contains(ext);
+  if (_textExtensions.contains(ext)) return true;
+  if (_binaryExtensions.contains(ext)) return false;
+  return true;
 }
 
-class FileTreePanel extends HookWidget {
+
+
+class FileTreePanel extends StatelessWidget {
   const FileTreePanel({super.key});
 
   @override

@@ -10,7 +10,7 @@ import 'package:flutter_latex_client/features/project/domain/usecases/import_pro
 import 'package:flutter_latex_client/features/project/domain/usecases/export_project.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart'
-    show ProjectFolder, ProjectState;
+    show ProjectState;
 
 @injectable
 class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
@@ -50,7 +50,6 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     on<AddFolder>(_onAddFolder);
     on<RenameFolder>(_onRenameFolder);
     on<DeleteFolder>(_onDeleteFolder);
-    on<ToggleFolder>(_onToggleFolder);
     on<ImportProjectEvent>(_onImportProject);
     on<ExportProjectEvent>(_onExportProject);
     on<LoadFiles>(_onLoadFiles);
@@ -60,13 +59,13 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     ImportProjectEvent event,
     Emitter<ProjectState> emit,
   ) async {
-    emit(state.copyWith(isImporting: true));
+    emit(state.copyWith(isImporting: true, importError: null));
     final result = await _importProject(
       bytes: event.bytes,
       fromPicker: event.bytes == null,
     );
     result.fold(
-      (failure) {
+      (_) {
         emit(state.copyWith(isImporting: false));
       },
       (List<ProjectFile> files) {
@@ -88,9 +87,16 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     ExportProjectEvent event,
     Emitter<ProjectState> emit,
   ) async {
-    emit(state.copyWith(isExporting: true));
-    await _exportProject(state.files);
-    emit(state.copyWith(isExporting: false));
+    emit(state.copyWith(isExporting: true, importError: null));
+    final result = await _exportProject(state.files);
+    result.fold(
+      (failure) {
+        emit(state.copyWith(isExporting: false, importError: 'Export failed'));
+      },
+      (void _) {
+        emit(state.copyWith(isExporting: false));
+      },
+    );
   }
 
   void _onLoadFiles(LoadFiles event, Emitter<ProjectState> emit) {
@@ -116,8 +122,11 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       } else {
         final baseName = event.name.substring(0, dotIndex);
         final extension = event.name.substring(dotIndex);
+        final dir = event.path.contains('/')
+            ? '${event.path.substring(0, event.path.lastIndexOf('/'))}/'
+            : '';
         finalName = '$baseName ($counter)$extension';
-        finalPath = '$baseName ($counter)$extension';
+        finalPath = '$dir$baseName ($counter)$extension';
       }
       counter++;
     }
@@ -155,15 +164,23 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   }
 
   void _onRenameFile(RenameFile event, Emitter<ProjectState> emit) {
+    final newPath = replaceLastPathSegment(event.oldPath, event.newName);
     final updated = state.files.map((f) {
       if (f.path == event.oldPath) {
-        final newPath = replaceLastPathSegment(event.oldPath, event.newName);
         return f.copyWith(name: event.newName, path: newPath);
       }
       return f;
     }).toList();
 
-    emit(state.copyWith(files: updated));
+    emit(state.copyWith(
+      files: updated,
+      activeFilePath: state.activeFilePath == event.oldPath
+          ? newPath
+          : state.activeFilePath,
+      mainFilePath: state.mainFilePath == event.oldPath
+          ? newPath
+          : state.mainFilePath,
+    ));
   }
 
   void _onSelectFile(SelectFile event, Emitter<ProjectState> emit) {
@@ -193,53 +210,65 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   }
 
   void _onAddFolder(AddFolder event, Emitter<ProjectState> emit) {
-    final exists = state.folders.any((f) => f.path == event.path);
-    if (exists) return;
-
-    final newFolder = ProjectFolder(name: event.name, path: event.path);
-
-    emit(state.copyWith(folders: [...state.folders, newFolder]));
+    // Create a .gitkeep placeholder so the folder is visible in the tree.
+    final placeholder = ProjectFile(
+      name: '.gitkeep',
+      path: '${event.path}/.gitkeep',
+    );
+    emit(state.copyWith(files: [...state.files, placeholder]));
   }
 
   void _onRenameFolder(RenameFolder event, Emitter<ProjectState> emit) {
-    final updatedFolders = state.folders.map((f) {
-      if (f.path == event.oldPath) {
-        final newPath = replaceLastPathSegment(event.oldPath, event.newName);
-        return f.copyWith(name: event.newName, path: newPath);
+    final newFolderPath = replaceLastPathSegment(event.oldPath, event.newName);
+    final updated = state.files.map((f) {
+      if (f.path.startsWith('${event.oldPath}/')) {
+        final newPath = f.path.replaceFirst(event.oldPath, newFolderPath);
+        return f.copyWith(path: newPath);
       }
       return f;
     }).toList();
 
-    emit(state.copyWith(folders: updatedFolders));
+    String? newActivePath;
+    if (state.activeFilePath != null &&
+        state.activeFilePath!.startsWith('${event.oldPath}/')) {
+      newActivePath = state.activeFilePath!.replaceFirst(event.oldPath, newFolderPath);
+    }
+
+    String? newMainPath;
+    if (state.mainFilePath != null &&
+        state.mainFilePath!.startsWith('${event.oldPath}/')) {
+      newMainPath = state.mainFilePath!.replaceFirst(event.oldPath, newFolderPath);
+    }
+
+    emit(state.copyWith(
+      files: updated,
+      activeFilePath: newActivePath ?? state.activeFilePath,
+      mainFilePath: newMainPath ?? state.mainFilePath,
+    ));
   }
 
   void _onDeleteFolder(DeleteFolder event, Emitter<ProjectState> emit) {
-    final updatedFolders = state.folders
-        .where((f) => f.path != event.path)
+    final updated = state.files
+        .where((f) => !f.path.startsWith('${event.path}/'))
         .toList();
-    emit(state.copyWith(folders: updatedFolders));
-  }
 
-  void _onToggleFolder(ToggleFolder event, Emitter<ProjectState> emit) {
-    final updatedFolders = _toggleFolderRecursive(state.folders, event.path);
-    emit(state.copyWith(folders: updatedFolders));
-  }
+    String? newActive;
+    if (state.activeFilePath != null &&
+        state.activeFilePath!.startsWith('${event.path}/')) {
+      newActive = updated.isNotEmpty ? updated.first.path : null;
+    }
 
-  List<ProjectFolder> _toggleFolderRecursive(
-    List<ProjectFolder> folders,
-    String targetPath,
-  ) {
-    return folders.map((folder) {
-      if (folder.path == targetPath) {
-        return folder.copyWith(isExpanded: !folder.isExpanded);
-      }
-      if (folder.children.isNotEmpty) {
-        return folder.copyWith(
-          children: _toggleFolderRecursive(folder.children, targetPath),
-        );
-      }
-      return folder;
-    }).toList();
+    String? newMain;
+    if (state.mainFilePath != null &&
+        state.mainFilePath!.startsWith('${event.path}/')) {
+      newMain = null;
+    }
+
+    emit(state.copyWith(
+      files: updated,
+      activeFilePath: newActive ?? state.activeFilePath,
+      mainFilePath: newMain ?? state.mainFilePath,
+    ));
   }
 
   @override

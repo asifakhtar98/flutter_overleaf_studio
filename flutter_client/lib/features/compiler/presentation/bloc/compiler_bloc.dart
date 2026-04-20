@@ -3,23 +3,19 @@ import 'package:injectable/injectable.dart';
 
 import 'package:flutter_latex_client/core/error/failures.dart';
 import 'package:flutter_latex_client/features/compiler/domain/usecases/compile_project.dart';
-import 'package:flutter_latex_client/features/compiler/domain/usecases/compile_single.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
 
 @injectable
 class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
   CompilerBloc({
-    required CompileSingle compileSingle,
     required CompileProject compileProject,
-  }) : _compileSingle = compileSingle,
-       _compileProject = compileProject,
+  }) : _compileProject = compileProject,
        super(const CompilerState.initial()) {
     on<CompileRequested>(_onCompileRequested);
     on<CompileReset>(_onReset);
   }
 
-  final CompileSingle _compileSingle;
   final CompileProject _compileProject;
 
   Future<void> _onCompileRequested(
@@ -28,34 +24,19 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
   ) async {
     emit(CompilerState.loading(engine: event.engine));
 
-    if (event.files.length <= 1) {
-      final result = await _compileSingle(
-        CompileSingleParams(
-          source: event.source,
-          engine: event.engine,
-          draft: event.draft,
-        ),
-      );
+    final result = await _compileProject(
+      CompileProjectParams(
+        files: event.files,
+        mainFile: event.mainFile,
+        engine: event.engine,
+        draft: event.draft,
+      ),
+    );
 
-      result.fold(
-        (failure) => emit(_mapFailure(failure)),
-        (result) => emit(CompilerState.success(result: result)),
-      );
-    } else {
-      final result = await _compileProject(
-        CompileProjectParams(
-          files: event.files,
-          mainFile: event.mainFile,
-          engine: event.engine,
-          draft: event.draft,
-        ),
-      );
-
-      result.fold(
-        (failure) => emit(_mapFailure(failure)),
-        (result) => emit(CompilerState.success(result: result)),
-      );
-    }
+    result.fold(
+      (failure) => emit(_mapFailure(failure)),
+      (result) => emit(CompilerState.success(result: result)),
+    );
   }
 
   CompilerState _mapFailure(Failure failure) {

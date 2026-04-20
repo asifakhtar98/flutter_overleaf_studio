@@ -106,7 +106,14 @@ class _TreeNodeWidgetState extends State<TreeNodeWidget> {
                   ),
                 if (_isHovered)
                   GestureDetector(
-                    onTap: () => widget.onContextMenu(Offset.zero),
+                    onTap: () {
+                      final box =
+                          context.findRenderObject()! as RenderBox;
+                      final pos = box.localToGlobal(
+                        Offset(box.size.width, box.size.height / 2),
+                      );
+                      widget.onContextMenu(pos);
+                    },
                     child: const Padding(
                       padding: EdgeInsets.all(4),
                       child: Icon(

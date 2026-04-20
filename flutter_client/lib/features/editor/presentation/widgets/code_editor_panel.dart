@@ -36,7 +36,7 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
     super.dispose();
   }
 
-  void _syncContent(BuildContext context, String newContent) {
+  void _syncContent(String newContent) {
     if (_controller.text != newContent) {
       _controller.text = newContent;
     }
@@ -44,55 +44,83 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<EditorBloc, EditorState>(
-      builder: (context, state) {
-        if (state.openTabs.isEmpty) {
-          return const _EmptyState();
+    // RC2: Listen for tab path changes (including tab close) to load content
+    // from the project state.
+    return BlocListener<EditorBloc, EditorState>(
+      listenWhen: (prev, curr) =>
+          prev.currentTabPath != curr.currentTabPath,
+      listener: (context, editorState) {
+        final newPath = editorState.currentTabPath;
+        if (newPath == null) return;
+
+        // If content is already loaded (e.g. from tabSwitched), skip.
+        if (editorState.content.isNotEmpty) return;
+
+        // Load content from project state for the new tab.
+        final projectFiles = context.read<ProjectBloc>().state.files;
+        final file =
+            projectFiles.where((f) => f.path == newPath).firstOrNull;
+        if (file != null) {
+          context.read<EditorBloc>().add(
+            EditorEvent.tabSwitched(path: newPath, content: file.content),
+          );
         }
+      },
+      child: BlocBuilder<EditorBloc, EditorState>(
+        // RC1: Only rebuild when the file changes or tabs change,
+        // NOT on every content keystroke.
+        buildWhen: (prev, curr) =>
+            prev.currentTabPath != curr.currentTabPath ||
+            prev.openTabs != curr.openTabs,
+        builder: (context, state) {
+          if (state.openTabs.isEmpty) {
+            return const _EmptyState();
+          }
 
-        _syncContent(context, state.content);
+          _syncContent(state.content);
 
-        return Column(
-          children: [
-            _TabsBar(
-              openTabs: state.openTabs,
-              currentTabPath: state.currentTabPath,
-              isDirty: state.isDirty,
-            ),
-            Expanded(
-              child: CodeTheme(
-                data: CodeThemeData(styles: vs2015Theme),
-                child: CodeField(
-                  controller: _controller,
-                  textStyle: const TextStyle(
-                    fontFamily: 'JetBrains Mono, Consolas, monospace',
-                    fontSize: 13,
-                  ),
-                  gutterStyle: const GutterStyle(
-                    showLineNumbers: true,
-                    showFoldingHandles: true,
-                  ),
-                  wrap: true,
-                  onChanged: (value) {
-                    context.read<EditorBloc>().add(
-                      EditorEvent.contentChanged(content: value),
-                    );
-                    final path = context.read<EditorBloc>().state.activeFilePath;
-                    if (path != null) {
-                      context.read<ProjectBloc>().add(
-                        ProjectEvent.updateFileContent(
-                          path: path,
-                          content: value,
-                        ),
+          return Column(
+            children: [
+              _TabsBar(
+                openTabs: state.openTabs,
+                currentTabPath: state.currentTabPath,
+              ),
+              Expanded(
+                child: CodeTheme(
+                  data: CodeThemeData(styles: vs2015Theme),
+                  child: CodeField(
+                    controller: _controller,
+                    textStyle: const TextStyle(
+                      fontFamily: 'JetBrains Mono, Consolas, monospace',
+                      fontSize: 13,
+                    ),
+                    gutterStyle: const GutterStyle(
+                      showLineNumbers: true,
+                      showFoldingHandles: true,
+                    ),
+                    wrap: true,
+                    onChanged: (value) {
+                      context.read<EditorBloc>().add(
+                        EditorEvent.contentChanged(content: value),
                       );
-                    }
-                  },
+                      final path =
+                          context.read<EditorBloc>().state.currentTabPath;
+                      if (path != null) {
+                        context.read<ProjectBloc>().add(
+                          ProjectEvent.updateFileContent(
+                            path: path,
+                            content: value,
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -132,12 +160,10 @@ class _TabsBar extends StatelessWidget {
   const _TabsBar({
     required this.openTabs,
     required this.currentTabPath,
-    required this.isDirty,
   });
 
   final List<String> openTabs;
   final String? currentTabPath;
-  final bool isDirty;
 
   @override
   Widget build(BuildContext context) {
@@ -158,10 +184,10 @@ class _TabsBar extends StatelessWidget {
           return _Tab(
             label: fileName,
             isActive: isActive,
-            isDirty: isActive && isDirty,
             onTap: () {
               final projectFiles = context.read<ProjectBloc>().state.files;
-              final targetFile = projectFiles.where((f) => f.path == path).firstOrNull;
+              final targetFile =
+                  projectFiles.where((f) => f.path == path).firstOrNull;
               final content = targetFile?.content ?? '';
               context.read<EditorBloc>().add(
                 EditorEvent.tabSwitched(path: path, content: content),
@@ -183,14 +209,12 @@ class _Tab extends StatelessWidget {
   const _Tab({
     required this.label,
     required this.isActive,
-    required this.isDirty,
     required this.onTap,
     required this.onClose,
   });
 
   final String label;
   final bool isActive;
-  final bool isDirty;
   final VoidCallback onTap;
   final VoidCallback onClose;
 
@@ -213,16 +237,6 @@ class _Tab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isDirty)
-              Container(
-                width: 6,
-                height: 6,
-                margin: const EdgeInsets.only(right: 4),
-                decoration: const BoxDecoration(
-                  color: LatexTheme.warning,
-                  shape: BoxShape.circle,
-                ),
-              ),
             Text(
               label,
               style: TextStyle(

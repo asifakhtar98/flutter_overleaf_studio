@@ -1,4 +1,3 @@
-Find all ux and logics bugs (by looking at code, not by lsp), also identify half implemented functionalities, wrong arpproached. give me a very long list for 
-
-flutter_client
+>Find all ux and logics bugs (by looking at code, not by lsp), also identify half implemented functionalities, wrong arpproached. give me a very long list with fixing strategies under points for folder flutter_client
  
+ > I have implemented. the above plan manually, you task to polish the code and code base. see web docs whenever necessary. no backwards compatibility needed

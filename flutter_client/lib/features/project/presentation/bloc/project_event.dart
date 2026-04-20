@@ -41,9 +41,6 @@ sealed class ProjectEvent with _$ProjectEvent {
   const factory ProjectEvent.deleteFolder({required String path}) =
       DeleteFolder;
 
-  const factory ProjectEvent.toggleFolder({required String path}) =
-      ToggleFolder;
-
   const factory ProjectEvent.importProject({List<int>? bytes}) =
       ImportProjectEvent;
 
