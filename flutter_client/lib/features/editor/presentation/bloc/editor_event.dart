@@ -19,7 +19,10 @@ sealed class EditorEvent with _$EditorEvent {
 
   const factory EditorEvent.tabClosed({required String path}) = TabClosed;
 
-  const factory EditorEvent.tabSwitched({required String path}) = TabSwitched;
+  const factory EditorEvent.tabSwitched({
+    required String path,
+    required String content,
+  }) = TabSwitched;
 
   const factory EditorEvent.fileSaved() = FileSaved;
 }

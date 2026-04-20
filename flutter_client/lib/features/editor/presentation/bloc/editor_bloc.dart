@@ -58,7 +58,11 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
   void _onTabSwitched(TabSwitched event, Emitter<EditorState> emit) {
     if (state.openTabs.contains(event.path)) {
       emit(
-        state.copyWith(activeFilePath: event.path, currentTabPath: event.path),
+        state.copyWith(
+          activeFilePath: event.path,
+          currentTabPath: event.path,
+          content: event.content,
+        ),
       );
     }
   }

@@ -61,7 +61,10 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     Emitter<ProjectState> emit,
   ) async {
     emit(state.copyWith(isImporting: true));
-    final result = await _importProject();
+    final result = await _importProject(
+      bytes: event.bytes,
+      fromPicker: event.bytes == null,
+    );
     result.fold(
       (failure) {
         emit(state.copyWith(isImporting: false));
@@ -101,19 +104,34 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   }
 
   void _onAddFile(AddFile event, Emitter<ProjectState> emit) {
-    final exists = state.files.any((f) => f.path == event.path);
-    if (exists) return;
+    var finalPath = event.path;
+    var finalName = event.name;
+
+    var counter = 1;
+    while (state.files.any((f) => f.path == finalPath)) {
+      final dotIndex = event.name.lastIndexOf('.');
+      if (dotIndex == -1) {
+        finalName = '${event.name} ($counter)';
+        finalPath = '${event.path} ($counter)';
+      } else {
+        final baseName = event.name.substring(0, dotIndex);
+        final extension = event.name.substring(dotIndex);
+        finalName = '$baseName ($counter)$extension';
+        finalPath = '$baseName ($counter)$extension';
+      }
+      counter++;
+    }
 
     final newFile = ProjectFile(
-      name: event.name,
-      path: event.path,
+      name: finalName,
+      path: finalPath,
       content: event.content,
     );
 
     emit(
       state.copyWith(
         files: [...state.files, newFile],
-        activeFilePath: event.path,
+        activeFilePath: finalPath,
       ),
     );
   }

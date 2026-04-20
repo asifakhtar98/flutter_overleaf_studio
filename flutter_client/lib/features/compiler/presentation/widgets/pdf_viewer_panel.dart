@@ -49,7 +49,7 @@ class PdfViewerPanel extends HookWidget {
                   backgroundColor: LatexTheme.surface,
                 ),
               ),
-            Positioned.fill(child: stateLayer),
+            if (state is CompilerLoading) stateLayer,
           ],
         );
       },
@@ -93,25 +93,47 @@ class _LoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: hasBackground
-          ? LatexTheme.surface.withValues(alpha: 0.7)
-          : LatexTheme.surface,
-      child: Center(
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: LatexTheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(strokeWidth: 3),
+            const LinearProgressIndicator(
+              backgroundColor: LatexTheme.border,
+              valueColor: AlwaysStoppedAnimation<Color>(LatexTheme.primary),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Compiling with $engine…',
-              style: const TextStyle(
-                color: LatexTheme.textSecondary,
-                fontSize: 14,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Compiling with $engine…',
+                    style: const TextStyle(
+                      color: LatexTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

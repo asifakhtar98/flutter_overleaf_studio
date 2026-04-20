@@ -13,6 +13,32 @@ import 'package:flutter_latex_client/features/project/presentation/utils/tree_bu
 import 'package:flutter_latex_client/features/project/presentation/widgets/file_tree/file_tree_dialogs.dart';
 import 'package:flutter_latex_client/features/project/presentation/widgets/file_tree/tree_node_widget.dart';
 
+const _textExtensions = {
+  '.tex',
+  '.bib',
+  '.sty',
+  '.cls',
+  '.log',
+  '.txt',
+  '.md',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.xml',
+  '.html',
+  '.css',
+  '.js',
+  '.sh',
+  '.bat',
+};
+
+bool _isTextFile(String fileName) {
+  final dotIndex = fileName.lastIndexOf('.');
+  if (dotIndex == -1) return false;
+  final ext = fileName.toLowerCase().substring(dotIndex);
+  return _textExtensions.contains(ext);
+}
+
 class FileTreePanel extends HookWidget {
   const FileTreePanel({super.key});
 
@@ -134,6 +160,18 @@ class _FileTreeState extends State<_FileTree> {
       _toggleFolder(node.path);
       return;
     }
+
+    final fileName = node.name;
+    if (!_isTextFile(fileName)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot open $fileName in editor'),
+          backgroundColor: LatexTheme.error,
+        ),
+      );
+      return;
+    }
+
     context.read<ProjectBloc>().add(ProjectEvent.selectFile(path: node.path));
     context.read<EditorBloc>().add(
       EditorEvent.tabOpened(path: node.path, content: node.file?.content ?? ''),

@@ -44,7 +44,8 @@ sealed class ProjectEvent with _$ProjectEvent {
   const factory ProjectEvent.toggleFolder({required String path}) =
       ToggleFolder;
 
-  const factory ProjectEvent.importProject() = ImportProjectEvent;
+  const factory ProjectEvent.importProject({List<int>? bytes}) =
+      ImportProjectEvent;
 
   const factory ProjectEvent.exportProject() = ExportProjectEvent;
 

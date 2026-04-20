@@ -1,0 +1,4 @@
+Find all ux and logics bugs (by looking at code, not by lsp), also identify half implemented functionalities, wrong arpproached. give me a very long list for 
+
+flutter_client
+ 

@@ -131,14 +131,14 @@ return fileSaved(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path)?  tabSwitched,TResult Function()?  fileSaved,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path,  String content)?  tabSwitched,TResult Function()?  fileSaved,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path);case FileSaved() when fileSaved != null:
+return tabSwitched(_that.path,_that.content);case FileSaved() when fileSaved != null:
 return fileSaved();case _:
   return orElse();
 
@@ -157,14 +157,14 @@ return fileSaved();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path)  tabSwitched,required TResult Function()  fileSaved,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path,  String content)  tabSwitched,required TResult Function()  fileSaved,}) {final _that = this;
 switch (_that) {
 case FileOpened():
 return fileOpened(_that.path,_that.content);case ContentChanged():
 return contentChanged(_that.content);case TabOpened():
 return tabOpened(_that.path,_that.content);case TabClosed():
 return tabClosed(_that.path);case TabSwitched():
-return tabSwitched(_that.path);case FileSaved():
+return tabSwitched(_that.path,_that.content);case FileSaved():
 return fileSaved();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -179,14 +179,14 @@ return fileSaved();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path)?  tabSwitched,TResult? Function()?  fileSaved,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path,  String content)?  tabSwitched,TResult? Function()?  fileSaved,}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path);case FileSaved() when fileSaved != null:
+return tabSwitched(_that.path,_that.content);case FileSaved() when fileSaved != null:
 return fileSaved();case _:
   return null;
 
@@ -467,10 +467,11 @@ as String,
 
 
 class TabSwitched implements EditorEvent {
-  const TabSwitched({required this.path});
+  const TabSwitched({required this.path, required this.content});
   
 
  final  String path;
+ final  String content;
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -482,16 +483,16 @@ $TabSwitchedCopyWith<TabSwitched> get copyWith => _$TabSwitchedCopyWithImpl<TabS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabSwitched&&(identical(other.path, path) || other.path == path));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabSwitched&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,path);
+int get hashCode => Object.hash(runtimeType,path,content);
 
 @override
 String toString() {
-  return 'EditorEvent.tabSwitched(path: $path)';
+  return 'EditorEvent.tabSwitched(path: $path, content: $content)';
 }
 
 
@@ -502,7 +503,7 @@ abstract mixin class $TabSwitchedCopyWith<$Res> implements $EditorEventCopyWith<
   factory $TabSwitchedCopyWith(TabSwitched value, $Res Function(TabSwitched) _then) = _$TabSwitchedCopyWithImpl;
 @useResult
 $Res call({
- String path
+ String path, String content
 });
 
 
@@ -519,9 +520,10 @@ class _$TabSwitchedCopyWithImpl<$Res>
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? path = null,Object? content = null,}) {
   return _then(TabSwitched(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,
   ));
 }

@@ -1,9 +1,12 @@
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
 import 'package:flutter_latex_client/core/error/failures.dart';
@@ -24,16 +27,31 @@ class ExportProjectUseCase {
         return const Left(Failure.unknown(message: 'Failed to encode ZIP'));
       }
 
-      final result = await FilePicker.platform.saveFile(
-        dialogTitle: 'Export Project',
-        fileName: 'project.zip',
-        type: FileType.custom,
-        allowedExtensions: ['zip'],
-        bytes: Uint8List.fromList(encoded),
-      );
+      final zipBytes = Uint8List.fromList(encoded);
 
-      if (result == null) {
-        return const Left(Failure.unknown(message: 'Export cancelled'));
+      if (kIsWeb) {
+        final result = await FilePicker.platform.saveFile(
+          dialogTitle: 'Export Project',
+          fileName: 'project.zip',
+          type: FileType.custom,
+          allowedExtensions: ['zip'],
+          bytes: zipBytes,
+        );
+
+        if (result == null) {
+          return const Left(Failure.unknown(message: 'Export cancelled'));
+        }
+      } else {
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File('${tempDir.path}/project.zip');
+        await tempFile.writeAsBytes(zipBytes);
+
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(tempFile.path)],
+            text: 'LaTeX Project',
+          ),
+        );
       }
 
       return const Right(null);

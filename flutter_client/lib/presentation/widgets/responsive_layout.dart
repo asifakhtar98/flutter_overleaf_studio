@@ -120,7 +120,8 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
       final fileName = path.split(Platform.pathSeparator).last;
 
       if (fileName.endsWith('.zip')) {
-        bloc.add(const ProjectEvent.importProject());
+        final bytes = await xFile.readAsBytes();
+        bloc.add(ProjectEvent.importProject(bytes: bytes));
       } else if (fileName.endsWith('.tex')) {
         final content = await File(path).readAsString();
         bloc.add(

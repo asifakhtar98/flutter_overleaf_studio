@@ -117,12 +117,21 @@ class Toolbar extends HookWidget {
                             final editorState = innerContext
                                 .read<EditorBloc>()
                                 .state;
+                            final activePath = editorState.activeFilePath;
+                            final updatedFiles = activePath != null
+                                ? projectState.files.map((f) {
+                                    if (f.path == activePath) {
+                                      return f.copyWith(content: editorState.content);
+                                    }
+                                    return f;
+                                  }).toList()
+                                : projectState.files;
                             innerContext.read<CompilerBloc>().add(
                               CompilerEvent.compileRequested(
                                 engine: selectedEngine.value,
                                 draft: draftMode.value,
                                 source: editorState.content,
-                                files: projectState.files,
+                                files: updatedFiles,
                                 mainFile: mainFilePath,
                               ),
                             );
@@ -238,29 +247,7 @@ class Toolbar extends HookWidget {
           // Save state indicator
           BlocBuilder<EditorBloc, EditorState>(
             builder: (context, state) {
-              if (state.isSaving) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: LatexTheme.textSecondary.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Saving...',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: LatexTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                );
-              } else if (state.isDirty) {
+              if (state.isDirty) {
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -275,25 +262,6 @@ class Toolbar extends HookWidget {
                     const SizedBox(width: 6),
                     const Text(
                       'Unsaved',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: LatexTheme.textSecondary,
-                      ),
-                    ),
-                  ],
-                );
-              } else if (state.lastSaved != null) {
-                return const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 12,
-                      color: LatexTheme.success,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Saved',
                       style: TextStyle(
                         fontSize: 11,
                         color: LatexTheme.textSecondary,
