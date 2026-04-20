@@ -4,7 +4,7 @@
         {
             "name": "🚀 Dev (Web / Chrome)",
             "preLaunchTask": "🚀 Dev: Start Server (Background)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -16,7 +16,7 @@
         {
             "name": "🚀 Dev (WASM / Chrome)",
             "preLaunchTask": "🚀 Dev: Start Server (Background)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -29,7 +29,7 @@
         {
             "name": "📱 Dev (iOS Simulator)",
             "preLaunchTask": "🚀 Dev: Start Server (Background)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -40,7 +40,7 @@
         {
             "name": "🖥️ Dev (macOS)",
             "preLaunchTask": "🚀 Dev: Start Server (Background)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -50,7 +50,7 @@
         },
         {
             "name": "📊 Profile (Chrome)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -62,7 +62,7 @@
         },
         {
             "name": "🏭 Release (Chrome)",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -74,7 +74,7 @@
         },
         {
             "name": "🔌 Attach to Flutter",
-            "cwd": "${workspaceFolder}/flutter_client",
+            "cwd": "${workspaceFolder}/flutter_overleaf",
             "request": "attach",
             "type": "dart"
         }

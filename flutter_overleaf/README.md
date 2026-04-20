@@ -45,7 +45,7 @@ Auth: `X-API-Key` header — set `apiKey` in `ServerConfig` inside `main.dart`.
 
 ```bash
 # From repo root
-cd flutter_client
+cd flutter_overleaf
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 flutter run -d chrome --web-port 51886

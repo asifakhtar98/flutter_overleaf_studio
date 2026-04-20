@@ -117,43 +117,57 @@ X-Request-ID: <uuid-hex>
 ## Project Structure (canonical)
 
 ```
-├── app/
-│   ├── __init__.py              # Package + __version__
-│   ├── main.py                  # Thin wiring — CORS, lifespan, router mounts
-│   ├── config.py                # pydantic-settings from env vars
-│   ├── auth.py                  # API key dependency (raises TexLiveError)
-│   ├── cache.py                 # CompileCache (TTLCache wrapper)
-│   ├── compiler.py              # Core compilation: tmpfs, smart passes, pool, orphan cleanup
-│   ├── errors.py                # TexLiveError hierarchy + ErrorEnvelope + handlers
-│   ├── logging.py               # structlog configuration (orjson, contextvars)
-│   ├── middleware.py            # Request ID (asgi-correlation-id), body limit, request logging
-│   ├── models.py                # Pydantic schemas (Engine, CompileRequest, CacheStats, HealthResponse)
-│   └── routers/
-│       ├── __init__.py
-│       ├── compile.py           # POST /api/v1/compile (Content-Type dispatch)
-│       └── health.py            # GET /api/v1/health
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py              # Async client, fixtures, assert_error_envelope helper
-│   ├── test_auth.py             # Auth error envelope tests
-│   ├── test_compile.py          # Compilation + cache tests
-│   ├── test_errors.py           # ErrorEnvelope consistency across all error types
-│   ├── test_hardening.py        # Path traversal, pool recovery, orphan cleanup, main_file validation
-│   ├── test_health.py           # Health endpoint + request ID
-│   ├── test_middleware.py       # Request ID, body limit, request logging
-│   └── fixtures/                # .tex, .bib test files
-├── test_samples/                # Sample .tex files for manual verification
-│   ├── 01_hello_world.tex
-│   ├── 02_multipage_toc.tex
-│   ├── 03_math_heavy.tex
-│   ├── 04_bibliography/        # Multi-file zip project
-│   ├── 05_images_tikz.tex
-│   └── 06_unicode_xelatex.tex
-├── test_outputs/                # ← gitignored, generated PDFs
-├── scripts/
-│   ├── server-setup.sh          # One-time Oracle VM bootstrap
-│   ├── deploy.sh                # Blue-green deploy
-│   └── test_samples.sh          # Compiles all test_samples/ via API
+├── overleaf_server/
+│   ├── app/
+│   │   ├── __init__.py              # Package + __version__
+│   │   ├── main.py                  # Thin wiring — CORS, lifespan, router mounts
+│   │   ├── config.py                # pydantic-settings from env vars
+│   │   ├── auth.py                  # API key dependency (raises TexLiveError)
+│   │   ├── cache.py                 # CompileCache (TTLCache wrapper)
+│   │   ├── compiler.py              # Core compilation: tmpfs, smart passes, pool, orphan cleanup
+│   │   ├── errors.py                # TexLiveError hierarchy + ErrorEnvelope + handlers
+│   │   ├── logging.py               # structlog configuration (orjson, contextvars)
+│   │   ├── middleware.py            # Request ID (asgi-correlation-id), body limit, request logging
+│   │   ├── models.py                # Pydantic schemas (Engine, CompileRequest, CacheStats, HealthResponse)
+│   │   └── routers/
+│   │       ├── __init__.py
+│   │       ├── compile.py           # POST /api/v1/compile (Content-Type dispatch)
+│   │       └── health.py            # GET /api/v1/health
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py              # Async client, fixtures, assert_error_envelope helper
+│   │   ├── test_auth.py             # Auth error envelope tests
+│   │   ├── test_compile.py          # Compilation + cache tests
+│   │   ├── test_errors.py           # ErrorEnvelope consistency across all error types
+│   │   ├── test_hardening.py        # Path traversal, pool recovery, orphan cleanup, main_file validation
+│   │   ├── test_health.py           # Health endpoint + request ID
+│   │   ├── test_middleware.py       # Request ID, body limit, request logging
+│   │   └── fixtures/                # .tex, .bib test files
+│   ├── test_samples/                # Sample .tex files for manual verification
+│   │   ├── 01_hello_world.tex
+│   │   ├── 02_multipage_toc.tex
+│   │   ├── 03_math_heavy.tex
+│   │   ├── 04_bibliography/        # Multi-file zip project
+│   │   ├── 05_images_tikz.tex
+│   │   └── 06_unicode_xelatex.tex
+│   ├── test_outputs/                # ← gitignored, generated PDFs
+│   ├── scripts/
+│   │   ├── server-setup.sh          # One-time Oracle VM bootstrap
+│   │   ├── deploy.sh                # Blue-green deploy
+│   │   └── test_samples.sh          # Compiles all test_samples/ via API
+│   ├── Dockerfile                   # Prod: multi-stage, venv, fontconfig
+│   ├── Dockerfile.dev               # Dev: hot-reload, --reload-dir app
+│   ├── docker-compose.yml           # Local dev
+│   ├── docker-compose.prod.yml      # Production
+│   ├── texlive.profile              # TeX Live installer profile (ARM64)
+│   ├── requirements.txt             # Pinned prod deps
+│   ├── requirements-dev.txt         # Extends requirements.txt + test/lint
+│   ├── pyproject.toml               # ruff, pytest, coverage config
+│   ├── .env.example                 # Template — copy to .env
+│   ├── tests.http                   # VS Code REST Client tests
+│   ├── README.md                    # Public docs
+│   └── DEPLOY_GUIDE.md              # Step-by-step production deployment
+├── flutter_overleaf/                # Flutter frontend code
 ├── .github/workflows/
 │   ├── ci.yml                   # Lint → Test → Build ARM64 → Push
 │   └── cd.yml                   # SSH deploy on main
@@ -161,22 +175,11 @@ X-Request-ID: <uuid-hex>
 │   ├── extensions.json
 │   ├── settings.json
 │   └── tasks.json               # Dev/test/deploy task runner
-├── Dockerfile                   # Prod: multi-stage, venv, fontconfig
-├── Dockerfile.dev               # Dev: hot-reload, --reload-dir app
-├── docker-compose.yml           # Local dev
-├── docker-compose.prod.yml      # Production
-├── texlive.profile              # TeX Live installer profile (ARM64)
-├── requirements.txt             # Pinned prod deps
-├── requirements-dev.txt         # Extends requirements.txt + test/lint
-├── pyproject.toml               # ruff, pytest, coverage config
-├── .env.example                 # Template — copy to .env
-├── .gitignore
-├── tests.http                   # VS Code REST Client tests
 ├── agents.md                    # ← This file
-├── README.md                    # Public docs
-├── DEPLOY_GUIDE.md              # Step-by-step production deployment
+├── .gitignore
 └── LICENSE                      # MIT
 ```
+
 
 ---
 
@@ -306,6 +309,8 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 ## Development Workflow (exact commands)
 
 ```bash
+cd overleaf_server
+
 # Setup
 cp .env.example .env                    # Edit API_KEYS at minimum
 
