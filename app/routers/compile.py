@@ -1,15 +1,17 @@
 """LaTeX compilation endpoint."""
 
+import base64
 from dataclasses import dataclass
 
 import structlog
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import Response
+from fastapi.responses import ORJSONResponse
 
 from app.auth import require_api_key
 from app.compiler import compile_latex
 from app.config import settings
 from app.errors import CompilationError, ErrorEnvelope, ValidationError
+from app.limiter import limiter
 from app.models import CompileRequest, Engine
 
 logger = structlog.get_logger()
@@ -125,8 +127,8 @@ async def _parse_request(request: Request) -> _ParsedRequest:
     "/compile",
     responses={
         200: {
-            "description": "Compilation successful. PDF returned natively.",
-            "content": {"application/pdf": {}},
+            "description": "Compilation successful. Returns JSON with base64-encoded PDF and compilation log.",
+            "content": {"application/json": {}},
             "headers": {
                 "X-Compilation-Time": {
                     "description": "Time taken to compile in seconds",
@@ -161,6 +163,7 @@ async def _parse_request(request: Request) -> _ParsedRequest:
         422: {"model": ErrorEnvelope, "description": "LaTeX compilation failed"},
         429: {"model": ErrorEnvelope, "description": "Rate limited"},
     },
+    response_model_exclude_unset=True,
     summary="Compile LaTeX → PDF",
     description=(
         "Compiles LaTeX source code into a PDF document.\n\n"
@@ -222,10 +225,11 @@ async def _parse_request(request: Request) -> _ParsedRequest:
         }
     },
 )
+@limiter.limit(settings.rate_limit)
 async def compile_endpoint(
     request: Request,
     api_key: str = Depends(require_api_key),
-) -> Response:
+) -> ORJSONResponse:
     """Compile LaTeX source into PDF."""
     req = await _parse_request(request)
 
@@ -260,9 +264,11 @@ async def compile_endpoint(
             },
         )
 
-    return Response(
-        content=result.pdf_bytes,
-        media_type="application/pdf",
+    return ORJSONResponse(
+        content={
+            "pdf": base64.b64encode(result.pdf_bytes).decode("utf-8"),
+            "log": result.log,
+        },
         headers={
             "X-Compilation-Time": f"{result.compilation_time:.2f}",
             "X-Engine": result.engine,

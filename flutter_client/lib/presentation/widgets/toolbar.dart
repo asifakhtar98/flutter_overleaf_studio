@@ -11,6 +11,7 @@ import 'package:flutter_latex_client/features/compiler/presentation/bloc/compile
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
 import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_bloc.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_bloc.dart';
+import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
 
 class Toolbar extends HookWidget {
   const Toolbar({super.key});
@@ -93,44 +94,96 @@ class Toolbar extends HookWidget {
           BlocBuilder<CompilerBloc, CompilerState>(
             builder: (context, state) {
               final isLoading = state is CompilerLoading;
-              return FilledButton.icon(
-                onPressed: isLoading
-                    ? null
-                    : () {
-                        final projectState =
-                            context.read<ProjectBloc>().state;
-                        final editorState =
-                            context.read<EditorBloc>().state;
-                        context.read<CompilerBloc>().add(
-                              CompilerEvent.compileRequested(
-                                engine: selectedEngine.value,
-                                draft: draftMode.value,
-                                source: editorState.content,
-                                files: projectState.files,
-                                mainFile:
-                                    projectState.mainFilePath ?? 'main.tex',
-                              ),
-                            );
-                      },
-                icon: isLoading
-                    ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.play_arrow, size: 18),
-                label: Text(isLoading ? 'Compiling…' : 'Compile'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: LatexTheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                  minimumSize: const Size(0, 34),
-                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                ),
+              return Builder(
+                builder: (innerContext) {
+                  final projectState = innerContext.read<ProjectBloc>().state;
+                  final mainFilePath = projectState.mainFilePath;
+                  final hasMainFile = mainFilePath != null &&
+                      projectState.files.any((f) => f.path == mainFilePath);
+                  final canCompile = !isLoading && hasMainFile;
+
+                  return FilledButton.icon(
+                    onPressed: canCompile
+                        ? () {
+                            final editorState =
+                                innerContext.read<EditorBloc>().state;
+                            innerContext.read<CompilerBloc>().add(
+                                  CompilerEvent.compileRequested(
+                                    engine: selectedEngine.value,
+                                    draft: draftMode.value,
+                                    source: editorState.content,
+                                    files: projectState.files,
+                                    mainFile: mainFilePath,
+                                  ),
+                                );
+                          }
+                        : null,
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            hasMainFile
+                                ? Icons.play_arrow
+                                : Icons.warning_amber_rounded,
+                            size: 18,
+                          ),
+                    label: Text(
+                      isLoading
+                          ? 'Compiling…'
+                          : hasMainFile
+                              ? 'Compile'
+                              : 'Set Main File',
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          hasMainFile ? LatexTheme.primary : LatexTheme.warning,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 0),
+                      minimumSize: const Size(0, 34),
+                      textStyle: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  );
+                },
               );
             },
+          ),
+          const SizedBox(width: 8),
+
+          // Import project
+          IconButton(
+            icon: const Icon(Icons.folder_open_outlined, size: 18),
+            tooltip: 'Import ZIP project',
+            onPressed: () {
+              context.read<ProjectBloc>().add(ProjectEvent.importProject());
+            },
+            color: LatexTheme.textSecondary,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
+            ),
+          ),
+
+          // Export project
+          IconButton(
+            icon: const Icon(Icons.save_alt_outlined, size: 18),
+            tooltip: 'Export as ZIP',
+            onPressed: () {
+              context.read<ProjectBloc>().add(ProjectEvent.exportProject());
+            },
+            color: LatexTheme.textSecondary,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
+            ),
           ),
 
           const Spacer(),

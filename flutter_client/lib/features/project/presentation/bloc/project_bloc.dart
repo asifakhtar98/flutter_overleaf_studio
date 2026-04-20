@@ -4,8 +4,10 @@ import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
+import 'package:flutter_latex_client/features/project/domain/usecases/import_project.dart';
+import 'package:flutter_latex_client/features/project/domain/usecases/export_project.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
-import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart';
+import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart' show ProjectState, ProjectFolder;
 
 const _defaultMainTex = r'''
 \documentclass{article}
@@ -18,7 +20,10 @@ Hello, \LaTeX!
 
 @injectable
 class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
-  ProjectBloc()
+  final ImportProjectUseCase _importProject;
+  final ExportProjectUseCase _exportProject;
+
+  ProjectBloc(this._importProject, this._exportProject)
       : super(
           const ProjectState(
             files: [
@@ -46,6 +51,46 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     on<SetMainFile>(_onSetMainFile);
     on<AddFolder>(_onAddFolder);
     on<ToggleFolder>(_onToggleFolder);
+    on<ImportProjectEvent>(_onImportProject);
+    on<ExportProjectEvent>(_onExportProject);
+    on<LoadFiles>(_onLoadFiles);
+  }
+
+  Future<void> _onImportProject(
+    ImportProjectEvent event,
+    Emitter<ProjectState> emit,
+  ) async {
+    final result = await _importProject();
+    result.fold(
+      (failure) {},
+      (List<ProjectFile> files) {
+        emit(state.copyWith(
+          files: files,
+          activeFilePath: files.isNotEmpty ? files.first.path : null,
+          mainFilePath: files.any((f) => f.isMainFile)
+              ? files.firstWhere((f) => f.isMainFile).path
+              : null,
+        ));
+      },
+    );
+  }
+
+  Future<void> _onExportProject(
+    ExportProjectEvent event,
+    Emitter<ProjectState> emit,
+  ) async {
+    await _exportProject(state.files);
+  }
+
+  void _onLoadFiles(
+    LoadFiles event,
+    Emitter<ProjectState> emit,
+  ) {
+    emit(state.copyWith(
+      files: event.files,
+      activeFilePath: event.activeFilePath ?? state.activeFilePath,
+      mainFilePath: event.mainFilePath ?? state.mainFilePath,
+    ));
   }
 
   void _onAddFile(AddFile event, Emitter<ProjectState> emit) {
@@ -124,11 +169,41 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   }
 
   void _onAddFolder(AddFolder event, Emitter<ProjectState> emit) {
-    // Folders are implicit from file paths — no-op for now.
+    final exists = state.folders.any((f) => f.path == event.path);
+    if (exists) return;
+
+    final newFolder = ProjectFolder(
+      name: event.name,
+      path: event.path,
+    );
+
+    emit(
+      state.copyWith(
+        folders: [...state.folders, newFolder],
+      ),
+    );
   }
 
   void _onToggleFolder(ToggleFolder event, Emitter<ProjectState> emit) {
-    // Handled in widget state — no-op in bloc.
+    final updatedFolders = _toggleFolderRecursive(state.folders, event.path);
+    emit(state.copyWith(folders: updatedFolders));
+  }
+
+  List<ProjectFolder> _toggleFolderRecursive(
+    List<ProjectFolder> folders,
+    String targetPath,
+  ) {
+    return folders.map((folder) {
+      if (folder.path == targetPath) {
+        return folder.copyWith(isExpanded: !folder.isExpanded);
+      }
+      if (folder.children.isNotEmpty) {
+        return folder.copyWith(
+          children: _toggleFolderRecursive(folder.children, targetPath),
+        );
+      }
+      return folder;
+    }).toList();
   }
 
   @override

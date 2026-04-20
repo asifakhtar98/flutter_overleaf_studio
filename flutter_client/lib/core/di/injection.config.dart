@@ -35,6 +35,10 @@ import 'package:flutter_latex_client/features/health/domain/repositories/health_
     as _i689;
 import 'package:flutter_latex_client/features/health/domain/usecases/check_health.dart'
     as _i96;
+import 'package:flutter_latex_client/features/project/domain/usecases/export_project.dart'
+    as _i462;
+import 'package:flutter_latex_client/features/project/domain/usecases/import_project.dart'
+    as _i964;
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_bloc.dart'
     as _i625;
 import 'package:get_it/get_it.dart' as _i174;
@@ -51,9 +55,20 @@ extension GetItInjectableX on _i174.GetIt {
     final talkerModule = _$TalkerModule();
     final dioModule = _$DioModule();
     gh.factory<_i294.EditorBloc>(() => _i294.EditorBloc());
-    gh.factory<_i625.ProjectBloc>(() => _i625.ProjectBloc());
+    gh.lazySingleton<_i462.ExportProjectUseCase>(
+      () => _i462.ExportProjectUseCase(),
+    );
+    gh.lazySingleton<_i964.ImportProjectUseCase>(
+      () => _i964.ImportProjectUseCase(),
+    );
     gh.lazySingleton<_i207.Talker>(
       () => talkerModule.talker(gh<_i706.ServerConfig>()),
+    );
+    gh.factory<_i625.ProjectBloc>(
+      () => _i625.ProjectBloc(
+        gh<_i964.ImportProjectUseCase>(),
+        gh<_i462.ExportProjectUseCase>(),
+      ),
     );
     gh.lazySingleton<_i361.Dio>(
       () => dioModule.dio(gh<_i706.ServerConfig>(), gh<_i207.Talker>()),

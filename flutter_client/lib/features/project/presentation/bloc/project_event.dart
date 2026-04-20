@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
+
 part 'project_event.freezed.dart';
 
 @freezed
@@ -40,4 +42,14 @@ sealed class ProjectEvent with _$ProjectEvent {
   const factory ProjectEvent.toggleFolder({
     required String path,
   }) = ToggleFolder;
+
+  const factory ProjectEvent.importProject() = ImportProjectEvent;
+
+  const factory ProjectEvent.exportProject() = ExportProjectEvent;
+
+  const factory ProjectEvent.loadFiles({
+    required List<ProjectFile> files,
+    String? activeFilePath,
+    String? mainFilePath,
+  }) = LoadFiles;
 }

@@ -76,15 +76,22 @@
 
 ### Response contract
 
-**Success (200)**: Raw PDF bytes in body. Metadata in headers only:
+**Success (200)**: JSON with base64-encoded PDF and log. Metadata in both body and headers:
 ```
-Content-Type: application/pdf
+Content-Type: application/json
 X-Compilation-Time: 4.20
 X-Engine: pdflatex
 X-Warnings-Count: 3
 X-Cached: false
 X-Passes-Run: 2
 X-Request-ID: <uuid-hex>
+```
+
+```json
+{
+  "pdf": "<base64-encoded-pdf>",
+  "log": "LaTeX compiler output with warnings"
+}
 ```
 
 **All errors** — unified `ErrorEnvelope` format:

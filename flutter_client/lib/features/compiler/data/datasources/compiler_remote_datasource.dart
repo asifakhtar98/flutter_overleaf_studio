@@ -19,14 +19,13 @@ class CompilerRemoteDatasource {
     String engine = 'pdflatex',
     bool draft = false,
   }) async {
-    final response = await _dio.post<List<int>>(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/compile',
       data: {
         'source': source,
         'engine': engine,
         'draft': draft,
       },
-      options: Options(responseType: ResponseType.bytes),
     );
 
     return _parseResponse(response);
@@ -47,10 +46,9 @@ class CompilerRemoteDatasource {
       'draft': draft.toString(),
     });
 
-    final response = await _dio.post<List<int>>(
+    final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/compile',
       data: formData,
-      options: Options(responseType: ResponseType.bytes),
     );
 
     return _parseResponse(response);
@@ -59,7 +57,7 @@ class CompilerRemoteDatasource {
   Uint8List _createZip(List<ProjectFile> files) {
     final archive = Archive();
     for (final file in files) {
-      final bytes = utf8.encode(file.content);
+      final bytes = file.bytes;
       archive.addFile(
         ArchiveFile(file.path, bytes.length, bytes),
       );
@@ -68,24 +66,18 @@ class CompilerRemoteDatasource {
     return Uint8List.fromList(encoded);
   }
 
-  CompileResult _parseResponse(Response<List<int>> response) {
+  CompileResult _parseResponse(Response<Map<String, dynamic>> response) {
     final headers = response.headers;
+    final data = response.data!;
     return CompileResult(
-      pdfBytes: Uint8List.fromList(response.data!),
-      log: '',
-      compilationTime: double.tryParse(
-            headers.value('X-Compilation-Time') ?? '0',
-          ) ??
-          0,
+      pdfBytes: base64Decode(data['pdf'] as String),
+      log: data['log'] as String? ?? '',
+      compilationTime:
+          double.tryParse(headers.value('X-Compilation-Time') ?? '0') ?? 0,
       engine: headers.value('X-Engine') ?? 'pdflatex',
-      warningsCount: int.tryParse(
-            headers.value('X-Warnings-Count') ?? '0',
-          ) ??
-          0,
-      passesRun: int.tryParse(
-            headers.value('X-Passes-Run') ?? '1',
-          ) ??
-          1,
+      warningsCount:
+          int.tryParse(headers.value('X-Warnings-Count') ?? '0') ?? 0,
+      passesRun: int.tryParse(headers.value('X-Passes-Run') ?? '1') ?? 1,
       cached: headers.value('X-Cached') == 'true',
     );
   }

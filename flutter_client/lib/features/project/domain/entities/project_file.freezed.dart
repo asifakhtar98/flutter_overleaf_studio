@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProjectFile {
 
- String get name; String get path; String get content; bool get isMainFile;
+ String get name; String get path; String get content; String? get binaryContentBase64; bool get isMainFile;
 /// Create a copy of ProjectFile
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ProjectFileCopyWith<ProjectFile> get copyWith => _$ProjectFileCopyWithImpl<Proj
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content)&&(identical(other.isMainFile, isMainFile) || other.isMainFile == isMainFile));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content)&&(identical(other.binaryContentBase64, binaryContentBase64) || other.binaryContentBase64 == binaryContentBase64)&&(identical(other.isMainFile, isMainFile) || other.isMainFile == isMainFile));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,path,content,isMainFile);
+int get hashCode => Object.hash(runtimeType,name,path,content,binaryContentBase64,isMainFile);
 
 @override
 String toString() {
-  return 'ProjectFile(name: $name, path: $path, content: $content, isMainFile: $isMainFile)';
+  return 'ProjectFile(name: $name, path: $path, content: $content, binaryContentBase64: $binaryContentBase64, isMainFile: $isMainFile)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ProjectFileCopyWith<$Res>  {
   factory $ProjectFileCopyWith(ProjectFile value, $Res Function(ProjectFile) _then) = _$ProjectFileCopyWithImpl;
 @useResult
 $Res call({
- String name, String path, String content, bool isMainFile
+ String name, String path, String content, String? binaryContentBase64, bool isMainFile
 });
 
 
@@ -65,12 +65,13 @@ class _$ProjectFileCopyWithImpl<$Res>
 
 /// Create a copy of ProjectFile
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? path = null,Object? content = null,Object? isMainFile = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? path = null,Object? content = null,Object? binaryContentBase64 = freezed,Object? isMainFile = null,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,isMainFile: null == isMainFile ? _self.isMainFile : isMainFile // ignore: cast_nullable_to_non_nullable
+as String,binaryContentBase64: freezed == binaryContentBase64 ? _self.binaryContentBase64 : binaryContentBase64 // ignore: cast_nullable_to_non_nullable
+as String?,isMainFile: null == isMainFile ? _self.isMainFile : isMainFile // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String path,  String content,  bool isMainFile)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String path,  String content,  String? binaryContentBase64,  bool isMainFile)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProjectFile() when $default != null:
-return $default(_that.name,_that.path,_that.content,_that.isMainFile);case _:
+return $default(_that.name,_that.path,_that.content,_that.binaryContentBase64,_that.isMainFile);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.name,_that.path,_that.content,_that.isMainFile);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String path,  String content,  bool isMainFile)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String path,  String content,  String? binaryContentBase64,  bool isMainFile)  $default,) {final _that = this;
 switch (_that) {
 case _ProjectFile():
-return $default(_that.name,_that.path,_that.content,_that.isMainFile);}
+return $default(_that.name,_that.path,_that.content,_that.binaryContentBase64,_that.isMainFile);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -191,10 +192,10 @@ return $default(_that.name,_that.path,_that.content,_that.isMainFile);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String path,  String content,  bool isMainFile)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String path,  String content,  String? binaryContentBase64,  bool isMainFile)?  $default,) {final _that = this;
 switch (_that) {
 case _ProjectFile() when $default != null:
-return $default(_that.name,_that.path,_that.content,_that.isMainFile);case _:
+return $default(_that.name,_that.path,_that.content,_that.binaryContentBase64,_that.isMainFile);case _:
   return null;
 
 }
@@ -206,12 +207,13 @@ return $default(_that.name,_that.path,_that.content,_that.isMainFile);case _:
 @JsonSerializable()
 
 class _ProjectFile implements ProjectFile {
-  const _ProjectFile({required this.name, required this.path, required this.content, this.isMainFile = false});
+  const _ProjectFile({required this.name, required this.path, this.content = '', this.binaryContentBase64 = null, this.isMainFile = false});
   factory _ProjectFile.fromJson(Map<String, dynamic> json) => _$ProjectFileFromJson(json);
 
 @override final  String name;
 @override final  String path;
-@override final  String content;
+@override@JsonKey() final  String content;
+@override@JsonKey() final  String? binaryContentBase64;
 @override@JsonKey() final  bool isMainFile;
 
 /// Create a copy of ProjectFile
@@ -227,16 +229,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content)&&(identical(other.isMainFile, isMainFile) || other.isMainFile == isMainFile));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectFile&&(identical(other.name, name) || other.name == name)&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content)&&(identical(other.binaryContentBase64, binaryContentBase64) || other.binaryContentBase64 == binaryContentBase64)&&(identical(other.isMainFile, isMainFile) || other.isMainFile == isMainFile));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,name,path,content,isMainFile);
+int get hashCode => Object.hash(runtimeType,name,path,content,binaryContentBase64,isMainFile);
 
 @override
 String toString() {
-  return 'ProjectFile(name: $name, path: $path, content: $content, isMainFile: $isMainFile)';
+  return 'ProjectFile(name: $name, path: $path, content: $content, binaryContentBase64: $binaryContentBase64, isMainFile: $isMainFile)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$ProjectFileCopyWith<$Res> implements $ProjectFileCopyWith
   factory _$ProjectFileCopyWith(_ProjectFile value, $Res Function(_ProjectFile) _then) = __$ProjectFileCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String path, String content, bool isMainFile
+ String name, String path, String content, String? binaryContentBase64, bool isMainFile
 });
 
 
@@ -264,12 +266,13 @@ class __$ProjectFileCopyWithImpl<$Res>
 
 /// Create a copy of ProjectFile
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? path = null,Object? content = null,Object? isMainFile = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? path = null,Object? content = null,Object? binaryContentBase64 = freezed,Object? isMainFile = null,}) {
   return _then(_ProjectFile(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,isMainFile: null == isMainFile ? _self.isMainFile : isMainFile // ignore: cast_nullable_to_non_nullable
+as String,binaryContentBase64: freezed == binaryContentBase64 ? _self.binaryContentBase64 : binaryContentBase64 // ignore: cast_nullable_to_non_nullable
+as String?,isMainFile: null == isMainFile ? _self.isMainFile : isMainFile // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

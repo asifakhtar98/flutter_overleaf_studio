@@ -44,6 +44,7 @@ dependencies:
   talker_bloc_logger: ^5.1.16
   rxdart: ^0.28.0
   bloc_concurrency: ^0.3.0
+  file_picker: ^9.0.2
 
 dev_dependencies:
   flutter_test:

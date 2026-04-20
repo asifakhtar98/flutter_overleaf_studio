@@ -14,13 +14,12 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from app import __version__
 from app.compiler import get_executor, shutdown_executor, sweep_orphan_temp_dirs
 from app.config import settings
 from app.errors import register_error_handlers
+from app.limiter import limiter
 from app.logging import configure_logging
 from app.middleware import register_middleware
 from app.routers import compile as compile_router
@@ -29,18 +28,6 @@ from app.routers import health
 # --- Logging (must be first — before any logger is created) ---
 configure_logging(settings.log_level)
 logger = structlog.get_logger()
-
-
-# --- Rate limiter ---
-def _get_api_key_or_ip(request: object) -> str:
-    """Rate limit key function — use API key if present, else IP."""
-    api_key = request.headers.get("X-API-Key")
-    if api_key:
-        return api_key
-    return get_remote_address(request)
-
-
-limiter = Limiter(key_func=_get_api_key_or_ip)
 
 
 # --- Lifespan ---
@@ -123,10 +110,14 @@ app.add_middleware(
         "X-Cached",
         "X-Passes-Run",
         "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
     ],
 )
 
 # Rate limiting
+app.state.limiter = limiter
 app.state.limiter = limiter
 
 # Middleware stack (request ID, body limit, request logging)
