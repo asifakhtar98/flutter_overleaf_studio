@@ -24,9 +24,7 @@ class CompileLogPanel extends StatelessWidget {
           height: 180,
           decoration: const BoxDecoration(
             color: LatexTheme.logBg,
-            border: Border(
-              top: BorderSide(color: LatexTheme.border),
-            ),
+            border: Border(top: BorderSide(color: LatexTheme.border)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -40,9 +38,7 @@ class CompileLogPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: LatexTheme.logBg.withValues(alpha: 0.95),
                   border: const Border(
-                    bottom: BorderSide(
-                      color: Color(0xFF374151),
-                    ),
+                    bottom: BorderSide(color: Color(0xFF374151)),
                   ),
                 ),
                 child: Row(
@@ -82,10 +78,7 @@ class CompileLogPanel extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(12),
-                  child: SelectableText(
-                    log,
-                    style: LatexTheme.monoSmall,
-                  ),
+                  child: SelectableText(log, style: LatexTheme.monoSmall),
                 ),
               ),
             ],

@@ -28,34 +28,25 @@ abstract final class LatexTheme {
   static const border = Color(0xFFE2E8F0);
 
   // ── Typography ──
-  static TextStyle get monoStyle => GoogleFonts.jetBrainsMono(
-        fontSize: 14,
-        height: 1.6,
-        color: textPrimary,
-      );
+  static TextStyle get monoStyle =>
+      GoogleFonts.jetBrainsMono(fontSize: 14, height: 1.6, color: textPrimary);
 
-  static TextStyle get monoSmall => GoogleFonts.jetBrainsMono(
-        fontSize: 12,
-        height: 1.4,
-        color: logText,
-      );
+  static TextStyle get monoSmall =>
+      GoogleFonts.jetBrainsMono(fontSize: 12, height: 1.4, color: logText);
 
   // ── Theme Data ──
   static ThemeData get lightTheme => ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: primary,
-        brightness: Brightness.light,
-        textTheme: GoogleFonts.interTextTheme(),
-        scaffoldBackgroundColor: background,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: surface,
-          foregroundColor: textPrimary,
-          elevation: 0,
-          scrolledUnderElevation: 1,
-        ),
-        dividerTheme: const DividerThemeData(
-          color: border,
-          thickness: 1,
-        ),
-      );
+    useMaterial3: true,
+    colorSchemeSeed: primary,
+    brightness: Brightness.light,
+    textTheme: GoogleFonts.interTextTheme(),
+    scaffoldBackgroundColor: background,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: surface,
+      foregroundColor: textPrimary,
+      elevation: 0,
+      scrolledUnderElevation: 1,
+    ),
+    dividerTheme: const DividerThemeData(color: border, thickness: 1),
+  );
 }

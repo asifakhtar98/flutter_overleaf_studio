@@ -24,11 +24,11 @@ class App extends StatelessWidget {
           create: (context) {
             final projectBloc = context.read<ProjectBloc>();
             final editorBloc = getIt<EditorBloc>();
-            
+
             final activeFile = projectBloc.state.files
                 .where((f) => f.path == projectBloc.state.activeFilePath)
                 .firstOrNull;
-                
+
             if (activeFile != null) {
               editorBloc.add(
                 EditorEvent.fileOpened(
@@ -40,9 +40,7 @@ class App extends StatelessWidget {
             return editorBloc;
           },
         ),
-        BlocProvider(
-          create: (_) => getIt<CompilerBloc>(),
-        ),
+        BlocProvider(create: (_) => getIt<CompilerBloc>()),
       ],
       child: _AppContent(),
     );
@@ -53,8 +51,8 @@ class _AppContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final talker = getIt<Talker>();
-    final isDev = getIt<ServerConfig>().environment ==
-        ServerEnvironment.development;
+    final isDev =
+        getIt<ServerConfig>().environment == ServerEnvironment.development;
 
     // Auto-open first file on start
     return BlocListener<ProjectBloc, ProjectState>(
@@ -66,25 +64,21 @@ class _AppContent extends StatelessWidget {
             .firstOrNull;
         if (activeFile != null) {
           context.read<EditorBloc>().add(
-                EditorEvent.fileOpened(
-                  path: activeFile.path,
-                  content: activeFile.content,
-                ),
-              );
+            EditorEvent.fileOpened(
+              path: activeFile.path,
+              content: activeFile.content,
+            ),
+          );
         }
       },
       child: TalkerWrapper(
         talker: talker,
-        options: TalkerWrapperOptions(
-          enableErrorAlerts: isDev,
-        ),
+        options: TalkerWrapperOptions(enableErrorAlerts: isDev),
         child: MaterialApp(
           title: 'LaTeX Editor',
           theme: LatexTheme.lightTheme,
           debugShowCheckedModeBanner: false,
-          navigatorObservers: [
-            TalkerRouteObserver(talker),
-          ],
+          navigatorObservers: [TalkerRouteObserver(talker)],
           home: const EditorPage(),
         ),
       ),

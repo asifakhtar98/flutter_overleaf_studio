@@ -4,14 +4,10 @@ part 'failures.freezed.dart';
 
 @freezed
 sealed class Failure with _$Failure {
-  const factory Failure.server({
-    required String message,
-    String? errorCode,
-  }) = ServerFailure;
+  const factory Failure.server({required String message, String? errorCode}) =
+      ServerFailure;
 
-  const factory Failure.network({
-    required String message,
-  }) = NetworkFailure;
+  const factory Failure.network({required String message}) = NetworkFailure;
 
   const factory Failure.compilation({
     required String log,
@@ -19,11 +15,8 @@ sealed class Failure with _$Failure {
     double? compilationTime,
   }) = CompilationFailure;
 
-  const factory Failure.validation({
-    required String message,
-  }) = ValidationFailure;
+  const factory Failure.validation({required String message}) =
+      ValidationFailure;
 
-  const factory Failure.unknown({
-    String? message,
-  }) = UnknownFailure;
+  const factory Failure.unknown({String? message}) = UnknownFailure;
 }

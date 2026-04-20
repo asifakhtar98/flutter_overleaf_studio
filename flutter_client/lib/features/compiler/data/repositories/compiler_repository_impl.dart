@@ -96,10 +96,7 @@ class CompilerRepositoryImpl implements CompilerRepository {
         'Server error ${error.statusCode}: '
         '${error.errorCode} — ${error.message}',
       );
-      return Failure.server(
-        message: error.message,
-        errorCode: error.errorCode,
-      );
+      return Failure.server(message: error.message, errorCode: error.errorCode);
     }
     _talker.warning('Unknown DioException: ${e.message}');
     return Failure.unknown(message: e.message);

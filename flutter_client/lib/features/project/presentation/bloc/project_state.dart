@@ -25,6 +25,8 @@ sealed class ProjectState with _$ProjectState {
     @Default([]) List<ProjectFolder> folders,
     String? activeFilePath,
     String? mainFilePath,
+    @Default(false) bool isImporting,
+    @Default(false) bool isExporting,
   }) = _ProjectState;
 
   factory ProjectState.fromJson(Map<String, dynamic> json) =>

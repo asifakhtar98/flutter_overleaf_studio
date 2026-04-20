@@ -16,14 +16,12 @@ class ExportProjectUseCase {
 
       for (final file in files) {
         final bytes = file.bytes;
-        archive.addFile(
-          ArchiveFile(file.path, bytes.length, bytes),
-        );
+        archive.addFile(ArchiveFile(file.path, bytes.length, bytes));
       }
 
       final encoded = ZipEncoder().encode(archive);
       if (encoded.isEmpty) {
-        return Left(Failure.unknown(message: 'Failed to encode ZIP'));
+        return const Left(Failure.unknown(message: 'Failed to encode ZIP'));
       }
 
       final result = await FilePicker.platform.saveFile(
@@ -35,7 +33,7 @@ class ExportProjectUseCase {
       );
 
       if (result == null) {
-        return Left(Failure.unknown(message: 'Export cancelled'));
+        return const Left(Failure.unknown(message: 'Export cancelled'));
       }
 
       return const Right(null);

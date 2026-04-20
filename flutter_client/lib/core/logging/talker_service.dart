@@ -13,10 +13,7 @@ abstract class TalkerModule {
     final isDev = config.environment == ServerEnvironment.development;
 
     return TalkerFlutter.init(
-      settings: TalkerSettings(
-        useConsoleLogs: true,
-        enabled: true,
-      ),
+      settings: TalkerSettings(useConsoleLogs: true, enabled: true),
       logger: TalkerLogger(
         settings: TalkerLoggerSettings(
           level: isDev ? LogLevel.verbose : LogLevel.warning,

@@ -15,7 +15,7 @@ class PdfViewerPanel extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final pdfController = useMemoized(PdfViewerController.new);
-    
+
     final lastPdfBytes = useState<Uint8List?>(null);
 
     return BlocConsumer<CompilerBloc, CompilerState>(
@@ -26,11 +26,14 @@ class PdfViewerPanel extends HookWidget {
       },
       builder: (context, state) {
         final hasPdf = lastPdfBytes.value != null;
-        
+
         final stateLayer = switch (state) {
-          CompilerInitial() => hasPdf ? const SizedBox.shrink() : const _EmptyState(),
-          CompilerLoading(:final engine) =>
-            _LoadingOverlay(engine: engine, hasBackground: hasPdf),
+          CompilerInitial() =>
+            hasPdf ? const SizedBox.shrink() : const _EmptyState(),
+          CompilerLoading(:final engine) => _LoadingOverlay(
+            engine: engine,
+            hasBackground: hasPdf,
+          ),
           CompilerSuccess() => const SizedBox.shrink(),
           CompilerFailure() => _ErrorState(state: state),
         };
@@ -73,10 +76,7 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(
               'Compile to see PDF preview',
-              style: TextStyle(
-                color: LatexTheme.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: LatexTheme.textSecondary, fontSize: 14),
             ),
           ],
         ),
@@ -94,7 +94,7 @@ class _LoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: hasBackground 
+      color: hasBackground
           ? LatexTheme.surface.withValues(alpha: 0.7)
           : LatexTheme.surface,
       child: Center(

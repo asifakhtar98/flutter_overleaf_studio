@@ -10,8 +10,10 @@ import 'package:flutter_latex_client/features/compiler/presentation/bloc/compile
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_latex_client/features/compiler/presentation/bloc/compiler_state.dart';
 import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_bloc.dart';
+import 'package:flutter_latex_client/features/editor/presentation/bloc/editor_state.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
+import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart';
 
 class Toolbar extends HookWidget {
   const Toolbar({super.key});
@@ -54,7 +56,10 @@ class Toolbar extends HookWidget {
               child: DropdownButton<String>(
                 value: selectedEngine.value,
                 isDense: true,
-                style: const TextStyle(fontSize: 13, color: LatexTheme.textPrimary),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: LatexTheme.textPrimary,
+                ),
                 items: const [
                   DropdownMenuItem(value: 'pdflatex', child: Text('pdflatex')),
                   DropdownMenuItem(value: 'xelatex', child: Text('xelatex')),
@@ -74,7 +79,10 @@ class Toolbar extends HookWidget {
               children: [
                 const Text(
                   'Draft',
-                  style: TextStyle(fontSize: 12, color: LatexTheme.textSecondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: LatexTheme.textSecondary,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 SizedBox(
@@ -98,24 +106,26 @@ class Toolbar extends HookWidget {
                 builder: (innerContext) {
                   final projectState = innerContext.read<ProjectBloc>().state;
                   final mainFilePath = projectState.mainFilePath;
-                  final hasMainFile = mainFilePath != null &&
+                  final hasMainFile =
+                      mainFilePath != null &&
                       projectState.files.any((f) => f.path == mainFilePath);
                   final canCompile = !isLoading && hasMainFile;
 
                   return FilledButton.icon(
                     onPressed: canCompile
                         ? () {
-                            final editorState =
-                                innerContext.read<EditorBloc>().state;
+                            final editorState = innerContext
+                                .read<EditorBloc>()
+                                .state;
                             innerContext.read<CompilerBloc>().add(
-                                  CompilerEvent.compileRequested(
-                                    engine: selectedEngine.value,
-                                    draft: draftMode.value,
-                                    source: editorState.content,
-                                    files: projectState.files,
-                                    mainFile: mainFilePath,
-                                  ),
-                                );
+                              CompilerEvent.compileRequested(
+                                engine: selectedEngine.value,
+                                draft: draftMode.value,
+                                source: editorState.content,
+                                files: projectState.files,
+                                mainFile: mainFilePath,
+                              ),
+                            );
                           }
                         : null,
                     icon: isLoading
@@ -137,17 +147,22 @@ class Toolbar extends HookWidget {
                       isLoading
                           ? 'Compiling…'
                           : hasMainFile
-                              ? 'Compile'
-                              : 'Set Main File',
+                          ? 'Compile'
+                          : 'Set Main File',
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor:
-                          hasMainFile ? LatexTheme.primary : LatexTheme.warning,
+                      backgroundColor: hasMainFile
+                          ? LatexTheme.primary
+                          : LatexTheme.warning,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 0),
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
                       minimumSize: const Size(0, 34),
                       textStyle: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   );
                 },
@@ -157,36 +172,141 @@ class Toolbar extends HookWidget {
           const SizedBox(width: 8),
 
           // Import project
-          IconButton(
-            icon: const Icon(Icons.folder_open_outlined, size: 18),
-            tooltip: 'Import ZIP project',
-            onPressed: () {
-              context.read<ProjectBloc>().add(ProjectEvent.importProject());
+          BlocBuilder<ProjectBloc, ProjectState>(
+            builder: (context, state) {
+              if (state.isImporting) {
+                return const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.folder_open_outlined, size: 18),
+                tooltip: 'Import ZIP project',
+                onPressed: () {
+                  context.read<ProjectBloc>().add(
+                    const ProjectEvent.importProject(),
+                  );
+                },
+                color: LatexTheme.textSecondary,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              );
             },
-            color: LatexTheme.textSecondary,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
           ),
 
           // Export project
-          IconButton(
-            icon: const Icon(Icons.save_alt_outlined, size: 18),
-            tooltip: 'Export as ZIP',
-            onPressed: () {
-              context.read<ProjectBloc>().add(ProjectEvent.exportProject());
+          BlocBuilder<ProjectBloc, ProjectState>(
+            builder: (context, state) {
+              if (state.isExporting) {
+                return const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.save_alt_outlined, size: 18),
+                tooltip: 'Export as ZIP',
+                onPressed: () {
+                  context.read<ProjectBloc>().add(
+                    const ProjectEvent.exportProject(),
+                  );
+                },
+                color: LatexTheme.textSecondary,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              );
             },
-            color: LatexTheme.textSecondary,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(
-              minWidth: 32,
-              minHeight: 32,
-            ),
           ),
 
           const Spacer(),
+
+          // Save state indicator
+          BlocBuilder<EditorBloc, EditorState>(
+            builder: (context, state) {
+              if (state.isSaving) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: LatexTheme.textSecondary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Saving...',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: LatexTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                );
+              } else if (state.isDirty) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: LatexTheme.warning,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Unsaved',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: LatexTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                );
+              } else if (state.lastSaved != null) {
+                return const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 12,
+                      color: LatexTheme.success,
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'Saved',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: LatexTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
+          const SizedBox(width: 16),
 
           // Debug log viewer (dev only)
           if (getIt<ServerConfig>().environment ==
@@ -197,18 +317,13 @@ class Toolbar extends HookWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => TalkerScreen(
-                      talker: getIt<Talker>(),
-                    ),
+                    builder: (_) => TalkerScreen(talker: getIt<Talker>()),
                   ),
                 );
               },
               color: LatexTheme.textSecondary,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
 
           const SizedBox(width: 8),
@@ -218,16 +333,13 @@ class Toolbar extends HookWidget {
             builder: (context, state) {
               return switch (state) {
                 CompilerSuccess(:final result) => _CompileTime(
-                    time: result.compilationTime,
-                    warnings: result.warningsCount,
-                    cached: result.cached,
-                  ),
+                  time: result.compilationTime,
+                  warnings: result.warningsCount,
+                  cached: result.cached,
+                ),
                 CompilerFailure(:final compilationTime)
                     when compilationTime != null =>
-                  _CompileTime(
-                    time: compilationTime,
-                    isError: true,
-                  ),
+                  _CompileTime(time: compilationTime, isError: true),
                 _ => const SizedBox.shrink(),
               };
             },

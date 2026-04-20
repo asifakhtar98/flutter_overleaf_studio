@@ -40,6 +40,8 @@ _ProjectState _$ProjectStateFromJson(Map<String, dynamic> json) =>
           const [],
       activeFilePath: json['activeFilePath'] as String?,
       mainFilePath: json['mainFilePath'] as String?,
+      isImporting: json['isImporting'] as bool? ?? false,
+      isExporting: json['isExporting'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ProjectStateToJson(_ProjectState instance) =>
@@ -48,4 +50,6 @@ Map<String, dynamic> _$ProjectStateToJson(_ProjectState instance) =>
       'folders': instance.folders,
       'activeFilePath': instance.activeFilePath,
       'mainFilePath': instance.mainFilePath,
+      'isImporting': instance.isImporting,
+      'isExporting': instance.isExporting,
     };

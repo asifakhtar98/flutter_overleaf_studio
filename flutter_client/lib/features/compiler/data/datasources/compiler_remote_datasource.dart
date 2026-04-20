@@ -21,11 +21,7 @@ class CompilerRemoteDatasource {
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/compile',
-      data: {
-        'source': source,
-        'engine': engine,
-        'draft': draft,
-      },
+      data: {'source': source, 'engine': engine, 'draft': draft},
     );
 
     return _parseResponse(response);
@@ -58,9 +54,7 @@ class CompilerRemoteDatasource {
     final archive = Archive();
     for (final file in files) {
       final bytes = file.bytes;
-      archive.addFile(
-        ArchiveFile(file.path, bytes.length, bytes),
-      );
+      archive.addFile(ArchiveFile(file.path, bytes.length, bytes));
     }
     final encoded = ZipEncoder().encode(archive);
     return Uint8List.fromList(encoded);

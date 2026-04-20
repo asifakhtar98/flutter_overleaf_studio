@@ -22,8 +22,7 @@ class _DebouncedHook<T> extends Hook<T> {
   _DebouncedHookState<T> createState() => _DebouncedHookState<T>();
 }
 
-class _DebouncedHookState<T>
-    extends HookState<T, _DebouncedHook<T>> {
+class _DebouncedHookState<T> extends HookState<T, _DebouncedHook<T>> {
   late T _debouncedValue = hook.value;
   Timer? _timer;
 

@@ -12,9 +12,9 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
   CompilerBloc({
     required CompileSingle compileSingle,
     required CompileProject compileProject,
-  })  : _compileSingle = compileSingle,
-        _compileProject = compileProject,
-        super(const CompilerState.initial()) {
+  }) : _compileSingle = compileSingle,
+       _compileProject = compileProject,
+       super(const CompilerState.initial()) {
     on<CompileRequested>(_onCompileRequested);
     on<CompileReset>(_onReset);
   }
@@ -60,15 +60,14 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
 
   CompilerState _mapFailure(Failure failure) {
     return switch (failure) {
-      ServerFailure(:final message, :final errorCode) =>
-        CompilerState.failure(
-          errorCode: errorCode ?? 'SERVER_ERROR',
-          log: message,
-        ),
+      ServerFailure(:final message, :final errorCode) => CompilerState.failure(
+        errorCode: errorCode ?? 'SERVER_ERROR',
+        log: message,
+      ),
       NetworkFailure(:final message) => CompilerState.failure(
-          errorCode: 'NETWORK_ERROR',
-          log: message,
-        ),
+        errorCode: 'NETWORK_ERROR',
+        log: message,
+      ),
       CompilationFailure(
         :final log,
         :final errorCode,
@@ -80,13 +79,13 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
           compilationTime: compilationTime,
         ),
       ValidationFailure(:final message) => CompilerState.failure(
-          errorCode: 'VALIDATION_ERROR',
-          log: message,
-        ),
+        errorCode: 'VALIDATION_ERROR',
+        log: message,
+      ),
       UnknownFailure(:final message) => CompilerState.failure(
-          errorCode: 'UNKNOWN',
-          log: message ?? 'Unknown error',
-        ),
+        errorCode: 'UNKNOWN',
+        log: message ?? 'Unknown error',
+      ),
     };
   }
 

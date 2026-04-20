@@ -3,20 +3,14 @@ import 'package:injectable/injectable.dart';
 
 import 'package:rxdart/rxdart.dart';
 
+import 'package:flutter_latex_client/core/constants/app_constants.dart';
+import 'package:flutter_latex_client/core/utils/path_utils.dart';
 import 'package:flutter_latex_client/features/project/domain/entities/project_file.dart';
 import 'package:flutter_latex_client/features/project/domain/usecases/import_project.dart';
 import 'package:flutter_latex_client/features/project/domain/usecases/export_project.dart';
 import 'package:flutter_latex_client/features/project/presentation/bloc/project_event.dart';
-import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart' show ProjectState, ProjectFolder;
-
-const _defaultMainTex = r'''
-\documentclass{article}
-\begin{document}
-
-Hello, \LaTeX!
-
-\end{document}
-''';
+import 'package:flutter_latex_client/features/project/presentation/bloc/project_state.dart'
+    show ProjectFolder, ProjectState;
 
 @injectable
 class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
@@ -24,20 +18,20 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   final ExportProjectUseCase _exportProject;
 
   ProjectBloc(this._importProject, this._exportProject)
-      : super(
-          const ProjectState(
-            files: [
-              ProjectFile(
-                name: 'main.tex',
-                path: 'main.tex',
-                content: _defaultMainTex,
-                isMainFile: true,
-              ),
-            ],
-            activeFilePath: 'main.tex',
-            mainFilePath: 'main.tex',
-          ),
-        ) {
+    : super(
+        const ProjectState(
+          files: [
+            ProjectFile(
+              name: 'main.tex',
+              path: 'main.tex',
+              content: defaultMainTex,
+              isMainFile: true,
+            ),
+          ],
+          activeFilePath: 'main.tex',
+          mainFilePath: 'main.tex',
+        ),
+      ) {
     on<AddFile>(_onAddFile);
     on<RemoveFile>(_onRemoveFile);
     on<RenameFile>(_onRenameFile);
@@ -46,10 +40,16 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       _onUpdateFileContent,
       transformer: (events, mapper) => events
           .groupBy((e) => e.path)
-          .flatMap((group) => group.debounceTime(const Duration(milliseconds: 300)).switchMap(mapper)),
+          .flatMap(
+            (group) => group
+                .debounceTime(const Duration(milliseconds: 300))
+                .switchMap(mapper),
+          ),
     );
     on<SetMainFile>(_onSetMainFile);
     on<AddFolder>(_onAddFolder);
+    on<RenameFolder>(_onRenameFolder);
+    on<DeleteFolder>(_onDeleteFolder);
     on<ToggleFolder>(_onToggleFolder);
     on<ImportProjectEvent>(_onImportProject);
     on<ExportProjectEvent>(_onExportProject);
@@ -60,17 +60,23 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     ImportProjectEvent event,
     Emitter<ProjectState> emit,
   ) async {
+    emit(state.copyWith(isImporting: true));
     final result = await _importProject();
     result.fold(
-      (failure) {},
+      (failure) {
+        emit(state.copyWith(isImporting: false));
+      },
       (List<ProjectFile> files) {
-        emit(state.copyWith(
-          files: files,
-          activeFilePath: files.isNotEmpty ? files.first.path : null,
-          mainFilePath: files.any((f) => f.isMainFile)
-              ? files.firstWhere((f) => f.isMainFile).path
-              : null,
-        ));
+        emit(
+          state.copyWith(
+            files: files,
+            activeFilePath: files.isNotEmpty ? files.first.path : null,
+            mainFilePath: files.any((f) => f.isMainFile)
+                ? files.firstWhere((f) => f.isMainFile).path
+                : null,
+            isImporting: false,
+          ),
+        );
       },
     );
   }
@@ -79,18 +85,19 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     ExportProjectEvent event,
     Emitter<ProjectState> emit,
   ) async {
+    emit(state.copyWith(isExporting: true));
     await _exportProject(state.files);
+    emit(state.copyWith(isExporting: false));
   }
 
-  void _onLoadFiles(
-    LoadFiles event,
-    Emitter<ProjectState> emit,
-  ) {
-    emit(state.copyWith(
-      files: event.files,
-      activeFilePath: event.activeFilePath ?? state.activeFilePath,
-      mainFilePath: event.mainFilePath ?? state.mainFilePath,
-    ));
+  void _onLoadFiles(LoadFiles event, Emitter<ProjectState> emit) {
+    emit(
+      state.copyWith(
+        files: event.files,
+        activeFilePath: event.activeFilePath ?? state.activeFilePath,
+        mainFilePath: event.mainFilePath ?? state.mainFilePath,
+      ),
+    );
   }
 
   void _onAddFile(AddFile event, Emitter<ProjectState> emit) {
@@ -116,7 +123,9 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     final newActive = state.activeFilePath == event.path
         ? (updated.isNotEmpty ? updated.first.path : null)
         : state.activeFilePath;
-    final newMain = state.mainFilePath == event.path ? null : state.mainFilePath;
+    final newMain = state.mainFilePath == event.path
+        ? null
+        : state.mainFilePath;
 
     emit(
       state.copyWith(
@@ -130,10 +139,7 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   void _onRenameFile(RenameFile event, Emitter<ProjectState> emit) {
     final updated = state.files.map((f) {
       if (f.path == event.oldPath) {
-        final dir = event.oldPath.contains('/')
-            ? '${event.oldPath.substring(0, event.oldPath.lastIndexOf('/'))}/'
-            : '';
-        final newPath = '$dir${event.newName}';
+        final newPath = replaceLastPathSegment(event.oldPath, event.newName);
         return f.copyWith(name: event.newName, path: newPath);
       }
       return f;
@@ -172,16 +178,28 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     final exists = state.folders.any((f) => f.path == event.path);
     if (exists) return;
 
-    final newFolder = ProjectFolder(
-      name: event.name,
-      path: event.path,
-    );
+    final newFolder = ProjectFolder(name: event.name, path: event.path);
 
-    emit(
-      state.copyWith(
-        folders: [...state.folders, newFolder],
-      ),
-    );
+    emit(state.copyWith(folders: [...state.folders, newFolder]));
+  }
+
+  void _onRenameFolder(RenameFolder event, Emitter<ProjectState> emit) {
+    final updatedFolders = state.folders.map((f) {
+      if (f.path == event.oldPath) {
+        final newPath = replaceLastPathSegment(event.oldPath, event.newName);
+        return f.copyWith(name: event.newName, path: newPath);
+      }
+      return f;
+    }).toList();
+
+    emit(state.copyWith(folders: updatedFolders));
+  }
+
+  void _onDeleteFolder(DeleteFolder event, Emitter<ProjectState> emit) {
+    final updatedFolders = state.folders
+        .where((f) => f.path != event.path)
+        .toList();
+    emit(state.copyWith(folders: updatedFolders));
   }
 
   void _onToggleFolder(ToggleFolder event, Emitter<ProjectState> emit) {

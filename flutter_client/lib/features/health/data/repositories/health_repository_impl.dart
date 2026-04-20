@@ -21,9 +21,7 @@ class HealthRepositoryImpl implements HealthRepository {
   FutureEither<HealthStatus> checkHealth() async {
     try {
       final result = await _datasource.checkHealth();
-      _talker.info(
-        'Health OK: TeX Live ${result.texliveVersion}',
-      );
+      _talker.info('Health OK: TeX Live ${result.texliveVersion}');
       return Right(result);
     } on DioException catch (e) {
       if (e.error is NetworkException) {

@@ -21,7 +21,9 @@ void main() {
       HydratedBloc.storage = await HydratedStorage.build(
         storageDirectory: kIsWeb
             ? HydratedStorageDirectory.web
-            : HydratedStorageDirectory((await getApplicationDocumentsDirectory()).path),
+            : HydratedStorageDirectory(
+                (await getApplicationDocumentsDirectory()).path,
+              ),
       );
 
       // Configure DI with server config

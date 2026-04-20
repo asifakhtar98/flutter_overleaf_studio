@@ -287,7 +287,7 @@ as bool,
 /// @nodoc
 mixin _$ProjectState {
 
- List<ProjectFile> get files; List<ProjectFolder> get folders; String? get activeFilePath; String? get mainFilePath;
+ List<ProjectFile> get files; List<ProjectFolder> get folders; String? get activeFilePath; String? get mainFilePath; bool get isImporting; bool get isExporting;
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -300,16 +300,16 @@ $ProjectStateCopyWith<ProjectState> get copyWith => _$ProjectStateCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectState&&const DeepCollectionEquality().equals(other.files, files)&&const DeepCollectionEquality().equals(other.folders, folders)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectState&&const DeepCollectionEquality().equals(other.files, files)&&const DeepCollectionEquality().equals(other.folders, folders)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),const DeepCollectionEquality().hash(folders),activeFilePath,mainFilePath);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),const DeepCollectionEquality().hash(folders),activeFilePath,mainFilePath,isImporting,isExporting);
 
 @override
 String toString() {
-  return 'ProjectState(files: $files, folders: $folders, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath)';
+  return 'ProjectState(files: $files, folders: $folders, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, isImporting: $isImporting, isExporting: $isExporting)';
 }
 
 
@@ -320,7 +320,7 @@ abstract mixin class $ProjectStateCopyWith<$Res>  {
   factory $ProjectStateCopyWith(ProjectState value, $Res Function(ProjectState) _then) = _$ProjectStateCopyWithImpl;
 @useResult
 $Res call({
- List<ProjectFile> files, List<ProjectFolder> folders, String? activeFilePath, String? mainFilePath
+ List<ProjectFile> files, List<ProjectFolder> folders, String? activeFilePath, String? mainFilePath, bool isImporting, bool isExporting
 });
 
 
@@ -337,13 +337,15 @@ class _$ProjectStateCopyWithImpl<$Res>
 
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? folders = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? folders = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? isImporting = null,Object? isExporting = null,}) {
   return _then(_self.copyWith(
 files: null == files ? _self.files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,folders: null == folders ? _self.folders : folders // ignore: cast_nullable_to_non_nullable
 as List<ProjectFolder>,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
 as String?,mainFilePath: freezed == mainFilePath ? _self.mainFilePath : mainFilePath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,isImporting: null == isImporting ? _self.isImporting : isImporting // ignore: cast_nullable_to_non_nullable
+as bool,isExporting: null == isExporting ? _self.isExporting : isExporting // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -425,10 +427,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath,  bool isImporting,  bool isExporting)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProjectState() when $default != null:
-return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath);case _:
+return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath,_that.isImporting,_that.isExporting);case _:
   return orElse();
 
 }
@@ -446,10 +448,10 @@ return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePat
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath,  bool isImporting,  bool isExporting)  $default,) {final _that = this;
 switch (_that) {
 case _ProjectState():
-return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath);}
+return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath,_that.isImporting,_that.isExporting);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -463,10 +465,10 @@ return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePat
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  List<ProjectFolder> folders,  String? activeFilePath,  String? mainFilePath,  bool isImporting,  bool isExporting)?  $default,) {final _that = this;
 switch (_that) {
 case _ProjectState() when $default != null:
-return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath);case _:
+return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePath,_that.isImporting,_that.isExporting);case _:
   return null;
 
 }
@@ -478,7 +480,7 @@ return $default(_that.files,_that.folders,_that.activeFilePath,_that.mainFilePat
 @JsonSerializable()
 
 class _ProjectState implements ProjectState {
-  const _ProjectState({final  List<ProjectFile> files = const [], final  List<ProjectFolder> folders = const [], this.activeFilePath, this.mainFilePath}): _files = files,_folders = folders;
+  const _ProjectState({final  List<ProjectFile> files = const [], final  List<ProjectFolder> folders = const [], this.activeFilePath, this.mainFilePath, this.isImporting = false, this.isExporting = false}): _files = files,_folders = folders;
   factory _ProjectState.fromJson(Map<String, dynamic> json) => _$ProjectStateFromJson(json);
 
  final  List<ProjectFile> _files;
@@ -497,6 +499,8 @@ class _ProjectState implements ProjectState {
 
 @override final  String? activeFilePath;
 @override final  String? mainFilePath;
+@override@JsonKey() final  bool isImporting;
+@override@JsonKey() final  bool isExporting;
 
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
@@ -511,16 +515,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectState&&const DeepCollectionEquality().equals(other._files, _files)&&const DeepCollectionEquality().equals(other._folders, _folders)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectState&&const DeepCollectionEquality().equals(other._files, _files)&&const DeepCollectionEquality().equals(other._folders, _folders)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),const DeepCollectionEquality().hash(_folders),activeFilePath,mainFilePath);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),const DeepCollectionEquality().hash(_folders),activeFilePath,mainFilePath,isImporting,isExporting);
 
 @override
 String toString() {
-  return 'ProjectState(files: $files, folders: $folders, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath)';
+  return 'ProjectState(files: $files, folders: $folders, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, isImporting: $isImporting, isExporting: $isExporting)';
 }
 
 
@@ -531,7 +535,7 @@ abstract mixin class _$ProjectStateCopyWith<$Res> implements $ProjectStateCopyWi
   factory _$ProjectStateCopyWith(_ProjectState value, $Res Function(_ProjectState) _then) = __$ProjectStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<ProjectFile> files, List<ProjectFolder> folders, String? activeFilePath, String? mainFilePath
+ List<ProjectFile> files, List<ProjectFolder> folders, String? activeFilePath, String? mainFilePath, bool isImporting, bool isExporting
 });
 
 
@@ -548,13 +552,15 @@ class __$ProjectStateCopyWithImpl<$Res>
 
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? folders = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? folders = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? isImporting = null,Object? isExporting = null,}) {
   return _then(_ProjectState(
 files: null == files ? _self._files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,folders: null == folders ? _self._folders : folders // ignore: cast_nullable_to_non_nullable
 as List<ProjectFolder>,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
 as String?,mainFilePath: freezed == mainFilePath ? _self.mainFilePath : mainFilePath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,isImporting: null == isImporting ? _self.isImporting : isImporting // ignore: cast_nullable_to_non_nullable
+as bool,isExporting: null == isExporting ? _self.isExporting : isExporting // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

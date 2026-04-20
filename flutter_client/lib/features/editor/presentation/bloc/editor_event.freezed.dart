@@ -14,61 +14,30 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EditorEvent {
 
- String get content;
-/// Create a copy of EditorEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$EditorEventCopyWith<EditorEvent> get copyWith => _$EditorEventCopyWithImpl<EditorEvent>(this as EditorEvent, _$identity);
+
 
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorEvent&&(identical(other.content, content) || other.content == content));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorEvent);
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content);
+int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'EditorEvent(content: $content)';
+  return 'EditorEvent()';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $EditorEventCopyWith<$Res>  {
-  factory $EditorEventCopyWith(EditorEvent value, $Res Function(EditorEvent) _then) = _$EditorEventCopyWithImpl;
-@useResult
-$Res call({
- String content
-});
-
-
-
-
-}
-/// @nodoc
-class _$EditorEventCopyWithImpl<$Res>
-    implements $EditorEventCopyWith<$Res> {
-  _$EditorEventCopyWithImpl(this._self, this._then);
-
-  final EditorEvent _self;
-  final $Res Function(EditorEvent) _then;
-
-/// Create a copy of EditorEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? content = null,}) {
-  return _then(_self.copyWith(
-content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
+class $EditorEventCopyWith<$Res>  {
+$EditorEventCopyWith(EditorEvent _, $Res Function(EditorEvent) __);
 }
 
 
@@ -86,12 +55,16 @@ extension EditorEventPatterns on EditorEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,TResult Function( TabOpened value)?  tabOpened,TResult Function( TabClosed value)?  tabClosed,TResult Function( TabSwitched value)?  tabSwitched,TResult Function( FileSaved value)?  fileSaved,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that);case ContentChanged() when contentChanged != null:
-return contentChanged(_that);case _:
+return contentChanged(_that);case TabOpened() when tabOpened != null:
+return tabOpened(_that);case TabClosed() when tabClosed != null:
+return tabClosed(_that);case TabSwitched() when tabSwitched != null:
+return tabSwitched(_that);case FileSaved() when fileSaved != null:
+return fileSaved(_that);case _:
   return orElse();
 
 }
@@ -109,12 +82,16 @@ return contentChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,required TResult Function( TabOpened value)  tabOpened,required TResult Function( TabClosed value)  tabClosed,required TResult Function( TabSwitched value)  tabSwitched,required TResult Function( FileSaved value)  fileSaved,}){
 final _that = this;
 switch (_that) {
 case FileOpened():
 return fileOpened(_that);case ContentChanged():
-return contentChanged(_that);}
+return contentChanged(_that);case TabOpened():
+return tabOpened(_that);case TabClosed():
+return tabClosed(_that);case TabSwitched():
+return tabSwitched(_that);case FileSaved():
+return fileSaved(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -128,12 +105,16 @@ return contentChanged(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,TResult? Function( TabOpened value)?  tabOpened,TResult? Function( TabClosed value)?  tabClosed,TResult? Function( TabSwitched value)?  tabSwitched,TResult? Function( FileSaved value)?  fileSaved,}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that);case ContentChanged() when contentChanged != null:
-return contentChanged(_that);case _:
+return contentChanged(_that);case TabOpened() when tabOpened != null:
+return tabOpened(_that);case TabClosed() when tabClosed != null:
+return tabClosed(_that);case TabSwitched() when tabSwitched != null:
+return tabSwitched(_that);case FileSaved() when fileSaved != null:
+return fileSaved(_that);case _:
   return null;
 
 }
@@ -150,11 +131,15 @@ return contentChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path)?  tabSwitched,TResult Function()?  fileSaved,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
-return contentChanged(_that.content);case _:
+return contentChanged(_that.content);case TabOpened() when tabOpened != null:
+return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
+return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
+return tabSwitched(_that.path);case FileSaved() when fileSaved != null:
+return fileSaved();case _:
   return orElse();
 
 }
@@ -172,11 +157,15 @@ return contentChanged(_that.content);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path)  tabSwitched,required TResult Function()  fileSaved,}) {final _that = this;
 switch (_that) {
 case FileOpened():
 return fileOpened(_that.path,_that.content);case ContentChanged():
-return contentChanged(_that.content);}
+return contentChanged(_that.content);case TabOpened():
+return tabOpened(_that.path,_that.content);case TabClosed():
+return tabClosed(_that.path);case TabSwitched():
+return tabSwitched(_that.path);case FileSaved():
+return fileSaved();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -190,11 +179,15 @@ return contentChanged(_that.content);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path)?  tabSwitched,TResult? Function()?  fileSaved,}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
-return contentChanged(_that.content);case _:
+return contentChanged(_that.content);case TabOpened() when tabOpened != null:
+return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
+return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
+return tabSwitched(_that.path);case FileSaved() when fileSaved != null:
+return fileSaved();case _:
   return null;
 
 }
@@ -210,11 +203,11 @@ class FileOpened implements EditorEvent {
   
 
  final  String path;
-@override final  String content;
+ final  String content;
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
+@JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $FileOpenedCopyWith<FileOpened> get copyWith => _$FileOpenedCopyWithImpl<FileOpened>(this, _$identity);
 
@@ -240,7 +233,7 @@ String toString() {
 /// @nodoc
 abstract mixin class $FileOpenedCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
   factory $FileOpenedCopyWith(FileOpened value, $Res Function(FileOpened) _then) = _$FileOpenedCopyWithImpl;
-@override @useResult
+@useResult
 $Res call({
  String path, String content
 });
@@ -259,7 +252,7 @@ class _$FileOpenedCopyWithImpl<$Res>
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? path = null,Object? content = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? path = null,Object? content = null,}) {
   return _then(FileOpened(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -277,11 +270,11 @@ class ContentChanged implements EditorEvent {
   const ContentChanged({required this.content});
   
 
-@override final  String content;
+ final  String content;
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
+@JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $ContentChangedCopyWith<ContentChanged> get copyWith => _$ContentChangedCopyWithImpl<ContentChanged>(this, _$identity);
 
@@ -307,7 +300,7 @@ String toString() {
 /// @nodoc
 abstract mixin class $ContentChangedCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
   factory $ContentChangedCopyWith(ContentChanged value, $Res Function(ContentChanged) _then) = _$ContentChangedCopyWithImpl;
-@override @useResult
+@useResult
 $Res call({
  String content
 });
@@ -326,7 +319,7 @@ class _$ContentChangedCopyWithImpl<$Res>
 
 /// Create a copy of EditorEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? content = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? content = null,}) {
   return _then(ContentChanged(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,
@@ -335,5 +328,237 @@ as String,
 
 
 }
+
+/// @nodoc
+
+
+class TabOpened implements EditorEvent {
+  const TabOpened({required this.path, required this.content});
+  
+
+ final  String path;
+ final  String content;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TabOpenedCopyWith<TabOpened> get copyWith => _$TabOpenedCopyWithImpl<TabOpened>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabOpened&&(identical(other.path, path) || other.path == path)&&(identical(other.content, content) || other.content == content));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,content);
+
+@override
+String toString() {
+  return 'EditorEvent.tabOpened(path: $path, content: $content)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TabOpenedCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
+  factory $TabOpenedCopyWith(TabOpened value, $Res Function(TabOpened) _then) = _$TabOpenedCopyWithImpl;
+@useResult
+$Res call({
+ String path, String content
+});
+
+
+
+
+}
+/// @nodoc
+class _$TabOpenedCopyWithImpl<$Res>
+    implements $TabOpenedCopyWith<$Res> {
+  _$TabOpenedCopyWithImpl(this._self, this._then);
+
+  final TabOpened _self;
+  final $Res Function(TabOpened) _then;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? path = null,Object? content = null,}) {
+  return _then(TabOpened(
+path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class TabClosed implements EditorEvent {
+  const TabClosed({required this.path});
+  
+
+ final  String path;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TabClosedCopyWith<TabClosed> get copyWith => _$TabClosedCopyWithImpl<TabClosed>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabClosed&&(identical(other.path, path) || other.path == path));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path);
+
+@override
+String toString() {
+  return 'EditorEvent.tabClosed(path: $path)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TabClosedCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
+  factory $TabClosedCopyWith(TabClosed value, $Res Function(TabClosed) _then) = _$TabClosedCopyWithImpl;
+@useResult
+$Res call({
+ String path
+});
+
+
+
+
+}
+/// @nodoc
+class _$TabClosedCopyWithImpl<$Res>
+    implements $TabClosedCopyWith<$Res> {
+  _$TabClosedCopyWithImpl(this._self, this._then);
+
+  final TabClosed _self;
+  final $Res Function(TabClosed) _then;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+  return _then(TabClosed(
+path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class TabSwitched implements EditorEvent {
+  const TabSwitched({required this.path});
+  
+
+ final  String path;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$TabSwitchedCopyWith<TabSwitched> get copyWith => _$TabSwitchedCopyWithImpl<TabSwitched>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TabSwitched&&(identical(other.path, path) || other.path == path));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path);
+
+@override
+String toString() {
+  return 'EditorEvent.tabSwitched(path: $path)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $TabSwitchedCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
+  factory $TabSwitchedCopyWith(TabSwitched value, $Res Function(TabSwitched) _then) = _$TabSwitchedCopyWithImpl;
+@useResult
+$Res call({
+ String path
+});
+
+
+
+
+}
+/// @nodoc
+class _$TabSwitchedCopyWithImpl<$Res>
+    implements $TabSwitchedCopyWith<$Res> {
+  _$TabSwitchedCopyWithImpl(this._self, this._then);
+
+  final TabSwitched _self;
+  final $Res Function(TabSwitched) _then;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? path = null,}) {
+  return _then(TabSwitched(
+path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class FileSaved implements EditorEvent {
+  const FileSaved();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is FileSaved);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EditorEvent.fileSaved()';
+}
+
+
+}
+
+
+
 
 // dart format on

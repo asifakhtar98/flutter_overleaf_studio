@@ -20,7 +20,8 @@ sealed class ProjectFile with _$ProjectFile {
 }
 
 extension ProjectFileX on ProjectFile {
-  bool get isBinary => binaryContentBase64 != null && binaryContentBase64!.isNotEmpty;
+  bool get isBinary =>
+      binaryContentBase64 != null && binaryContentBase64!.isNotEmpty;
 
   List<int> get bytes {
     if (binaryContentBase64 != null && binaryContentBase64!.isNotEmpty) {
@@ -32,9 +33,7 @@ extension ProjectFileX on ProjectFile {
 
 @freezed
 sealed class ProjectNode with _$ProjectNode {
-  const factory ProjectNode.file({
-    required ProjectFile file,
-  }) = ProjectFileNode;
+  const factory ProjectNode.file({required ProjectFile file}) = ProjectFileNode;
 
   const factory ProjectNode.folder({
     required String name,

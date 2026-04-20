@@ -19,12 +19,12 @@ class ImportProjectUseCase {
       );
 
       if (result == null || result.files.isEmpty) {
-        return Left(Failure.unknown(message: 'No file selected'));
+        return const Left(Failure.unknown(message: 'No file selected'));
       }
 
       final file = result.files.first;
       if (file.bytes == null) {
-        return Left(Failure.unknown(message: 'Could not read file'));
+        return const Left(Failure.unknown(message: 'Could not read file'));
       }
 
       final archive = ZipDecoder().decodeBytes(file.bytes!);
@@ -32,20 +32,25 @@ class ImportProjectUseCase {
 
       for (final archiveFile in archive) {
         if (archiveFile.isFile) {
-          final content = utf8.decode(archiveFile.content as List<int>, allowMalformed: true);
+          final content = utf8.decode(
+            archiveFile.content as List<int>,
+            allowMalformed: true,
+          );
           final name = archiveFile.name.split('/').last;
-          
-          files.add(ProjectFile(
-            name: name,
-            path: archiveFile.name,
-            content: content,
-            isMainFile: name.toLowerCase() == 'main.tex',
-          ));
+
+          files.add(
+            ProjectFile(
+              name: name,
+              path: archiveFile.name,
+              content: content,
+              isMainFile: name.toLowerCase() == 'main.tex',
+            ),
+          );
         }
       }
 
       if (files.isEmpty) {
-        return Left(Failure.unknown(message: 'No files found in ZIP'));
+        return const Left(Failure.unknown(message: 'No files found in ZIP'));
       }
 
       return Right(files);

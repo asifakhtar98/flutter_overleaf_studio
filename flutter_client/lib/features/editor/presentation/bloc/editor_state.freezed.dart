@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EditorState {
 
- String get content; String? get activeFilePath; bool get isDirty;
+ String get content; String? get activeFilePath; List<String> get openTabs; String? get currentTabPath; bool get isDirty; bool get isSaving; DateTime? get lastSaved;
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $EditorStateCopyWith<EditorState> get copyWith => _$EditorStateCopyWithImpl<Edit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorState&&(identical(other.content, content) || other.content == content)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.isDirty, isDirty) || other.isDirty == isDirty));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorState&&(identical(other.content, content) || other.content == content)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&const DeepCollectionEquality().equals(other.openTabs, openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath)&&(identical(other.isDirty, isDirty) || other.isDirty == isDirty)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.lastSaved, lastSaved) || other.lastSaved == lastSaved));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,activeFilePath,isDirty);
+int get hashCode => Object.hash(runtimeType,content,activeFilePath,const DeepCollectionEquality().hash(openTabs),currentTabPath,isDirty,isSaving,lastSaved);
 
 @override
 String toString() {
-  return 'EditorState(content: $content, activeFilePath: $activeFilePath, isDirty: $isDirty)';
+  return 'EditorState(content: $content, activeFilePath: $activeFilePath, openTabs: $openTabs, currentTabPath: $currentTabPath, isDirty: $isDirty, isSaving: $isSaving, lastSaved: $lastSaved)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $EditorStateCopyWith<$Res>  {
   factory $EditorStateCopyWith(EditorState value, $Res Function(EditorState) _then) = _$EditorStateCopyWithImpl;
 @useResult
 $Res call({
- String content, String? activeFilePath, bool isDirty
+ String content, String? activeFilePath, List<String> openTabs, String? currentTabPath, bool isDirty, bool isSaving, DateTime? lastSaved
 });
 
 
@@ -62,12 +62,16 @@ class _$EditorStateCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? activeFilePath = freezed,Object? isDirty = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? activeFilePath = freezed,Object? openTabs = null,Object? currentTabPath = freezed,Object? isDirty = null,Object? isSaving = null,Object? lastSaved = freezed,}) {
   return _then(_self.copyWith(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
+as String?,openTabs: null == openTabs ? _self.openTabs : openTabs // ignore: cast_nullable_to_non_nullable
+as List<String>,currentTabPath: freezed == currentTabPath ? _self.currentTabPath : currentTabPath // ignore: cast_nullable_to_non_nullable
 as String?,isDirty: null == isDirty ? _self.isDirty : isDirty // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
+as bool,lastSaved: freezed == lastSaved ? _self.lastSaved : lastSaved // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -149,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  String? activeFilePath,  bool isDirty)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  String? activeFilePath,  List<String> openTabs,  String? currentTabPath,  bool isDirty,  bool isSaving,  DateTime? lastSaved)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EditorState() when $default != null:
-return $default(_that.content,_that.activeFilePath,_that.isDirty);case _:
+return $default(_that.content,_that.activeFilePath,_that.openTabs,_that.currentTabPath,_that.isDirty,_that.isSaving,_that.lastSaved);case _:
   return orElse();
 
 }
@@ -170,10 +174,10 @@ return $default(_that.content,_that.activeFilePath,_that.isDirty);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  String? activeFilePath,  bool isDirty)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  String? activeFilePath,  List<String> openTabs,  String? currentTabPath,  bool isDirty,  bool isSaving,  DateTime? lastSaved)  $default,) {final _that = this;
 switch (_that) {
 case _EditorState():
-return $default(_that.content,_that.activeFilePath,_that.isDirty);}
+return $default(_that.content,_that.activeFilePath,_that.openTabs,_that.currentTabPath,_that.isDirty,_that.isSaving,_that.lastSaved);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -187,10 +191,10 @@ return $default(_that.content,_that.activeFilePath,_that.isDirty);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  String? activeFilePath,  bool isDirty)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  String? activeFilePath,  List<String> openTabs,  String? currentTabPath,  bool isDirty,  bool isSaving,  DateTime? lastSaved)?  $default,) {final _that = this;
 switch (_that) {
 case _EditorState() when $default != null:
-return $default(_that.content,_that.activeFilePath,_that.isDirty);case _:
+return $default(_that.content,_that.activeFilePath,_that.openTabs,_that.currentTabPath,_that.isDirty,_that.isSaving,_that.lastSaved);case _:
   return null;
 
 }
@@ -202,12 +206,22 @@ return $default(_that.content,_that.activeFilePath,_that.isDirty);case _:
 
 
 class _EditorState implements EditorState {
-  const _EditorState({this.content = '', this.activeFilePath, this.isDirty = false});
+  const _EditorState({this.content = '', this.activeFilePath, final  List<String> openTabs = const [], this.currentTabPath, this.isDirty = false, this.isSaving = false, this.lastSaved}): _openTabs = openTabs;
   
 
 @override@JsonKey() final  String content;
 @override final  String? activeFilePath;
+ final  List<String> _openTabs;
+@override@JsonKey() List<String> get openTabs {
+  if (_openTabs is EqualUnmodifiableListView) return _openTabs;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_openTabs);
+}
+
+@override final  String? currentTabPath;
 @override@JsonKey() final  bool isDirty;
+@override@JsonKey() final  bool isSaving;
+@override final  DateTime? lastSaved;
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
@@ -219,16 +233,16 @@ _$EditorStateCopyWith<_EditorState> get copyWith => __$EditorStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EditorState&&(identical(other.content, content) || other.content == content)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.isDirty, isDirty) || other.isDirty == isDirty));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EditorState&&(identical(other.content, content) || other.content == content)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&const DeepCollectionEquality().equals(other._openTabs, _openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath)&&(identical(other.isDirty, isDirty) || other.isDirty == isDirty)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.lastSaved, lastSaved) || other.lastSaved == lastSaved));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,activeFilePath,isDirty);
+int get hashCode => Object.hash(runtimeType,content,activeFilePath,const DeepCollectionEquality().hash(_openTabs),currentTabPath,isDirty,isSaving,lastSaved);
 
 @override
 String toString() {
-  return 'EditorState(content: $content, activeFilePath: $activeFilePath, isDirty: $isDirty)';
+  return 'EditorState(content: $content, activeFilePath: $activeFilePath, openTabs: $openTabs, currentTabPath: $currentTabPath, isDirty: $isDirty, isSaving: $isSaving, lastSaved: $lastSaved)';
 }
 
 
@@ -239,7 +253,7 @@ abstract mixin class _$EditorStateCopyWith<$Res> implements $EditorStateCopyWith
   factory _$EditorStateCopyWith(_EditorState value, $Res Function(_EditorState) _then) = __$EditorStateCopyWithImpl;
 @override @useResult
 $Res call({
- String content, String? activeFilePath, bool isDirty
+ String content, String? activeFilePath, List<String> openTabs, String? currentTabPath, bool isDirty, bool isSaving, DateTime? lastSaved
 });
 
 
@@ -256,12 +270,16 @@ class __$EditorStateCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? activeFilePath = freezed,Object? isDirty = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? activeFilePath = freezed,Object? openTabs = null,Object? currentTabPath = freezed,Object? isDirty = null,Object? isSaving = null,Object? lastSaved = freezed,}) {
   return _then(_EditorState(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
+as String?,openTabs: null == openTabs ? _self._openTabs : openTabs // ignore: cast_nullable_to_non_nullable
+as List<String>,currentTabPath: freezed == currentTabPath ? _self.currentTabPath : currentTabPath // ignore: cast_nullable_to_non_nullable
 as String?,isDirty: null == isDirty ? _self.isDirty : isDirty // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
+as bool,lastSaved: freezed == lastSaved ? _self.lastSaved : lastSaved // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

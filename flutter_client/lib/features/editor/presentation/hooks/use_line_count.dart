@@ -5,25 +5,22 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 int useLineCount(TextEditingController controller) {
   final lineCount = useState(1);
 
-  useEffect(
-    () {
-      void listener() {
-        int count = 1;
-        final text = controller.text;
-        for (int i = 0; i < text.length; i++) {
-          if (text.codeUnitAt(i) == 10) count++;
-        }
-        if (lineCount.value != count) {
-          lineCount.value = count;
-        }
+  useEffect(() {
+    void listener() {
+      var count = 1;
+      final text = controller.text;
+      for (var i = 0; i < text.length; i++) {
+        if (text.codeUnitAt(i) == 10) count++;
       }
+      if (lineCount.value != count) {
+        lineCount.value = count;
+      }
+    }
 
-      controller.addListener(listener);
-      listener(); // Initial count
-      return () => controller.removeListener(listener);
-    },
-    [controller],
-  );
+    controller.addListener(listener);
+    listener(); // Initial count
+    return () => controller.removeListener(listener);
+  }, [controller]);
 
   return lineCount.value;
 }

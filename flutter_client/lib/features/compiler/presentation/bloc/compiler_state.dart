@@ -8,13 +8,11 @@ part 'compiler_state.freezed.dart';
 sealed class CompilerState with _$CompilerState {
   const factory CompilerState.initial() = CompilerInitial;
 
-  const factory CompilerState.loading({
-    required String engine,
-  }) = CompilerLoading;
+  const factory CompilerState.loading({required String engine}) =
+      CompilerLoading;
 
-  const factory CompilerState.success({
-    required CompileResult result,
-  }) = CompilerSuccess;
+  const factory CompilerState.success({required CompileResult result}) =
+      CompilerSuccess;
 
   const factory CompilerState.failure({
     required String errorCode,

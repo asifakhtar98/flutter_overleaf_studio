@@ -9,7 +9,17 @@ sealed class EditorEvent with _$EditorEvent {
     required String content,
   }) = FileOpened;
 
-  const factory EditorEvent.contentChanged({
+  const factory EditorEvent.contentChanged({required String content}) =
+      ContentChanged;
+
+  const factory EditorEvent.tabOpened({
+    required String path,
     required String content,
-  }) = ContentChanged;
+  }) = TabOpened;
+
+  const factory EditorEvent.tabClosed({required String path}) = TabClosed;
+
+  const factory EditorEvent.tabSwitched({required String path}) = TabSwitched;
+
+  const factory EditorEvent.fileSaved() = FileSaved;
 }
