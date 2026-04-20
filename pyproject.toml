@@ -1,5 +1,5 @@
 [project]
-name = "texlive-api"
+name = "overleaf-server"
 version = "1.0.0"
 description = "Stateless REST API for LaTeX compilation via TeX Live"
 requires-python = ">=3.11"

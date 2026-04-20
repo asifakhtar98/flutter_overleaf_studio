@@ -19,8 +19,8 @@ jobs:
           script: |
             set -e
 
-            APP_DIR="$HOME/texlive-api"
-            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/texlive-api:latest"
+            APP_DIR="$HOME/overleaf-server"
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server:latest"
 
             echo "=== Pulling latest image ==="
             docker pull "$IMAGE"
@@ -39,5 +39,5 @@ jobs:
         if: always()
         run: |
           echo "Deployment ${{ job.status }}"
-          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/texlive-api:latest"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server:latest"
           echo "Host: ${{ secrets.ORACLE_HOST }}"

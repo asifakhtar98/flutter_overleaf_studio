@@ -3,7 +3,7 @@
 # Blue-Green Deployment Script (zero-downtime with iptables port swap)
 # =============================================================================
 # Usage: bash scripts/deploy.sh <image:tag>
-# Example: bash scripts/deploy.sh yourusername/texlive-api:latest
+# Example: bash scripts/deploy.sh yourusername/overleaf-server:latest
 #
 # Requires: sudo (for iptables during port swap)
 # =============================================================================
@@ -24,11 +24,11 @@ echo "App dir: $APP_DIR"
 # ---------------------------------------------------------------------------
 # Determine current/next slot
 # ---------------------------------------------------------------------------
-CURRENT_CONTAINER=$(docker ps --filter "name=texlive-api" --format "{{.Names}}" | head -1 || true)
-if [[ "$CURRENT_CONTAINER" == "texlive-api-blue" ]]; then
+CURRENT_CONTAINER=$(docker ps --filter "name=overleaf-server" --format "{{.Names}}" | head -1 || true)
+if [[ "$CURRENT_CONTAINER" == "overleaf-server-blue" ]]; then
     NEXT_SLOT="green"
     OLD_SLOT="blue"
-elif [[ "$CURRENT_CONTAINER" == "texlive-api-green" ]]; then
+elif [[ "$CURRENT_CONTAINER" == "overleaf-server-green" ]]; then
     NEXT_SLOT="blue"
     OLD_SLOT="green"
 else
@@ -36,7 +36,7 @@ else
     OLD_SLOT=""
 fi
 
-NEXT_CONTAINER="texlive-api-${NEXT_SLOT}"
+NEXT_CONTAINER="overleaf-server-${NEXT_SLOT}"
 
 echo "Current: ${CURRENT_CONTAINER:-none}"
 echo "Deploying to: $NEXT_CONTAINER"
@@ -116,10 +116,10 @@ IPTABLES_ADDED=true
 # ---------------------------------------------------------------------------
 echo "[4/6] Stopping old container..."
 if [ -n "$OLD_SLOT" ]; then
-    OLD_CONTAINER="texlive-api-${OLD_SLOT}"
+    OLD_CONTAINER="overleaf-server-${OLD_SLOT}"
     docker rm -f "$OLD_CONTAINER" 2>/dev/null || true
 fi
-docker rm -f "texlive-api-prod" 2>/dev/null || true
+docker rm -f "overleaf-server-prod" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # [5/6] Recreate new container on production port

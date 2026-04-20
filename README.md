@@ -1,4 +1,4 @@
-# 📄 TeX Live Compilation API
+# 📄 Overleaf Server
 
 > Stateless REST API — LaTeX in, PDF out. TeX Live Full, Docker, Oracle Cloud ARM64.
 
@@ -12,8 +12,8 @@ The easiest way to get the API running on your machine is using Docker.
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/YOUR_USERNAME/texlive-api.git 
-cd texlive-api
+git clone https://github.com/YOUR_USERNAME/overleaf-server.git 
+cd overleaf-server
 ```
 
 **2. Configure environment**

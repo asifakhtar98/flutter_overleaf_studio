@@ -7,7 +7,7 @@
 # =============================================================================
 set -euo pipefail
 
-echo "=== TeX Live API — Server Setup ==="
+echo "=== Overleaf Server — Server Setup ==="
 
 # --- System updates ---
 echo "[1/7] Updating system packages..."
@@ -48,7 +48,7 @@ sudo netfilter-persistent save 2>/dev/null || true
 
 # --- Create app directory ---
 echo "[6/7] Creating application directory..."
-APP_DIR="$HOME/texlive-api"
+APP_DIR="$HOME/overleaf-server"
 mkdir -p "$APP_DIR/scripts"
 echo "App directory: $APP_DIR"
 

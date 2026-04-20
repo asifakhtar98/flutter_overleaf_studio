@@ -1,6 +1,6 @@
-# 🚀 Production Deploy Guide — TeX Live Compilation API
+# 🚀 Production Deploy Guide — Overleaf Server
 
-> Step-by-step guide to deploy the TeX Live API on Oracle Cloud Free Tier (ARM64).
+> Step-by-step guide to deploy the Overleaf Server on Oracle Cloud Free Tier (ARM64).
 
 > [!IMPORTANT]
 > Replace all occurrences of `YOUR_ORACLE_IP`, `YOUR_USERNAME`, `YOUR_DOCKERHUB_USERNAME`, and `YOUR_API_KEY` with your actual values before running any command.
@@ -29,7 +29,7 @@
 
 | Setting | Value |
 |---------|-------|
-| **Name** | `texlive-api` |
+| **Name: `overleaf-server`` |
 | **Image** | Ubuntu 22.04 (Canonical) |
 | **Shape** | `VM.Standard.A1.Flex` |
 | **OCPUs** | 4 |
@@ -80,7 +80,7 @@ Run the setup script:
 
 ```bash
 # Option A: Run from repo (if repo is public)
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/texlive-api/main/scripts/server-setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/overleaf-server/main/scripts/server-setup.sh | bash
 
 # Option B: Copy and run manually
 # (paste contents of scripts/server-setup.sh and run)
@@ -92,7 +92,7 @@ curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/texlive-api/main/scrip
 - ✅ Adds user to docker group
 - ✅ Configures UFW firewall (ports 22, 8080)
 - ✅ Configures Oracle Cloud iptables rules
-- ✅ Creates `~/texlive-api/` directory with `.env` template
+- ✅ Creates `~/overleaf-server/` directory with `.env` template
 - ✅ Sets up Docker log rotation
 
 **After the script:**
@@ -113,7 +113,7 @@ docker run --rm hello-world
 Edit the environment file on the VM:
 
 ```bash
-nano ~/texlive-api/.env
+nano ~/overleaf-server/.env
 ```
 
 **Critical values to change:**
@@ -136,8 +136,8 @@ Copy the deploy script and prod compose to the VM:
 
 ```bash
 # From your local machine
-scp -i ~/.ssh/your_key scripts/deploy.sh ubuntu@YOUR_ORACLE_IP:~/texlive-api/scripts/
-scp -i ~/.ssh/your_key docker-compose.prod.yml ubuntu@YOUR_ORACLE_IP:~/texlive-api/
+scp -i ~/.ssh/your_key scripts/deploy.sh ubuntu@YOUR_ORACLE_IP:~/overleaf-server/scripts/
+scp -i ~/.ssh/your_key docker-compose.prod.yml ubuntu@YOUR_ORACLE_IP:~/overleaf-server/
 ```
 
 ---
@@ -158,7 +158,7 @@ In your GitHub repo → **Settings → Secrets and variables → Actions**:
 
 1. Go to [hub.docker.com](https://hub.docker.com)
 2. Account Settings → Security → New Access Token
-3. Name: `texlive-api-ci`
+3. Name: `overleaf-server-ci`
 4. Permissions: Read & Write
 5. Copy the token — you won't see it again
 
@@ -179,7 +179,7 @@ This triggers:
 1. **CI**: Lint → Test → Build ARM64 image → Push to Docker Hub
 2. **CD**: SSH → Pull → Blue-green deploy → Health check
 
-Monitor at: `https://github.com/YOUR_USERNAME/texlive-api/actions`
+Monitor at: `https://github.com/YOUR_USERNAME/overleaf-server/actions`
 
 ### Option B: Manual first deploy (while CI builds)
 
@@ -189,9 +189,9 @@ SSH into the VM:
 ssh -i ~/.ssh/your_key ubuntu@YOUR_ORACLE_IP
 
 # Pull and start manually
-cd ~/texlive-api
-docker pull YOUR_DOCKERHUB_USERNAME/texlive-api:latest
-bash scripts/deploy.sh YOUR_DOCKERHUB_USERNAME/texlive-api:latest
+cd ~/overleaf-server
+docker pull YOUR_DOCKERHUB_USERNAME/overleaf-server:latest
+bash scripts/deploy.sh YOUR_DOCKERHUB_USERNAME/overleaf-server:latest
 ```
 
 ### Verify deployment
@@ -227,30 +227,30 @@ Logs are structured JSON (via `structlog` + `orjson`). Each line includes
 
 ```bash
 ssh ubuntu@YOUR_ORACLE_IP
-docker logs texlive-api-blue --tail 100 -f
+docker logs overleaf-server-blue --tail 100 -f
 
 # Pipe through jq for formatted output
-docker logs texlive-api-blue --tail 20 2>&1 | jq .
+docker logs overleaf-server-blue --tail 20 2>&1 | jq .
 ```
 
 ### Restart the container
 
 ```bash
-docker restart texlive-api-blue
+docker restart overleaf-server-blue
 ```
 
 ### Update manually (if CI/CD is broken)
 
 ```bash
-cd ~/texlive-api
-docker pull YOUR_DOCKERHUB_USERNAME/texlive-api:latest
-bash scripts/deploy.sh YOUR_DOCKERHUB_USERNAME/texlive-api:latest
+cd ~/overleaf-server
+docker pull YOUR_DOCKERHUB_USERNAME/overleaf-server:latest
+bash scripts/deploy.sh YOUR_DOCKERHUB_USERNAME/overleaf-server:latest
 ```
 
 ### Check resource usage
 
 ```bash
-docker stats texlive-api-blue
+docker stats overleaf-server-blue
 free -h
 df -h
 ```
@@ -281,7 +281,7 @@ sudo apt install nginx certbot python3-certbot-nginx
 sudo certbot --nginx -d api.yourdomain.com
 
 # Configure Nginx to proxy to port 8080
-sudo tee /etc/nginx/sites-available/texlive-api << 'EOF'
+sudo tee /etc/nginx/sites-available/overleaf-server << 'EOF'
 server {
     server_name api.yourdomain.com;
     location / {
@@ -302,7 +302,7 @@ server {
     return 301 https://$server_name$request_uri;
 }
 EOF
-sudo ln -sf /etc/nginx/sites-available/texlive-api /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/overleaf-server /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
@@ -324,7 +324,7 @@ sudo nginx -t && sudo systemctl reload nginx
 crontab -e
 
 # Check health every 5 minutes, restart if down
-*/5 * * * * curl -sf http://localhost:8080/api/v1/health || docker restart $(docker ps -q --filter "name=texlive-api") >> /var/log/texlive-health.log 2>&1
+*/5 * * * * curl -sf http://localhost:8080/api/v1/health || docker restart $(docker ps -q --filter "name=overleaf-server") >> /var/log/texlive-health.log 2>&1
 ```
 
 ---
@@ -334,7 +334,7 @@ crontab -e
 ### Container won't start
 
 ```bash
-docker logs texlive-api-blue --tail 50
+docker logs overleaf-server-blue --tail 50
 # Check for Python import errors, missing env vars, etc.
 ```
 

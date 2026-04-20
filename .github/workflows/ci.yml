@@ -3,7 +3,7 @@ name: CI
 on: workflow_dispatch
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/texlive-api
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server
 
 jobs:
   lint:
@@ -39,7 +39,7 @@ jobs:
           file: Dockerfile.dev
           platforms: linux/arm64
           load: true
-          tags: texlive-api-dev:test
+          tags: overleaf-server-dev:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -49,7 +49,7 @@ jobs:
             -e API_KEYS=test-key-123 \
             -e LOG_LEVEL=warning \
             -e USE_TMPFS=false \
-            texlive-api-dev:test \
+            overleaf-server-dev:test \
             python3 -m pytest tests/ -v --tb=short
 
   build-push:

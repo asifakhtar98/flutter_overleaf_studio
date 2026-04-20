@@ -86,7 +86,7 @@ app = FastAPI(
     openapi_tags=tags_metadata,
     contact={
         "name": "API Support",
-        "url": "https://github.com/YOUR_USERNAME/texlive-api",
+        "url": "https://github.com/YOUR_USERNAME/overleaf-server",
     },
     license_info={
         "name": "MIT",

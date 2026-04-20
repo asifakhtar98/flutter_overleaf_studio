@@ -8,7 +8,7 @@
 ## Product Brief
 
 **Product**: Overleaf Mvp (TeX Live Full REST API Server+Flutter thin frontend)
-**Codename**: flutter-overleaf
+**Codename**: overleaf-server / flutter-overleaf
 **One-liner**: Stateless REST API — LaTeX in, PDF out. No database,  file persistence only in frontend (drift sql).
 **Frontend**: Flutter web & Flutter mobile only
 

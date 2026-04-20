@@ -166,7 +166,7 @@
     {
       "label": "🏗️ Docker: Build Prod Image",
       "type": "shell",
-      "command": "docker build -t texlive-api:local -f Dockerfile .",
+      "command": "docker build -t overleaf-server:local -f Dockerfile .",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Build production image locally for testing"
@@ -193,7 +193,7 @@
     {
       "label": "🚀 Deploy: Push to Docker Hub",
       "type": "shell",
-      "command": "echo 'Tag and push:' && read -p 'Docker Hub username: ' DH_USER && docker tag texlive-api:local $DH_USER/texlive-api:latest && docker push $DH_USER/texlive-api:latest",
+      "command": "echo 'Tag and push:' && read -p 'Docker Hub username: ' DH_USER && docker tag overleaf-server:local $DH_USER/overleaf-server:latest && docker push $DH_USER/overleaf-server:latest",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Tag and push prod image to Docker Hub"
