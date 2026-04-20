@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 
-import 'package:flutter_overleaf/core/config/server_config.dart';
-import 'package:flutter_overleaf/core/di/injection.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_event.dart';
@@ -20,8 +17,6 @@ class Toolbar extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final draftMode = useState(false);
-
     return Container(
       height: 48,
       decoration: const BoxDecoration(
@@ -44,122 +39,13 @@ class Toolbar extends HookWidget {
           ),
           const SizedBox(width: 24),
 
-          // Draft toggle (kept in toolbar per user request)
-          Tooltip(
-            message: 'Draft mode — skips image rendering for faster compile',
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Draft',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: LatexTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                SizedBox(
-                  height: 24,
-                  child: Switch(
-                    value: draftMode.value,
-                    onChanged: (v) => draftMode.value = v,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 24),
 
           // Compile button
-          _CompileButton(draftMode: draftMode.value),
+          const _CompileButton(),
           const SizedBox(width: 8),
-
-          // Import project
-          BlocBuilder<ProjectBloc, ProjectState>(
-            builder: (context, state) {
-              if (state.isImporting) {
-                return const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: LatexTheme.textSecondary,
-                    ),
-                  ),
-                );
-              }
-              return IconButton(
-                icon: const Icon(Icons.folder_open_outlined, size: 18),
-                tooltip: 'Import ZIP project',
-                onPressed: () {
-                  context.read<ProjectBloc>().add(
-                    const ProjectEvent.importProject(),
-                  );
-                },
-                color: LatexTheme.textSecondary,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              );
-            },
-          ),
-
-          // Export project
-          BlocBuilder<ProjectBloc, ProjectState>(
-            builder: (context, state) {
-              if (state.isExporting) {
-                return const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: LatexTheme.textSecondary,
-                    ),
-                  ),
-                );
-              }
-              return IconButton(
-                icon: const Icon(Icons.save_alt_outlined, size: 18),
-                tooltip: 'Export as ZIP',
-                onPressed: () {
-                  context.read<ProjectBloc>().add(
-                    const ProjectEvent.exportProject(),
-                  );
-                },
-                color: LatexTheme.textSecondary,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              );
-            },
-          ),
 
           const Spacer(),
-
-          const SizedBox(width: 16),
-
-          // Debug log viewer (dev only)
-          if (getIt<ServerConfig>().environment ==
-              ServerEnvironment.development)
-            IconButton(
-              icon: const Icon(Icons.bug_report_outlined, size: 18),
-              tooltip: 'Open log viewer',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => TalkerScreen(talker: getIt<Talker>()),
-                  ),
-                );
-              },
-              color: LatexTheme.textSecondary,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
-
-          const SizedBox(width: 8),
 
           // Compile time
           BlocBuilder<CompilerBloc, CompilerState>(
@@ -199,9 +85,7 @@ String? resolveEntryFile({
 }
 
 class _CompileButton extends StatelessWidget {
-  const _CompileButton({required this.draftMode});
-
-  final bool draftMode;
+  const _CompileButton();
 
   @override
   Widget build(BuildContext context) {
@@ -294,7 +178,7 @@ class _CompileButton extends StatelessWidget {
     context.read<CompilerBloc>().add(
       CompilerEvent.compileRequested(
         engine: projectState.engine,
-        draft: draftMode,
+        draft: projectState.draftMode,
         files: files,
         mainFile: entryFile,
       ),

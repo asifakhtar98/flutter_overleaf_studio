@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
+import 'package:flutter_overleaf/core/di/injection.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
@@ -18,28 +20,165 @@ class SettingsButton extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: LatexTheme.border)),
       ),
-      child: InkWell(
-        onTap: () => _showSettingsPanel(context),
-        borderRadius: BorderRadius.circular(4),
-        child: const Row(
-          children: [
-            Icon(
-              Icons.settings_outlined,
-              size: 16,
-              color: LatexTheme.textSecondary,
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 12,
-                color: LatexTheme.textSecondary,
-                fontWeight: FontWeight.w500,
+      child: Row(
+        children: [
+          // Talker Logs
+          Tooltip(
+            message: 'View App Logs',
+            child: InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (context) => TalkerScreen(talker: getIt<Talker>()),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(
+                  Icons.receipt_long,
+                  size: 16,
+                  color: LatexTheme.textSecondary,
+                ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+          const SizedBox(width: 8),
+
+          // Import Button
+          BlocBuilder<ProjectBloc, ProjectState>(
+            builder: (context, state) {
+              if (state.isImporting) {
+                return const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                );
+              }
+              return Tooltip(
+                message: 'Import ZIP project',
+                child: InkWell(
+                  onTap: () => context.read<ProjectBloc>().add(
+                    const ProjectEvent.importProject(),
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.folder_open_outlined,
+                      size: 16,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+
+          // Export Button
+          BlocBuilder<ProjectBloc, ProjectState>(
+            builder: (context, state) {
+              if (state.isExporting) {
+                return const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                );
+              }
+              return Tooltip(
+                message: 'Export as ZIP',
+                child: InkWell(
+                  onTap: () => context.read<ProjectBloc>().add(
+                    const ProjectEvent.exportProject(),
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.save_alt_outlined,
+                      size: 16,
+                      color: LatexTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          const Spacer(),
+
+          // Settings Button
+          Tooltip(
+            message: 'Project Settings',
+            child: InkWell(
+              onTap: () => _showSettingsPanel(context),
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.all(4),
+                child: Icon(
+                  Icons.settings_outlined,
+                  size: 16,
+                  color: LatexTheme.textSecondary,
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(width: 8),
+
+          // Draft mode toggle
+          BlocBuilder<ProjectBloc, ProjectState>(
+            builder: (context, state) {
+              return Tooltip(
+                message: 'Draft mode — skips images',
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Draft',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: LatexTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    SizedBox(
+                      height: 20,
+                      width: 28,
+                      child: Transform.scale(
+                        scale: 0.65,
+                        child: Switch(
+                          value: state.draftMode,
+                          onChanged: (v) {
+                            context.read<ProjectBloc>().add(
+                              ProjectEvent.setDraftMode(draft: v),
+                            );
+                          },
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      )
     );
   }
 

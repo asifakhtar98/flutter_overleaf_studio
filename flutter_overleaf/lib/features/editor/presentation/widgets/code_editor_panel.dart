@@ -85,6 +85,7 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
                   data: CodeThemeData(styles: vs2015Theme),
                   child: CodeField(
                     controller: _controller,
+                    expands: true,
                     textStyle: const TextStyle(
                       fontFamily: 'JetBrains Mono, Consolas, monospace',
                       fontSize: 13,
