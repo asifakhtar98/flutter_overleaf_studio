@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install ruff==0.11.6
-      - run: ruff check app/ tests/
+      - run: ruff check overleaf_server/app/ overleaf_server/tests/
 
   test:
     name: Test
@@ -35,8 +35,8 @@ jobs:
       - name: Build dev image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: Dockerfile.dev
+          context: ./overleaf_server
+          file: overleaf_server/Dockerfile.dev
           platforms: linux/arm64
           load: true
           tags: overleaf-server-dev:test
@@ -77,8 +77,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: Dockerfile
+          context: ./overleaf_server
+          file: overleaf_server/Dockerfile
           platforms: linux/arm64
           push: true
           tags: |

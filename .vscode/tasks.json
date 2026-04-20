@@ -8,6 +8,7 @@
       "label": "🚀 Dev: Start Server",
       "type": "shell",
       "command": "docker compose up --build",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "build",
       "presentation": {
         "reveal": "always",
@@ -21,6 +22,7 @@
       "label": "🚀 Dev: Start Server (Background)",
       "type": "shell",
       "command": "docker compose up -d --build",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "build",
       "presentation": {
         "reveal": "silent"
@@ -32,6 +34,7 @@
       "label": "🔄 Dev: Restart Server",
       "type": "shell",
       "command": "docker compose restart api",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Restart the running container (no rebuild)"
@@ -40,6 +43,7 @@
       "label": "⏹️ Dev: Stop Server",
       "type": "shell",
       "command": "docker compose down --remove-orphans",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Stop all containers and remove orphans"
@@ -48,6 +52,7 @@
       "label": "🪵 Dev: Logs (follow)",
       "type": "shell",
       "command": "docker compose logs -f --tail 100 api",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
@@ -63,6 +68,7 @@
       "label": "🧪 Test: Run All",
       "type": "shell",
       "command": "docker compose exec api python3 -m pytest tests/ -v --tb=short",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared", "clear": true },
       "problemMatcher": [],
@@ -72,6 +78,7 @@
       "label": "🧪 Test: Health Only",
       "type": "shell",
       "command": "docker compose exec api python3 -m pytest tests/test_health.py -v",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
@@ -81,6 +88,7 @@
       "label": "🧪 Test: Auth Only",
       "type": "shell",
       "command": "docker compose exec api python3 -m pytest tests/test_auth.py -v",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
@@ -90,6 +98,7 @@
       "label": "🧪 Test: Compile Only",
       "type": "shell",
       "command": "docker compose exec api python3 -m pytest tests/test_compile.py -v",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
@@ -99,6 +108,7 @@
       "label": "🧪 Test: With Coverage",
       "type": "shell",
       "command": "docker compose exec api python3 -m pytest tests/ -v --cov=app --cov-report=term-missing",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": { "reveal": "always", "panel": "shared", "clear": true },
       "problemMatcher": [],
@@ -108,6 +118,7 @@
       "label": "🧪 Test: Compile All Samples",
       "type": "shell",
       "command": "bash scripts/test_samples.sh",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "group": "test",
       "presentation": {
         "reveal": "always",
@@ -124,6 +135,7 @@
       "label": "🔍 Lint: Check",
       "type": "shell",
       "command": "docker compose exec api python3 -m ruff check app/ tests/",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Run ruff linter"
@@ -132,6 +144,7 @@
       "label": "🔍 Lint: Fix",
       "type": "shell",
       "command": "docker compose exec api python3 -m ruff check app/ tests/ --fix",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Auto-fix lint issues"
@@ -140,6 +153,7 @@
       "label": "🔍 Format: Check",
       "type": "shell",
       "command": "docker compose exec api python3 -m ruff format --check app/ tests/",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Check code formatting"
@@ -148,6 +162,7 @@
       "label": "🔍 Format: Apply",
       "type": "shell",
       "command": "docker compose exec api python3 -m ruff format app/ tests/",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Auto-format code"
@@ -159,6 +174,7 @@
       "label": "🏗️ Docker: Build Dev Image",
       "type": "shell",
       "command": "docker compose build --no-cache",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Force rebuild dev image from scratch"
@@ -167,6 +183,7 @@
       "label": "🏗️ Docker: Build Prod Image",
       "type": "shell",
       "command": "docker build -t overleaf-server:local -f Dockerfile .",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Build production image locally for testing"
@@ -232,6 +249,7 @@
       "label": "📋 Setup: Copy .env",
       "type": "shell",
       "command": "cp -n .env.example .env && echo '.env created — edit API_KEYS before starting' || echo '.env already exists'",
+      "options": { "cwd": "${workspaceFolder}/overleaf_server" },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": [],
       "detail": "Create .env from template (won't overwrite existing)"
