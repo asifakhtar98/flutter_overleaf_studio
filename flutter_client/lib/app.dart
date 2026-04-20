@@ -78,8 +78,7 @@ class _AppContent extends StatelessWidget {
         // OL5: Show snackbar on import/export errors
         BlocListener<ProjectBloc, ProjectState>(
           listenWhen: (prev, curr) =>
-              curr.importError != null &&
-              prev.importError != curr.importError,
+              curr.importError != null && prev.importError != curr.importError,
           listener: (context, state) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

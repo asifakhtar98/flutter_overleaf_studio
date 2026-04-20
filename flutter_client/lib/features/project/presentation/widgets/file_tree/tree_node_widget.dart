@@ -107,8 +107,7 @@ class _TreeNodeWidgetState extends State<TreeNodeWidget> {
                 if (_isHovered)
                   GestureDetector(
                     onTap: () {
-                      final box =
-                          context.findRenderObject()! as RenderBox;
+                      final box = context.findRenderObject()! as RenderBox;
                       final pos = box.localToGlobal(
                         Offset(box.size.width, box.size.height / 2),
                       );

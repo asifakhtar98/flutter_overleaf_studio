@@ -11,6 +11,7 @@ import 'package:flutter_latex_client/features/project/presentation/models/tree_n
 import 'package:flutter_latex_client/features/project/presentation/utils/tree_builder.dart';
 import 'package:flutter_latex_client/features/project/presentation/widgets/file_tree/file_tree_dialogs.dart';
 import 'package:flutter_latex_client/features/project/presentation/widgets/file_tree/tree_node_widget.dart';
+import 'package:flutter_latex_client/features/project/presentation/widgets/settings_panel.dart';
 
 const _textExtensions = {
   '.tex',
@@ -48,14 +49,12 @@ const _binaryExtensions = {
 
 bool _isTextFile(String fileName) {
   final dotIndex = fileName.lastIndexOf('.');
-  if (dotIndex == -1) return true; // Extensionless files are treated as text
+  if (dotIndex == -1) return true;
   final ext = fileName.toLowerCase().substring(dotIndex);
   if (_textExtensions.contains(ext)) return true;
   if (_binaryExtensions.contains(ext)) return false;
   return true;
 }
-
-
 
 class FileTreePanel extends StatelessWidget {
   const FileTreePanel({super.key});
@@ -101,6 +100,7 @@ class _FileTreeState extends State<_FileTree> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Header with New File + New Folder buttons
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: const BoxDecoration(
@@ -129,12 +129,21 @@ class _FileTreeState extends State<_FileTree> {
                   tooltip: 'New File',
                   onTap: () => FileTreeDialogs.showNewFileDialog(context),
                 ),
+                const SizedBox(width: 4),
+                _ActionButton(
+                  icon: Icons.create_new_folder_outlined,
+                  tooltip: 'New Folder',
+                  onTap: () => FileTreeDialogs.showNewFolderDialog(context),
+                ),
               ],
             ),
           ),
+          // File tree content
           Expanded(
             child: ListView(children: _buildNodeWidgets(widget.roots, 0)),
           ),
+          // Settings button at bottom (Overleaf-style)
+          const SettingsButton(),
         ],
       ),
     );
@@ -245,6 +254,8 @@ class _FileTreeState extends State<_FileTree> {
     }
   }
 
+  /// Overleaf file context menu: Rename, Delete only.
+  /// No "Set as Main" — that's in Settings panel.
   Future<void> _showFileContextMenu(
     BuildContext context,
     TreeNode node,
@@ -259,7 +270,6 @@ class _FileTreeState extends State<_FileTree> {
         globalPosition.dy + 1,
       ),
       items: const [
-        PopupMenuItem(value: 'main', child: Text('Set as Main')),
         PopupMenuItem(value: 'rename', child: Text('Rename')),
         PopupMenuItem(value: 'delete', child: Text('Delete')),
       ],
@@ -268,10 +278,6 @@ class _FileTreeState extends State<_FileTree> {
     if (!context.mounted) return;
 
     switch (value) {
-      case 'main':
-        context.read<ProjectBloc>().add(
-          ProjectEvent.setMainFile(path: node.path),
-        );
       case 'rename':
         await FileTreeDialogs.showRenameDialog(context, node);
       case 'delete':

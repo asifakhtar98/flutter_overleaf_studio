@@ -20,7 +20,6 @@ class Toolbar extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedEngine = useState('pdflatex');
     final draftMode = useState(false);
 
     return Container(
@@ -45,34 +44,7 @@ class Toolbar extends HookWidget {
           ),
           const SizedBox(width: 24),
 
-          // Engine picker
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: LatexTheme.border),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedEngine.value,
-                isDense: true,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: LatexTheme.textPrimary,
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'pdflatex', child: Text('pdflatex')),
-                  DropdownMenuItem(value: 'xelatex', child: Text('xelatex')),
-                  DropdownMenuItem(value: 'lualatex', child: Text('lualatex')),
-                  DropdownMenuItem(value: 'latexmk', child: Text('latexmk')),
-                ],
-                onChanged: (v) => selectedEngine.value = v!,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Draft toggle
+          // Draft toggle (kept in toolbar per user request)
           Tooltip(
             message: 'Draft mode — skips image rendering for faster compile',
             child: Row(
@@ -100,88 +72,7 @@ class Toolbar extends HookWidget {
           const SizedBox(width: 12),
 
           // Compile button
-          BlocBuilder<CompilerBloc, CompilerState>(
-            builder: (context, compilerState) {
-              final isLoading = compilerState is CompilerLoading;
-              return BlocBuilder<ProjectBloc, ProjectState>(
-                builder: (context, projectState) {
-                  return BlocBuilder<EditorBloc, EditorState>(
-                    builder: (context, editorState) {
-                      // Overleaf: active file is the entry point,
-                      // mainFilePath is fallback.
-                      final activePath = editorState.currentTabPath;
-                      final entryFile =
-                          projectState.mainFilePath ?? activePath;
-                      final hasEntry = entryFile != null &&
-                          projectState.files.any((f) => f.path == entryFile);
-                      final canCompile = !isLoading && hasEntry;
-
-                      return FilledButton.icon(
-                        onPressed: canCompile
-                            ? () {
-                                // Flush active editor content to project
-                                if (activePath != null) {
-                                  context.read<ProjectBloc>().add(
-                                    ProjectEvent.updateFileContent(
-                                      path: activePath,
-                                      content: editorState.content,
-                                    ),
-                                  );
-                                }
-
-                                // Build files with active content overlaid
-                                final files = activePath != null
-                                    ? projectState.files.map((f) {
-                                        if (f.path == activePath) {
-                                          return f.copyWith(
-                                              content: editorState.content);
-                                        }
-                                        return f;
-                                      }).toList()
-                                    : projectState.files;
-
-                                context.read<CompilerBloc>().add(
-                                  CompilerEvent.compileRequested(
-                                    engine: selectedEngine.value,
-                                    draft: draftMode.value,
-                                    files: files,
-                                    mainFile: entryFile!,
-                                  ),
-                                );
-                              }
-                            : null,
-                        icon: isLoading
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.play_arrow, size: 18),
-                        label: Text(
-                          isLoading ? 'Compiling…' : 'Compile',
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: LatexTheme.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 0,
-                          ),
-                          minimumSize: const Size(0, 34),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
+          _CompileButton(draftMode: draftMode.value),
           const SizedBox(width: 8),
 
           // Import project
@@ -287,6 +178,125 @@ class Toolbar extends HookWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Determines the compile entry file using Overleaf logic:
+/// 1. If active file contains \documentclass → compile it
+/// 2. Else → use project's mainFilePath
+String? resolveEntryFile({
+  required String? activePath,
+  required String activeContent,
+  required String? mainFilePath,
+}) {
+  // Overleaf behavior: active file with \documentclass takes priority
+  if (activePath != null && activeContent.contains(r'\documentclass')) {
+    return activePath;
+  }
+  return mainFilePath ?? activePath;
+}
+
+class _CompileButton extends StatelessWidget {
+  const _CompileButton({required this.draftMode});
+
+  final bool draftMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CompilerBloc, CompilerState>(
+      builder: (context, compilerState) {
+        final isLoading = compilerState is CompilerLoading;
+        return BlocBuilder<ProjectBloc, ProjectState>(
+          builder: (context, projectState) {
+            return BlocBuilder<EditorBloc, EditorState>(
+              builder: (context, editorState) {
+                final entryFile = resolveEntryFile(
+                  activePath: editorState.currentTabPath,
+                  activeContent: editorState.content,
+                  mainFilePath: projectState.mainFilePath,
+                );
+                final hasEntry =
+                    entryFile != null &&
+                    projectState.files.any((f) => f.path == entryFile);
+                final canCompile = !isLoading && hasEntry;
+
+                return FilledButton.icon(
+                  onPressed: canCompile
+                      ? () => _compile(
+                          context,
+                          editorState: editorState,
+                          projectState: projectState,
+                          entryFile: entryFile,
+                        )
+                      : null,
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.play_arrow, size: 18),
+                  label: Text(isLoading ? 'Compiling…' : 'Compile'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: LatexTheme.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 0,
+                    ),
+                    minimumSize: const Size(0, 34),
+                    textStyle: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _compile(
+    BuildContext context, {
+    required EditorState editorState,
+    required ProjectState projectState,
+    required String entryFile,
+  }) {
+    final activePath = editorState.currentTabPath;
+
+    // Flush active editor content to project
+    if (activePath != null) {
+      context.read<ProjectBloc>().add(
+        ProjectEvent.updateFileContent(
+          path: activePath,
+          content: editorState.content,
+        ),
+      );
+    }
+
+    // Build files with active content overlaid
+    final files = activePath != null
+        ? projectState.files.map((f) {
+            if (f.path == activePath) {
+              return f.copyWith(content: editorState.content);
+            }
+            return f;
+          }).toList()
+        : projectState.files;
+
+    context.read<CompilerBloc>().add(
+      CompilerEvent.compileRequested(
+        engine: projectState.engine,
+        draft: draftMode,
+        files: files,
+        mainFile: entryFile,
       ),
     );
   }

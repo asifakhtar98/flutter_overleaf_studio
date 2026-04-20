@@ -55,7 +55,7 @@ extension ProjectEventPatterns on ProjectEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AddFile value)?  addFile,TResult Function( RemoveFile value)?  removeFile,TResult Function( RenameFile value)?  renameFile,TResult Function( SelectFile value)?  selectFile,TResult Function( UpdateFileContent value)?  updateFileContent,TResult Function( SetMainFile value)?  setMainFile,TResult Function( AddFolder value)?  addFolder,TResult Function( RenameFolder value)?  renameFolder,TResult Function( DeleteFolder value)?  deleteFolder,TResult Function( ImportProjectEvent value)?  importProject,TResult Function( ExportProjectEvent value)?  exportProject,TResult Function( LoadFiles value)?  loadFiles,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( AddFile value)?  addFile,TResult Function( RemoveFile value)?  removeFile,TResult Function( RenameFile value)?  renameFile,TResult Function( SelectFile value)?  selectFile,TResult Function( UpdateFileContent value)?  updateFileContent,TResult Function( SetMainFile value)?  setMainFile,TResult Function( SetEngine value)?  setEngine,TResult Function( SetDraftMode value)?  setDraftMode,TResult Function( AddFolder value)?  addFolder,TResult Function( RenameFolder value)?  renameFolder,TResult Function( DeleteFolder value)?  deleteFolder,TResult Function( ImportProjectEvent value)?  importProject,TResult Function( ExportProjectEvent value)?  exportProject,TResult Function( LoadFiles value)?  loadFiles,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
@@ -64,7 +64,9 @@ return removeFile(_that);case RenameFile() when renameFile != null:
 return renameFile(_that);case SelectFile() when selectFile != null:
 return selectFile(_that);case UpdateFileContent() when updateFileContent != null:
 return updateFileContent(_that);case SetMainFile() when setMainFile != null:
-return setMainFile(_that);case AddFolder() when addFolder != null:
+return setMainFile(_that);case SetEngine() when setEngine != null:
+return setEngine(_that);case SetDraftMode() when setDraftMode != null:
+return setDraftMode(_that);case AddFolder() when addFolder != null:
 return addFolder(_that);case RenameFolder() when renameFolder != null:
 return renameFolder(_that);case DeleteFolder() when deleteFolder != null:
 return deleteFolder(_that);case ImportProjectEvent() when importProject != null:
@@ -88,7 +90,7 @@ return loadFiles(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AddFile value)  addFile,required TResult Function( RemoveFile value)  removeFile,required TResult Function( RenameFile value)  renameFile,required TResult Function( SelectFile value)  selectFile,required TResult Function( UpdateFileContent value)  updateFileContent,required TResult Function( SetMainFile value)  setMainFile,required TResult Function( AddFolder value)  addFolder,required TResult Function( RenameFolder value)  renameFolder,required TResult Function( DeleteFolder value)  deleteFolder,required TResult Function( ImportProjectEvent value)  importProject,required TResult Function( ExportProjectEvent value)  exportProject,required TResult Function( LoadFiles value)  loadFiles,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( AddFile value)  addFile,required TResult Function( RemoveFile value)  removeFile,required TResult Function( RenameFile value)  renameFile,required TResult Function( SelectFile value)  selectFile,required TResult Function( UpdateFileContent value)  updateFileContent,required TResult Function( SetMainFile value)  setMainFile,required TResult Function( SetEngine value)  setEngine,required TResult Function( SetDraftMode value)  setDraftMode,required TResult Function( AddFolder value)  addFolder,required TResult Function( RenameFolder value)  renameFolder,required TResult Function( DeleteFolder value)  deleteFolder,required TResult Function( ImportProjectEvent value)  importProject,required TResult Function( ExportProjectEvent value)  exportProject,required TResult Function( LoadFiles value)  loadFiles,}){
 final _that = this;
 switch (_that) {
 case AddFile():
@@ -97,7 +99,9 @@ return removeFile(_that);case RenameFile():
 return renameFile(_that);case SelectFile():
 return selectFile(_that);case UpdateFileContent():
 return updateFileContent(_that);case SetMainFile():
-return setMainFile(_that);case AddFolder():
+return setMainFile(_that);case SetEngine():
+return setEngine(_that);case SetDraftMode():
+return setDraftMode(_that);case AddFolder():
 return addFolder(_that);case RenameFolder():
 return renameFolder(_that);case DeleteFolder():
 return deleteFolder(_that);case ImportProjectEvent():
@@ -117,7 +121,7 @@ return loadFiles(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AddFile value)?  addFile,TResult? Function( RemoveFile value)?  removeFile,TResult? Function( RenameFile value)?  renameFile,TResult? Function( SelectFile value)?  selectFile,TResult? Function( UpdateFileContent value)?  updateFileContent,TResult? Function( SetMainFile value)?  setMainFile,TResult? Function( AddFolder value)?  addFolder,TResult? Function( RenameFolder value)?  renameFolder,TResult? Function( DeleteFolder value)?  deleteFolder,TResult? Function( ImportProjectEvent value)?  importProject,TResult? Function( ExportProjectEvent value)?  exportProject,TResult? Function( LoadFiles value)?  loadFiles,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( AddFile value)?  addFile,TResult? Function( RemoveFile value)?  removeFile,TResult? Function( RenameFile value)?  renameFile,TResult? Function( SelectFile value)?  selectFile,TResult? Function( UpdateFileContent value)?  updateFileContent,TResult? Function( SetMainFile value)?  setMainFile,TResult? Function( SetEngine value)?  setEngine,TResult? Function( SetDraftMode value)?  setDraftMode,TResult? Function( AddFolder value)?  addFolder,TResult? Function( RenameFolder value)?  renameFolder,TResult? Function( DeleteFolder value)?  deleteFolder,TResult? Function( ImportProjectEvent value)?  importProject,TResult? Function( ExportProjectEvent value)?  exportProject,TResult? Function( LoadFiles value)?  loadFiles,}){
 final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
@@ -126,7 +130,9 @@ return removeFile(_that);case RenameFile() when renameFile != null:
 return renameFile(_that);case SelectFile() when selectFile != null:
 return selectFile(_that);case UpdateFileContent() when updateFileContent != null:
 return updateFileContent(_that);case SetMainFile() when setMainFile != null:
-return setMainFile(_that);case AddFolder() when addFolder != null:
+return setMainFile(_that);case SetEngine() when setEngine != null:
+return setEngine(_that);case SetDraftMode() when setDraftMode != null:
+return setDraftMode(_that);case AddFolder() when addFolder != null:
 return addFolder(_that);case RenameFolder() when renameFolder != null:
 return renameFolder(_that);case DeleteFolder() when deleteFolder != null:
 return deleteFolder(_that);case ImportProjectEvent() when importProject != null:
@@ -149,7 +155,7 @@ return loadFiles(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String name,  String path,  String content)?  addFile,TResult Function( String path)?  removeFile,TResult Function( String oldPath,  String newName)?  renameFile,TResult Function( String path)?  selectFile,TResult Function( String path,  String content)?  updateFileContent,TResult Function( String path)?  setMainFile,TResult Function( String name,  String path)?  addFolder,TResult Function( String oldPath,  String newName)?  renameFolder,TResult Function( String path)?  deleteFolder,TResult Function( List<int>? bytes)?  importProject,TResult Function()?  exportProject,TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String name,  String path,  String content)?  addFile,TResult Function( String path)?  removeFile,TResult Function( String oldPath,  String newName)?  renameFile,TResult Function( String path)?  selectFile,TResult Function( String path,  String content)?  updateFileContent,TResult Function( String path)?  setMainFile,TResult Function( String engine)?  setEngine,TResult Function( bool draft)?  setDraftMode,TResult Function( String name,  String path)?  addFolder,TResult Function( String oldPath,  String newName)?  renameFolder,TResult Function( String path)?  deleteFolder,TResult Function( List<int>? bytes)?  importProject,TResult Function()?  exportProject,TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
 return addFile(_that.name,_that.path,_that.content);case RemoveFile() when removeFile != null:
@@ -157,7 +163,9 @@ return removeFile(_that.path);case RenameFile() when renameFile != null:
 return renameFile(_that.oldPath,_that.newName);case SelectFile() when selectFile != null:
 return selectFile(_that.path);case UpdateFileContent() when updateFileContent != null:
 return updateFileContent(_that.path,_that.content);case SetMainFile() when setMainFile != null:
-return setMainFile(_that.path);case AddFolder() when addFolder != null:
+return setMainFile(_that.path);case SetEngine() when setEngine != null:
+return setEngine(_that.engine);case SetDraftMode() when setDraftMode != null:
+return setDraftMode(_that.draft);case AddFolder() when addFolder != null:
 return addFolder(_that.name,_that.path);case RenameFolder() when renameFolder != null:
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder() when deleteFolder != null:
 return deleteFolder(_that.path);case ImportProjectEvent() when importProject != null:
@@ -181,7 +189,7 @@ return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String name,  String path,  String content)  addFile,required TResult Function( String path)  removeFile,required TResult Function( String oldPath,  String newName)  renameFile,required TResult Function( String path)  selectFile,required TResult Function( String path,  String content)  updateFileContent,required TResult Function( String path)  setMainFile,required TResult Function( String name,  String path)  addFolder,required TResult Function( String oldPath,  String newName)  renameFolder,required TResult Function( String path)  deleteFolder,required TResult Function( List<int>? bytes)  importProject,required TResult Function()  exportProject,required TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)  loadFiles,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String name,  String path,  String content)  addFile,required TResult Function( String path)  removeFile,required TResult Function( String oldPath,  String newName)  renameFile,required TResult Function( String path)  selectFile,required TResult Function( String path,  String content)  updateFileContent,required TResult Function( String path)  setMainFile,required TResult Function( String engine)  setEngine,required TResult Function( bool draft)  setDraftMode,required TResult Function( String name,  String path)  addFolder,required TResult Function( String oldPath,  String newName)  renameFolder,required TResult Function( String path)  deleteFolder,required TResult Function( List<int>? bytes)  importProject,required TResult Function()  exportProject,required TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)  loadFiles,}) {final _that = this;
 switch (_that) {
 case AddFile():
 return addFile(_that.name,_that.path,_that.content);case RemoveFile():
@@ -189,7 +197,9 @@ return removeFile(_that.path);case RenameFile():
 return renameFile(_that.oldPath,_that.newName);case SelectFile():
 return selectFile(_that.path);case UpdateFileContent():
 return updateFileContent(_that.path,_that.content);case SetMainFile():
-return setMainFile(_that.path);case AddFolder():
+return setMainFile(_that.path);case SetEngine():
+return setEngine(_that.engine);case SetDraftMode():
+return setDraftMode(_that.draft);case AddFolder():
 return addFolder(_that.name,_that.path);case RenameFolder():
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder():
 return deleteFolder(_that.path);case ImportProjectEvent():
@@ -209,7 +219,7 @@ return loadFiles(_that.files,_that.activeFilePath,_that.mainFilePath);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String name,  String path,  String content)?  addFile,TResult? Function( String path)?  removeFile,TResult? Function( String oldPath,  String newName)?  renameFile,TResult? Function( String path)?  selectFile,TResult? Function( String path,  String content)?  updateFileContent,TResult? Function( String path)?  setMainFile,TResult? Function( String name,  String path)?  addFolder,TResult? Function( String oldPath,  String newName)?  renameFolder,TResult? Function( String path)?  deleteFolder,TResult? Function( List<int>? bytes)?  importProject,TResult? Function()?  exportProject,TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String name,  String path,  String content)?  addFile,TResult? Function( String path)?  removeFile,TResult? Function( String oldPath,  String newName)?  renameFile,TResult? Function( String path)?  selectFile,TResult? Function( String path,  String content)?  updateFileContent,TResult? Function( String path)?  setMainFile,TResult? Function( String engine)?  setEngine,TResult? Function( bool draft)?  setDraftMode,TResult? Function( String name,  String path)?  addFolder,TResult? Function( String oldPath,  String newName)?  renameFolder,TResult? Function( String path)?  deleteFolder,TResult? Function( List<int>? bytes)?  importProject,TResult? Function()?  exportProject,TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath)?  loadFiles,}) {final _that = this;
 switch (_that) {
 case AddFile() when addFile != null:
 return addFile(_that.name,_that.path,_that.content);case RemoveFile() when removeFile != null:
@@ -217,7 +227,9 @@ return removeFile(_that.path);case RenameFile() when renameFile != null:
 return renameFile(_that.oldPath,_that.newName);case SelectFile() when selectFile != null:
 return selectFile(_that.path);case UpdateFileContent() when updateFileContent != null:
 return updateFileContent(_that.path,_that.content);case SetMainFile() when setMainFile != null:
-return setMainFile(_that.path);case AddFolder() when addFolder != null:
+return setMainFile(_that.path);case SetEngine() when setEngine != null:
+return setEngine(_that.engine);case SetDraftMode() when setDraftMode != null:
+return setDraftMode(_that.draft);case AddFolder() when addFolder != null:
 return addFolder(_that.name,_that.path);case RenameFolder() when renameFolder != null:
 return renameFolder(_that.oldPath,_that.newName);case DeleteFolder() when deleteFolder != null:
 return deleteFolder(_that.path);case ImportProjectEvent() when importProject != null:
@@ -629,6 +641,138 @@ class _$SetMainFileCopyWithImpl<$Res>
   return _then(SetMainFile(
 path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
 as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class SetEngine implements ProjectEvent {
+  const SetEngine({required this.engine});
+  
+
+ final  String engine;
+
+/// Create a copy of ProjectEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SetEngineCopyWith<SetEngine> get copyWith => _$SetEngineCopyWithImpl<SetEngine>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetEngine&&(identical(other.engine, engine) || other.engine == engine));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,engine);
+
+@override
+String toString() {
+  return 'ProjectEvent.setEngine(engine: $engine)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SetEngineCopyWith<$Res> implements $ProjectEventCopyWith<$Res> {
+  factory $SetEngineCopyWith(SetEngine value, $Res Function(SetEngine) _then) = _$SetEngineCopyWithImpl;
+@useResult
+$Res call({
+ String engine
+});
+
+
+
+
+}
+/// @nodoc
+class _$SetEngineCopyWithImpl<$Res>
+    implements $SetEngineCopyWith<$Res> {
+  _$SetEngineCopyWithImpl(this._self, this._then);
+
+  final SetEngine _self;
+  final $Res Function(SetEngine) _then;
+
+/// Create a copy of ProjectEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? engine = null,}) {
+  return _then(SetEngine(
+engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class SetDraftMode implements ProjectEvent {
+  const SetDraftMode({required this.draft});
+  
+
+ final  bool draft;
+
+/// Create a copy of ProjectEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SetDraftModeCopyWith<SetDraftMode> get copyWith => _$SetDraftModeCopyWithImpl<SetDraftMode>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetDraftMode&&(identical(other.draft, draft) || other.draft == draft));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,draft);
+
+@override
+String toString() {
+  return 'ProjectEvent.setDraftMode(draft: $draft)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SetDraftModeCopyWith<$Res> implements $ProjectEventCopyWith<$Res> {
+  factory $SetDraftModeCopyWith(SetDraftMode value, $Res Function(SetDraftMode) _then) = _$SetDraftModeCopyWithImpl;
+@useResult
+$Res call({
+ bool draft
+});
+
+
+
+
+}
+/// @nodoc
+class _$SetDraftModeCopyWithImpl<$Res>
+    implements $SetDraftModeCopyWith<$Res> {
+  _$SetDraftModeCopyWithImpl(this._self, this._then);
+
+  final SetDraftMode _self;
+  final $Res Function(SetDraftMode) _then;
+
+/// Create a copy of ProjectEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? draft = null,}) {
+  return _then(SetDraftMode(
+draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

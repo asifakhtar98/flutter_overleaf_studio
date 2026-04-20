@@ -11,6 +11,8 @@ sealed class ProjectState with _$ProjectState {
     @Default([]) List<ProjectFile> files,
     String? activeFilePath,
     String? mainFilePath,
+    @Default('pdflatex') String engine,
+    @Default(false) bool draftMode,
     @Default(false) bool isImporting,
     @Default(false) bool isExporting,
     String? importError,

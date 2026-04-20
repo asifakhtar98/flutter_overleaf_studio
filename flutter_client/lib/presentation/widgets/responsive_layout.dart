@@ -145,9 +145,7 @@ class _MobileLayout extends HookWidget {
 
     return Scaffold(
       key: scaffoldKey.value,
-      drawer: const Drawer(
-        child: FileTreePanel(),
-      ),
+      drawer: const Drawer(child: FileTreePanel()),
       body: Column(
         children: [
           Container(

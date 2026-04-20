@@ -8,10 +8,9 @@ import 'package:flutter_latex_client/features/compiler/presentation/bloc/compile
 
 @injectable
 class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
-  CompilerBloc({
-    required CompileProject compileProject,
-  }) : _compileProject = compileProject,
-       super(const CompilerState.initial()) {
+  CompilerBloc({required CompileProject compileProject})
+    : _compileProject = compileProject,
+      super(const CompilerState.initial()) {
     on<CompileRequested>(_onCompileRequested);
     on<CompileReset>(_onReset);
   }

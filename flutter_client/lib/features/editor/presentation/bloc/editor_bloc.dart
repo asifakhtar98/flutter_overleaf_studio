@@ -55,21 +55,18 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     // Active tab was closed — pick replacement but don't load content here.
     // The UI layer (BlocListener) handles loading replacement content.
     final newCurrentTab = newTabs.isNotEmpty ? newTabs.last : null;
-    emit(state.copyWith(
-      openTabs: newTabs,
-      currentTabPath: newCurrentTab,
-      content: '',
-    ));
+    emit(
+      state.copyWith(
+        openTabs: newTabs,
+        currentTabPath: newCurrentTab,
+        content: '',
+      ),
+    );
   }
 
   void _onTabSwitched(TabSwitched event, Emitter<EditorState> emit) {
     if (state.openTabs.contains(event.path)) {
-      emit(
-        state.copyWith(
-          currentTabPath: event.path,
-          content: event.content,
-        ),
-      );
+      emit(state.copyWith(currentTabPath: event.path, content: event.content));
     }
   }
 }

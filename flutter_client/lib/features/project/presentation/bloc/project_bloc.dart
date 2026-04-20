@@ -47,6 +47,8 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
           ),
     );
     on<SetMainFile>(_onSetMainFile);
+    on<SetEngine>(_onSetEngine);
+    on<SetDraftMode>(_onSetDraftMode);
     on<AddFolder>(_onAddFolder);
     on<RenameFolder>(_onRenameFolder);
     on<DeleteFolder>(_onDeleteFolder);
@@ -69,13 +71,14 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
         emit(state.copyWith(isImporting: false));
       },
       (List<ProjectFile> files) {
+        final detectedMain = files.any((f) => f.isMainFile)
+            ? files.firstWhere((f) => f.isMainFile).path
+            : _detectMainFile(files);
         emit(
           state.copyWith(
             files: files,
             activeFilePath: files.isNotEmpty ? files.first.path : null,
-            mainFilePath: files.any((f) => f.isMainFile)
-                ? files.firstWhere((f) => f.isMainFile).path
-                : null,
+            mainFilePath: detectedMain,
             isImporting: false,
           ),
         );
@@ -141,6 +144,8 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       state.copyWith(
         files: [...state.files, newFile],
         activeFilePath: finalPath,
+        mainFilePath:
+            state.mainFilePath ?? _detectMainFile([...state.files, newFile]),
       ),
     );
   }
@@ -172,15 +177,17 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       return f;
     }).toList();
 
-    emit(state.copyWith(
-      files: updated,
-      activeFilePath: state.activeFilePath == event.oldPath
-          ? newPath
-          : state.activeFilePath,
-      mainFilePath: state.mainFilePath == event.oldPath
-          ? newPath
-          : state.mainFilePath,
-    ));
+    emit(
+      state.copyWith(
+        files: updated,
+        activeFilePath: state.activeFilePath == event.oldPath
+            ? newPath
+            : state.activeFilePath,
+        mainFilePath: state.mainFilePath == event.oldPath
+            ? newPath
+            : state.mainFilePath,
+      ),
+    );
   }
 
   void _onSelectFile(SelectFile event, Emitter<ProjectState> emit) {
@@ -198,7 +205,12 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       return f;
     }).toList();
 
-    emit(state.copyWith(files: updated));
+    emit(
+      state.copyWith(
+        files: updated,
+        mainFilePath: state.mainFilePath ?? _detectMainFile(updated),
+      ),
+    );
   }
 
   void _onSetMainFile(SetMainFile event, Emitter<ProjectState> emit) {
@@ -207,6 +219,14 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     }).toList();
 
     emit(state.copyWith(files: updated, mainFilePath: event.path));
+  }
+
+  void _onSetEngine(SetEngine event, Emitter<ProjectState> emit) {
+    emit(state.copyWith(engine: event.engine));
+  }
+
+  void _onSetDraftMode(SetDraftMode event, Emitter<ProjectState> emit) {
+    emit(state.copyWith(draftMode: event.draft));
   }
 
   void _onAddFolder(AddFolder event, Emitter<ProjectState> emit) {
@@ -231,20 +251,28 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     String? newActivePath;
     if (state.activeFilePath != null &&
         state.activeFilePath!.startsWith('${event.oldPath}/')) {
-      newActivePath = state.activeFilePath!.replaceFirst(event.oldPath, newFolderPath);
+      newActivePath = state.activeFilePath!.replaceFirst(
+        event.oldPath,
+        newFolderPath,
+      );
     }
 
     String? newMainPath;
     if (state.mainFilePath != null &&
         state.mainFilePath!.startsWith('${event.oldPath}/')) {
-      newMainPath = state.mainFilePath!.replaceFirst(event.oldPath, newFolderPath);
+      newMainPath = state.mainFilePath!.replaceFirst(
+        event.oldPath,
+        newFolderPath,
+      );
     }
 
-    emit(state.copyWith(
-      files: updated,
-      activeFilePath: newActivePath ?? state.activeFilePath,
-      mainFilePath: newMainPath ?? state.mainFilePath,
-    ));
+    emit(
+      state.copyWith(
+        files: updated,
+        activeFilePath: newActivePath ?? state.activeFilePath,
+        mainFilePath: newMainPath ?? state.mainFilePath,
+      ),
+    );
   }
 
   void _onDeleteFolder(DeleteFolder event, Emitter<ProjectState> emit) {
@@ -264,11 +292,13 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       newMain = null;
     }
 
-    emit(state.copyWith(
-      files: updated,
-      activeFilePath: newActive ?? state.activeFilePath,
-      mainFilePath: newMain ?? state.mainFilePath,
-    ));
+    emit(
+      state.copyWith(
+        files: updated,
+        activeFilePath: newActive ?? state.activeFilePath,
+        mainFilePath: newMain ?? state.mainFilePath,
+      ),
+    );
   }
 
   @override
@@ -287,5 +317,19 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     } on Object {
       return null;
     }
+  }
+
+  /// Auto-detect main file by scanning root-level .tex files for \documentclass.
+  static String? _detectMainFile(List<ProjectFile> files) {
+    final rootTexFiles = files.where(
+      (f) => !f.path.contains('/') && f.path.endsWith('.tex'),
+    );
+    for (final f in rootTexFiles) {
+      if (f.content.contains(r'\documentclass')) {
+        return f.path;
+      }
+    }
+    // Fallback: first root .tex file
+    return rootTexFiles.firstOrNull?.path;
   }
 }

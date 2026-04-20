@@ -28,6 +28,10 @@ sealed class ProjectEvent with _$ProjectEvent {
 
   const factory ProjectEvent.setMainFile({required String path}) = SetMainFile;
 
+  const factory ProjectEvent.setEngine({required String engine}) = SetEngine;
+
+  const factory ProjectEvent.setDraftMode({required bool draft}) = SetDraftMode;
+
   const factory ProjectEvent.addFolder({
     required String name,
     required String path,

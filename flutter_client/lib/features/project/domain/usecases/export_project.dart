@@ -47,10 +47,7 @@ class ExportProjectUseCase {
         await tempFile.writeAsBytes(zipBytes);
 
         await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(tempFile.path)],
-            text: 'LaTeX Project',
-          ),
+          ShareParams(files: [XFile(tempFile.path)], text: 'LaTeX Project'),
         );
       }
 

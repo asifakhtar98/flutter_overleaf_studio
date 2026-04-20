@@ -31,8 +31,10 @@ bool _isBinaryFile(String fileName) {
 
 @lazySingleton
 class ImportProjectUseCase {
-  Future<Either<Failure, List<ProjectFile>>> call(
-      {List<int>? bytes, bool fromPicker = true}) async {
+  Future<Either<Failure, List<ProjectFile>>> call({
+    List<int>? bytes,
+    bool fromPicker = true,
+  }) async {
     try {
       var zipBytes = bytes;
 
@@ -72,7 +74,9 @@ class ImportProjectUseCase {
                 name: name,
                 path: archiveFile.name,
                 content: '',
-                binaryContentBase64: base64Encode(archiveFile.content as List<int>),
+                binaryContentBase64: base64Encode(
+                  archiveFile.content as List<int>,
+                ),
                 isMainFile: name.toLowerCase() == 'main.tex',
               ),
             );

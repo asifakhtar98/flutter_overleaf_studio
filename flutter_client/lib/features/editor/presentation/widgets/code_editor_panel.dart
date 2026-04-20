@@ -24,10 +24,7 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
   @override
   void initState() {
     super.initState();
-    _controller = CodeController(
-      text: '',
-      language: tex,
-    );
+    _controller = CodeController(text: '', language: tex);
   }
 
   @override
@@ -47,8 +44,7 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
     // RC2: Listen for tab path changes (including tab close) to load content
     // from the project state.
     return BlocListener<EditorBloc, EditorState>(
-      listenWhen: (prev, curr) =>
-          prev.currentTabPath != curr.currentTabPath,
+      listenWhen: (prev, curr) => prev.currentTabPath != curr.currentTabPath,
       listener: (context, editorState) {
         final newPath = editorState.currentTabPath;
         if (newPath == null) return;
@@ -58,8 +54,7 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
 
         // Load content from project state for the new tab.
         final projectFiles = context.read<ProjectBloc>().state.files;
-        final file =
-            projectFiles.where((f) => f.path == newPath).firstOrNull;
+        final file = projectFiles.where((f) => f.path == newPath).firstOrNull;
         if (file != null) {
           context.read<EditorBloc>().add(
             EditorEvent.tabSwitched(path: newPath, content: file.content),
@@ -103,8 +98,10 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
                       context.read<EditorBloc>().add(
                         EditorEvent.contentChanged(content: value),
                       );
-                      final path =
-                          context.read<EditorBloc>().state.currentTabPath;
+                      final path = context
+                          .read<EditorBloc>()
+                          .state
+                          .currentTabPath;
                       if (path != null) {
                         context.read<ProjectBloc>().add(
                           ProjectEvent.updateFileContent(
@@ -157,10 +154,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _TabsBar extends StatelessWidget {
-  const _TabsBar({
-    required this.openTabs,
-    required this.currentTabPath,
-  });
+  const _TabsBar({required this.openTabs, required this.currentTabPath});
 
   final List<String> openTabs;
   final String? currentTabPath;
@@ -186,17 +180,16 @@ class _TabsBar extends StatelessWidget {
             isActive: isActive,
             onTap: () {
               final projectFiles = context.read<ProjectBloc>().state.files;
-              final targetFile =
-                  projectFiles.where((f) => f.path == path).firstOrNull;
+              final targetFile = projectFiles
+                  .where((f) => f.path == path)
+                  .firstOrNull;
               final content = targetFile?.content ?? '';
               context.read<EditorBloc>().add(
                 EditorEvent.tabSwitched(path: path, content: content),
               );
             },
             onClose: () {
-              context.read<EditorBloc>().add(
-                EditorEvent.tabClosed(path: path),
-              );
+              context.read<EditorBloc>().add(EditorEvent.tabClosed(path: path));
             },
           );
         },

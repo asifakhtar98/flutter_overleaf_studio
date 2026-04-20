@@ -75,9 +75,9 @@ class CompileLogPanel extends StatelessWidget {
                     const SizedBox(width: 8),
                     // RM3: Close button
                     InkWell(
-                      onTap: () => context
-                          .read<CompilerBloc>()
-                          .add(const CompilerEvent.reset()),
+                      onTap: () => context.read<CompilerBloc>().add(
+                        const CompilerEvent.reset(),
+                      ),
                       borderRadius: BorderRadius.circular(4),
                       child: const Padding(
                         padding: EdgeInsets.all(2),
@@ -92,9 +92,7 @@ class CompileLogPanel extends StatelessWidget {
                 ),
               ),
               // Log content — RM4: auto-scroll to bottom
-              Expanded(
-                child: _AutoScrollLog(log: log),
-              ),
+              Expanded(child: _AutoScrollLog(log: log)),
             ],
           ),
         );
