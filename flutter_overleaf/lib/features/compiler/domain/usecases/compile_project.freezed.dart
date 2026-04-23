@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CompileProjectParams {
 
- List<ProjectFile> get files; String get mainFile; String get engine; bool get draft;
+ List<ProjectFile> get files; String get mainFile; Engine get engine; bool get draft; bool get enableCache;
 /// Create a copy of CompileProjectParams
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $CompileProjectParamsCopyWith<CompileProjectParams> get copyWith => _$CompilePro
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileProjectParams&&const DeepCollectionEquality().equals(other.files, files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileProjectParams&&const DeepCollectionEquality().equals(other.files, files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),mainFile,engine,draft);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),mainFile,engine,draft,enableCache);
 
 @override
 String toString() {
-  return 'CompileProjectParams(files: $files, mainFile: $mainFile, engine: $engine, draft: $draft)';
+  return 'CompileProjectParams(files: $files, mainFile: $mainFile, engine: $engine, draft: $draft, enableCache: $enableCache)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $CompileProjectParamsCopyWith<$Res>  {
   factory $CompileProjectParamsCopyWith(CompileProjectParams value, $Res Function(CompileProjectParams) _then) = _$CompileProjectParamsCopyWithImpl;
 @useResult
 $Res call({
- List<ProjectFile> files, String mainFile, String engine, bool draft
+ List<ProjectFile> files, String mainFile, Engine engine, bool draft, bool enableCache
 });
 
 
@@ -62,12 +62,13 @@ class _$CompileProjectParamsCopyWithImpl<$Res>
 
 /// Create a copy of CompileProjectParams
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? mainFile = null,Object? engine = null,Object? draft = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? mainFile = null,Object? engine = null,Object? draft = null,Object? enableCache = null,}) {
   return _then(_self.copyWith(
 files: null == files ? _self.files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,mainFile: null == mainFile ? _self.mainFile : mainFile // ignore: cast_nullable_to_non_nullable
 as String,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as Engine,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -150,10 +151,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String mainFile,  String engine,  bool draft)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String mainFile,  Engine engine,  bool draft,  bool enableCache)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CompileProjectParams() when $default != null:
-return $default(_that.files,_that.mainFile,_that.engine,_that.draft);case _:
+return $default(_that.files,_that.mainFile,_that.engine,_that.draft,_that.enableCache);case _:
   return orElse();
 
 }
@@ -171,10 +172,10 @@ return $default(_that.files,_that.mainFile,_that.engine,_that.draft);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String mainFile,  String engine,  bool draft)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String mainFile,  Engine engine,  bool draft,  bool enableCache)  $default,) {final _that = this;
 switch (_that) {
 case _CompileProjectParams():
-return $default(_that.files,_that.mainFile,_that.engine,_that.draft);}
+return $default(_that.files,_that.mainFile,_that.engine,_that.draft,_that.enableCache);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -188,10 +189,10 @@ return $default(_that.files,_that.mainFile,_that.engine,_that.draft);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  String mainFile,  String engine,  bool draft)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  String mainFile,  Engine engine,  bool draft,  bool enableCache)?  $default,) {final _that = this;
 switch (_that) {
 case _CompileProjectParams() when $default != null:
-return $default(_that.files,_that.mainFile,_that.engine,_that.draft);case _:
+return $default(_that.files,_that.mainFile,_that.engine,_that.draft,_that.enableCache);case _:
   return null;
 
 }
@@ -203,7 +204,7 @@ return $default(_that.files,_that.mainFile,_that.engine,_that.draft);case _:
 
 
 class _CompileProjectParams implements CompileProjectParams {
-  const _CompileProjectParams({required final  List<ProjectFile> files, required this.mainFile, this.engine = 'pdflatex', this.draft = false}): _files = files;
+  const _CompileProjectParams({required final  List<ProjectFile> files, required this.mainFile, this.engine = Engine.pdflatex, this.draft = false, this.enableCache = true}): _files = files;
   
 
  final  List<ProjectFile> _files;
@@ -214,8 +215,9 @@ class _CompileProjectParams implements CompileProjectParams {
 }
 
 @override final  String mainFile;
-@override@JsonKey() final  String engine;
+@override@JsonKey() final  Engine engine;
 @override@JsonKey() final  bool draft;
+@override@JsonKey() final  bool enableCache;
 
 /// Create a copy of CompileProjectParams
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ _$CompileProjectParamsCopyWith<_CompileProjectParams> get copyWith => __$Compile
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompileProjectParams&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompileProjectParams&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),mainFile,engine,draft);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),mainFile,engine,draft,enableCache);
 
 @override
 String toString() {
-  return 'CompileProjectParams(files: $files, mainFile: $mainFile, engine: $engine, draft: $draft)';
+  return 'CompileProjectParams(files: $files, mainFile: $mainFile, engine: $engine, draft: $draft, enableCache: $enableCache)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$CompileProjectParamsCopyWith<$Res> implements $CompilePro
   factory _$CompileProjectParamsCopyWith(_CompileProjectParams value, $Res Function(_CompileProjectParams) _then) = __$CompileProjectParamsCopyWithImpl;
 @override @useResult
 $Res call({
- List<ProjectFile> files, String mainFile, String engine, bool draft
+ List<ProjectFile> files, String mainFile, Engine engine, bool draft, bool enableCache
 });
 
 
@@ -264,12 +266,13 @@ class __$CompileProjectParamsCopyWithImpl<$Res>
 
 /// Create a copy of CompileProjectParams
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? mainFile = null,Object? engine = null,Object? draft = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? mainFile = null,Object? engine = null,Object? draft = null,Object? enableCache = null,}) {
   return _then(_CompileProjectParams(
 files: null == files ? _self._files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,mainFile: null == mainFile ? _self.mainFile : mainFile // ignore: cast_nullable_to_non_nullable
 as String,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as Engine,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

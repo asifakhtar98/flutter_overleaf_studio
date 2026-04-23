@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
@@ -7,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:universal_io/io.dart';
 
 import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 import 'package:flutter_overleaf/core/error/failures.dart';

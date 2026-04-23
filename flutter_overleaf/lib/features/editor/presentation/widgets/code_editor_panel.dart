@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
@@ -8,6 +10,7 @@ import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_bloc.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_event.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_state.dart';
+import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
 
@@ -41,26 +44,45 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
 
   @override
   Widget build(BuildContext context) {
-    // RC2: Listen for tab path changes (including tab close) to load content
-    // from the project state.
-    return BlocListener<EditorBloc, EditorState>(
-      listenWhen: (prev, curr) => prev.currentTabPath != curr.currentTabPath,
-      listener: (context, editorState) {
-        final newPath = editorState.currentTabPath;
-        if (newPath == null) return;
+    return MultiBlocListener(
+      listeners: [
+        // RC2: Listen for tab path changes (including tab close) to load
+        // content from the project state.
+        BlocListener<EditorBloc, EditorState>(
+          listenWhen: (prev, curr) =>
+              prev.currentTabPath != curr.currentTabPath,
+          listener: (context, editorState) {
+            final newPath = editorState.currentTabPath;
+            if (newPath == null) return;
 
-        // If content is already loaded (e.g. from tabSwitched), skip.
-        if (editorState.content.isNotEmpty) return;
+            // If content is already loaded (e.g. from tabSwitched), skip.
+            if (editorState.content.isNotEmpty) return;
 
-        // Load content from project state for the new tab.
-        final projectFiles = context.read<ProjectBloc>().state.files;
-        final file = projectFiles.where((f) => f.path == newPath).firstOrNull;
-        if (file != null) {
-          context.read<EditorBloc>().add(
-            EditorEvent.tabSwitched(path: newPath, content: file.content),
-          );
-        }
-      },
+            // Load content from project state for the new tab.
+            final projectFiles = context.read<ProjectBloc>().state.files;
+            final file =
+                projectFiles.where((f) => f.path == newPath).firstOrNull;
+            if (file != null) {
+              context.read<EditorBloc>().add(
+                EditorEvent.tabSwitched(
+                  path: newPath,
+                  content: file.content,
+                ),
+              );
+            }
+          },
+        ),
+        // Fix #1: Sync controller when content changes programmatically
+        // (e.g. after tab-close picks a replacement and tabSwitched loads
+        // its content). No-op for user keystrokes because
+        // _controller.text already matches.
+        BlocListener<EditorBloc, EditorState>(
+          listenWhen: (prev, curr) =>
+              prev.content != curr.content &&
+              prev.currentTabPath == curr.currentTabPath,
+          listener: (context, state) => _syncContent(state.content),
+        ),
+      ],
       child: BlocBuilder<EditorBloc, EditorState>(
         // RC1: Only rebuild when the file changes or tabs change,
         // NOT on every content keystroke.
@@ -74,6 +96,12 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
 
           _syncContent(state.content);
 
+          final projectFiles = context.read<ProjectBloc>().state.files;
+          final currentFile = projectFiles
+              .where((f) => f.path == state.currentTabPath)
+              .firstOrNull;
+          final isBinary = currentFile?.isBinary ?? false;
+
           return Column(
             children: [
               _TabsBar(
@@ -81,42 +109,48 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
                 currentTabPath: state.currentTabPath,
               ),
               Expanded(
-                child: CodeTheme(
-                  data: CodeThemeData(styles: vs2015Theme),
-                  child: CodeField(
-                    controller: _controller,
-                    expands: true,
-                    textStyle: const TextStyle(
-                      fontFamily: 'JetBrains Mono, Consolas, monospace',
-                      fontSize: 13,
-                    ),
-                    gutterStyle: const GutterStyle(
-                      showLineNumbers: true,
-                      showFoldingHandles: true,
-                    ),
-                    wrap: true,
-                    onChanged: (value) {
-                      context.read<EditorBloc>().add(
-                        EditorEvent.contentChanged(content: value),
-                      );
-                      final path = context
-                          .read<EditorBloc>()
-                          .state
-                          .currentTabPath;
-                      if (path != null) {
-                        context.read<ProjectBloc>().add(
-                          ProjectEvent.updateFileContent(
-                            path: path,
-                            content: value,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ),
+                child: isBinary
+                    ? _BinaryPreview(file: currentFile!)
+                    : _buildCodeEditor(context),
               ),
             ],
           );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCodeEditor(BuildContext context) {
+    return CodeTheme(
+      data: CodeThemeData(styles: vs2015Theme),
+      child: CodeField(
+        controller: _controller,
+        expands: true,
+        textStyle: const TextStyle(
+          fontFamily: 'JetBrains Mono, Consolas, monospace',
+          fontSize: 13,
+        ),
+        gutterStyle: const GutterStyle(
+          showLineNumbers: true,
+          showFoldingHandles: true,
+        ),
+        wrap: true,
+        onChanged: (value) {
+          context.read<EditorBloc>().add(
+            EditorEvent.contentChanged(content: value),
+          );
+          final path = context
+              .read<EditorBloc>()
+              .state
+              .currentTabPath;
+          if (path != null) {
+            context.read<ProjectBloc>().add(
+              ProjectEvent.updateFileContent(
+                path: path,
+                content: value,
+              ),
+            );
+          }
         },
       ),
     );
@@ -180,6 +214,18 @@ class _TabsBar extends StatelessWidget {
             label: fileName,
             isActive: isActive,
             onTap: () {
+              // Fix #2: Flush dirty content before switching tabs.
+              final editorState = context.read<EditorBloc>().state;
+              if (editorState.currentTabPath != null &&
+                  editorState.currentTabPath != path) {
+                context.read<ProjectBloc>().add(
+                  ProjectEvent.updateFileContent(
+                    path: editorState.currentTabPath!,
+                    content: editorState.content,
+                  ),
+                );
+              }
+
               final projectFiles = context.read<ProjectBloc>().state.files;
               final targetFile = projectFiles
                   .where((f) => f.path == path)
@@ -256,6 +302,65 @@ class _Tab extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Displays a binary file preview. Shows an image for supported formats,
+/// or a generic file icon with file info for other binary types.
+class _BinaryPreview extends StatelessWidget {
+  const _BinaryPreview({required this.file});
+
+  final ProjectFile file;
+
+  static const _imageExtensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'};
+
+  bool get _isImage {
+    final lower = file.path.toLowerCase();
+    return _imageExtensions.any(lower.endsWith);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: LatexTheme.editorBg,
+      child: Center(
+        child: _isImage && file.binaryContentBase64 != null
+            ? Padding(
+                padding: const EdgeInsets.all(24),
+                child: Image.memory(
+                  base64Decode(file.binaryContentBase64!),
+                  fit: BoxFit.contain,
+                ),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.insert_drive_file_outlined,
+                    size: 64,
+                    color: LatexTheme.textSecondary.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    file.name,
+                    style: const TextStyle(
+                      color: LatexTheme.textSecondary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Binary file — no editor preview',
+                    style: TextStyle(
+                      color: LatexTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

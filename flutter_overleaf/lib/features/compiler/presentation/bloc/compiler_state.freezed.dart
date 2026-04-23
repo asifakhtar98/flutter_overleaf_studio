@@ -125,13 +125,13 @@ return failure(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function( String engine)?  loading,TResult Function( CompileResult result)?  success,TResult Function( String errorCode,  String log,  double? compilationTime)?  failure,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  initial,TResult Function( Engine engine)?  loading,TResult Function( CompileResult result)?  success,TResult Function( String errorCode,  String log,  double? compilationTime,  String? requestId)?  failure,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CompilerInitial() when initial != null:
 return initial();case CompilerLoading() when loading != null:
 return loading(_that.engine);case CompilerSuccess() when success != null:
 return success(_that.result);case CompilerFailure() when failure != null:
-return failure(_that.errorCode,_that.log,_that.compilationTime);case _:
+return failure(_that.errorCode,_that.log,_that.compilationTime,_that.requestId);case _:
   return orElse();
 
 }
@@ -149,13 +149,13 @@ return failure(_that.errorCode,_that.log,_that.compilationTime);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function( String engine)  loading,required TResult Function( CompileResult result)  success,required TResult Function( String errorCode,  String log,  double? compilationTime)  failure,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  initial,required TResult Function( Engine engine)  loading,required TResult Function( CompileResult result)  success,required TResult Function( String errorCode,  String log,  double? compilationTime,  String? requestId)  failure,}) {final _that = this;
 switch (_that) {
 case CompilerInitial():
 return initial();case CompilerLoading():
 return loading(_that.engine);case CompilerSuccess():
 return success(_that.result);case CompilerFailure():
-return failure(_that.errorCode,_that.log,_that.compilationTime);}
+return failure(_that.errorCode,_that.log,_that.compilationTime,_that.requestId);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -169,13 +169,13 @@ return failure(_that.errorCode,_that.log,_that.compilationTime);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function( String engine)?  loading,TResult? Function( CompileResult result)?  success,TResult? Function( String errorCode,  String log,  double? compilationTime)?  failure,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  initial,TResult? Function( Engine engine)?  loading,TResult? Function( CompileResult result)?  success,TResult? Function( String errorCode,  String log,  double? compilationTime,  String? requestId)?  failure,}) {final _that = this;
 switch (_that) {
 case CompilerInitial() when initial != null:
 return initial();case CompilerLoading() when loading != null:
 return loading(_that.engine);case CompilerSuccess() when success != null:
 return success(_that.result);case CompilerFailure() when failure != null:
-return failure(_that.errorCode,_that.log,_that.compilationTime);case _:
+return failure(_that.errorCode,_that.log,_that.compilationTime,_that.requestId);case _:
   return null;
 
 }
@@ -222,7 +222,7 @@ class CompilerLoading implements CompilerState {
   const CompilerLoading({required this.engine});
   
 
- final  String engine;
+ final  Engine engine;
 
 /// Create a copy of CompilerState
 /// with the given fields replaced by the non-null parameter values.
@@ -254,7 +254,7 @@ abstract mixin class $CompilerLoadingCopyWith<$Res> implements $CompilerStateCop
   factory $CompilerLoadingCopyWith(CompilerLoading value, $Res Function(CompilerLoading) _then) = _$CompilerLoadingCopyWithImpl;
 @useResult
 $Res call({
- String engine
+ Engine engine
 });
 
 
@@ -274,7 +274,7 @@ class _$CompilerLoadingCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? engine = null,}) {
   return _then(CompilerLoading(
 engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,
+as Engine,
   ));
 }
 
@@ -360,12 +360,13 @@ $CompileResultCopyWith<$Res> get result {
 
 
 class CompilerFailure implements CompilerState {
-  const CompilerFailure({required this.errorCode, required this.log, this.compilationTime});
+  const CompilerFailure({required this.errorCode, required this.log, this.compilationTime, this.requestId});
   
 
  final  String errorCode;
  final  String log;
  final  double? compilationTime;
+ final  String? requestId;
 
 /// Create a copy of CompilerState
 /// with the given fields replaced by the non-null parameter values.
@@ -377,16 +378,16 @@ $CompilerFailureCopyWith<CompilerFailure> get copyWith => _$CompilerFailureCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompilerFailure&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.log, log) || other.log == log)&&(identical(other.compilationTime, compilationTime) || other.compilationTime == compilationTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompilerFailure&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.log, log) || other.log == log)&&(identical(other.compilationTime, compilationTime) || other.compilationTime == compilationTime)&&(identical(other.requestId, requestId) || other.requestId == requestId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,errorCode,log,compilationTime);
+int get hashCode => Object.hash(runtimeType,errorCode,log,compilationTime,requestId);
 
 @override
 String toString() {
-  return 'CompilerState.failure(errorCode: $errorCode, log: $log, compilationTime: $compilationTime)';
+  return 'CompilerState.failure(errorCode: $errorCode, log: $log, compilationTime: $compilationTime, requestId: $requestId)';
 }
 
 
@@ -397,7 +398,7 @@ abstract mixin class $CompilerFailureCopyWith<$Res> implements $CompilerStateCop
   factory $CompilerFailureCopyWith(CompilerFailure value, $Res Function(CompilerFailure) _then) = _$CompilerFailureCopyWithImpl;
 @useResult
 $Res call({
- String errorCode, String log, double? compilationTime
+ String errorCode, String log, double? compilationTime, String? requestId
 });
 
 
@@ -414,12 +415,13 @@ class _$CompilerFailureCopyWithImpl<$Res>
 
 /// Create a copy of CompilerState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? errorCode = null,Object? log = null,Object? compilationTime = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? errorCode = null,Object? log = null,Object? compilationTime = freezed,Object? requestId = freezed,}) {
   return _then(CompilerFailure(
 errorCode: null == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
 as String,log: null == log ? _self.log : log // ignore: cast_nullable_to_non_nullable
 as String,compilationTime: freezed == compilationTime ? _self.compilationTime : compilationTime // ignore: cast_nullable_to_non_nullable
-as double?,
+as double?,requestId: freezed == requestId ? _self.requestId : requestId // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

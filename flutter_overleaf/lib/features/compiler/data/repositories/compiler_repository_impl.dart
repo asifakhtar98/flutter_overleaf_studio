@@ -23,12 +23,14 @@ class CompilerRepositoryImpl implements CompilerRepository {
     required String source,
     String engine = 'pdflatex',
     bool draft = false,
+    bool enableCache = true,
   }) async {
     try {
       final result = await _datasource.compileSingle(
         source: source,
         engine: engine,
         draft: draft,
+        enableCache: enableCache,
       );
       _logSuccess(result);
       return Right(result);
@@ -46,6 +48,7 @@ class CompilerRepositoryImpl implements CompilerRepository {
     required String mainFile,
     String engine = 'pdflatex',
     bool draft = false,
+    bool enableCache = true,
   }) async {
     try {
       final result = await _datasource.compileProject(
@@ -53,6 +56,7 @@ class CompilerRepositoryImpl implements CompilerRepository {
         mainFile: mainFile,
         engine: engine,
         draft: draft,
+        enableCache: enableCache,
       );
       _logSuccess(result);
       return Right(result);
@@ -85,6 +89,29 @@ class CompilerRepositoryImpl implements CompilerRepository {
         log: error.log,
         errorCode: error.errorCode,
         compilationTime: error.compilationTime,
+        requestId: error.requestId,
+      );
+    }
+    if (error is AuthException) {
+      _talker.warning('Auth error: ${error.errorCode} — ${error.message}');
+      return Failure.auth(
+        message: error.message,
+        errorCode: error.errorCode,
+        requestId: error.requestId,
+      );
+    }
+    if (error is RateLimitException) {
+      _talker.warning('Rate limited: ${error.message}');
+      return Failure.rateLimited(
+        message: error.message,
+        requestId: error.requestId,
+      );
+    }
+    if (error is UploadTooLargeException) {
+      _talker.warning('Upload too large: ${error.message}');
+      return Failure.uploadTooLarge(
+        message: error.message,
+        requestId: error.requestId,
       );
     }
     if (error is NetworkException) {

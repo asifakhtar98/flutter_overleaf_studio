@@ -6,7 +6,7 @@ import 'package:flutter_overleaf/features/compiler/domain/usecases/compile_proje
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_state.dart';
 
-@injectable
+@lazySingleton
 class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
   CompilerBloc({required CompileProject compileProject})
     : _compileProject = compileProject,
@@ -29,6 +29,7 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
         mainFile: event.mainFile,
         engine: event.engine,
         draft: event.draft,
+        enableCache: event.enableCache,
       ),
     );
 
@@ -52,11 +53,31 @@ class CompilerBloc extends Bloc<CompilerEvent, CompilerState> {
         :final log,
         :final errorCode,
         :final compilationTime,
+        :final requestId,
       ) =>
         CompilerState.failure(
           errorCode: errorCode,
           log: log,
           compilationTime: compilationTime,
+          requestId: requestId,
+        ),
+      AuthFailure(:final message, :final errorCode, :final requestId) =>
+        CompilerState.failure(
+          errorCode: errorCode,
+          log: message,
+          requestId: requestId,
+        ),
+      RateLimitedFailure(:final message, :final requestId) =>
+        CompilerState.failure(
+          errorCode: 'RATE_LIMITED',
+          log: message,
+          requestId: requestId,
+        ),
+      UploadTooLargeFailure(:final message, :final requestId) =>
+        CompilerState.failure(
+          errorCode: 'UPLOAD_TOO_LARGE',
+          log: message,
+          requestId: requestId,
         ),
       ValidationFailure(:final message) => CompilerState.failure(
         errorCode: 'VALIDATION_ERROR',

@@ -15,8 +15,11 @@ _ProjectState _$ProjectStateFromJson(Map<String, dynamic> json) =>
           const [],
       activeFilePath: json['activeFilePath'] as String?,
       mainFilePath: json['mainFilePath'] as String?,
-      engine: json['engine'] as String? ?? 'pdflatex',
+      engine:
+          $enumDecodeNullable(_$EngineEnumMap, json['engine']) ??
+          Engine.pdflatex,
       draftMode: json['draftMode'] as bool? ?? false,
+      enableCache: json['enableCache'] as bool? ?? true,
       isImporting: json['isImporting'] as bool? ?? false,
       isExporting: json['isExporting'] as bool? ?? false,
       importError: json['importError'] as String?,
@@ -27,9 +30,17 @@ Map<String, dynamic> _$ProjectStateToJson(_ProjectState instance) =>
       'files': instance.files,
       'activeFilePath': instance.activeFilePath,
       'mainFilePath': instance.mainFilePath,
-      'engine': instance.engine,
+      'engine': _$EngineEnumMap[instance.engine]!,
       'draftMode': instance.draftMode,
+      'enableCache': instance.enableCache,
       'isImporting': instance.isImporting,
       'isExporting': instance.isExporting,
       'importError': instance.importError,
     };
+
+const _$EngineEnumMap = {
+  Engine.pdflatex: 'pdflatex',
+  Engine.xelatex: 'xelatex',
+  Engine.lualatex: 'lualatex',
+  Engine.latexmk: 'latexmk',
+};

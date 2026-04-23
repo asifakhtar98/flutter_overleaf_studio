@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import 'package:flutter_overleaf/core/di/injection.dart';
+import 'package:flutter_overleaf/core/models/engine.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
@@ -65,9 +66,37 @@ class SettingsButton extends StatelessWidget {
               return Tooltip(
                 message: 'Import ZIP project',
                 child: InkWell(
-                  onTap: () => context.read<ProjectBloc>().add(
-                    const ProjectEvent.importProject(),
-                  ),
+                  onTap: () async {
+                    final bloc = context.read<ProjectBloc>();
+                    // Fix #3: Confirm before replacing existing project.
+                    if (bloc.state.files.isNotEmpty) {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Replace current project?'),
+                          content: const Text(
+                            'Importing will replace all current files. '
+                            'Unsaved changes will be lost.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.of(ctx).pop(true),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: LatexTheme.error,
+                              ),
+                              child: const Text('Replace'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
+                    }
+                    bloc.add(const ProjectEvent.importProject());
+                  },
                   borderRadius: BorderRadius.circular(4),
                   child: const Padding(
                     padding: EdgeInsets.all(4),
@@ -250,9 +279,10 @@ class _SettingsSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              _buildDropdown<String>(
+              _buildDropdown<Engine>(
                 value: state.engine,
-                items: const ['pdflatex', 'xelatex', 'lualatex', 'latexmk'],
+                items: Engine.values,
+                labelBuilder: (e) => e.label,
                 onChanged: (v) => context.read<ProjectBloc>().add(
                   ProjectEvent.setEngine(engine: v!),
                 ),
@@ -288,6 +318,34 @@ class _SettingsSheet extends StatelessWidget {
                     ProjectEvent.setMainFile(path: v!),
                   ),
                 ),
+              const SizedBox(height: 16),
+
+              // Cache
+              const Text(
+                'Cache',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: LatexTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              SwitchListTile(
+                value: state.enableCache,
+                title: const Text(
+                  'Enable compilation cache',
+                  style: TextStyle(fontSize: 13, color: LatexTheme.textPrimary),
+                ),
+                subtitle: const Text(
+                  'Identical requests return cached PDF',
+                  style: TextStyle(fontSize: 11, color: LatexTheme.textSecondary),
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => context.read<ProjectBloc>().add(
+                  ProjectEvent.setEnableCache(enable: v),
+                ),
+              ),
 
               const SizedBox(height: 12),
             ],
@@ -301,6 +359,7 @@ class _SettingsSheet extends StatelessWidget {
     required T value,
     required List<T> items,
     required ValueChanged<T?> onChanged,
+    String Function(T)? labelBuilder,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -315,7 +374,10 @@ class _SettingsSheet extends StatelessWidget {
           isDense: true,
           style: const TextStyle(fontSize: 13, color: LatexTheme.textPrimary),
           items: items
-              .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+              .map((e) => DropdownMenuItem(
+                    value: e,
+                    child: Text(labelBuilder?.call(e) ?? '$e'),
+                  ))
               .toList(),
           onChanged: onChanged,
         ),

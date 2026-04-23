@@ -13,10 +13,27 @@ sealed class Failure with _$Failure {
     required String log,
     required String errorCode,
     double? compilationTime,
+    String? requestId,
   }) = CompilationFailure;
 
   const factory Failure.validation({required String message}) =
       ValidationFailure;
+
+  const factory Failure.auth({
+    required String message,
+    required String errorCode,
+    String? requestId,
+  }) = AuthFailure;
+
+  const factory Failure.rateLimited({
+    required String message,
+    String? requestId,
+  }) = RateLimitedFailure;
+
+  const factory Failure.uploadTooLarge({
+    required String message,
+    String? requestId,
+  }) = UploadTooLargeFailure;
 
   const factory Failure.unknown({String? message}) = UnknownFailure;
 }

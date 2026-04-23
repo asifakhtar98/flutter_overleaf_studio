@@ -119,6 +119,33 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
       final fileName = path.split('/').last;
 
       if (fileName.endsWith('.zip')) {
+        // Fix #3: Confirm before replacing existing project via drag-drop.
+        if (bloc.state.files.isNotEmpty) {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Replace current project?'),
+              content: const Text(
+                'Importing will replace all current files. '
+                'Unsaved changes will be lost.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: LatexTheme.error,
+                  ),
+                  child: const Text('Replace'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return;
+        }
         final bytes = await xFile.readAsBytes();
         bloc.add(ProjectEvent.importProject(bytes: bytes));
       } else if (fileName.endsWith('.tex')) {

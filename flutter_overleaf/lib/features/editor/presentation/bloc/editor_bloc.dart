@@ -4,7 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_event.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_state.dart';
 
-@injectable
+@lazySingleton
 class EditorBloc extends Bloc<EditorEvent, EditorState> {
   EditorBloc() : super(const EditorState()) {
     on<FileOpened>(_onFileOpened);

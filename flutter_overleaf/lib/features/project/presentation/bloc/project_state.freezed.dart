@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProjectState {
 
- List<ProjectFile> get files; String? get activeFilePath; String? get mainFilePath; String get engine; bool get draftMode; bool get isImporting; bool get isExporting; String? get importError;
+ List<ProjectFile> get files; String? get activeFilePath; String? get mainFilePath; Engine get engine; bool get draftMode; bool get enableCache; bool get isImporting; bool get isExporting; String? get importError;
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ProjectStateCopyWith<ProjectState> get copyWith => _$ProjectStateCopyWithImpl<P
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectState&&const DeepCollectionEquality().equals(other.files, files)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draftMode, draftMode) || other.draftMode == draftMode)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting)&&(identical(other.importError, importError) || other.importError == importError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProjectState&&const DeepCollectionEquality().equals(other.files, files)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draftMode, draftMode) || other.draftMode == draftMode)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting)&&(identical(other.importError, importError) || other.importError == importError));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),activeFilePath,mainFilePath,engine,draftMode,isImporting,isExporting,importError);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(files),activeFilePath,mainFilePath,engine,draftMode,enableCache,isImporting,isExporting,importError);
 
 @override
 String toString() {
-  return 'ProjectState(files: $files, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, engine: $engine, draftMode: $draftMode, isImporting: $isImporting, isExporting: $isExporting, importError: $importError)';
+  return 'ProjectState(files: $files, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, engine: $engine, draftMode: $draftMode, enableCache: $enableCache, isImporting: $isImporting, isExporting: $isExporting, importError: $importError)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ProjectStateCopyWith<$Res>  {
   factory $ProjectStateCopyWith(ProjectState value, $Res Function(ProjectState) _then) = _$ProjectStateCopyWithImpl;
 @useResult
 $Res call({
- List<ProjectFile> files, String? activeFilePath, String? mainFilePath, String engine, bool draftMode, bool isImporting, bool isExporting, String? importError
+ List<ProjectFile> files, String? activeFilePath, String? mainFilePath, Engine engine, bool draftMode, bool enableCache, bool isImporting, bool isExporting, String? importError
 });
 
 
@@ -65,13 +65,14 @@ class _$ProjectStateCopyWithImpl<$Res>
 
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? engine = null,Object? draftMode = null,Object? isImporting = null,Object? isExporting = null,Object? importError = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? files = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? engine = null,Object? draftMode = null,Object? enableCache = null,Object? isImporting = null,Object? isExporting = null,Object? importError = freezed,}) {
   return _then(_self.copyWith(
 files: null == files ? _self.files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
 as String?,mainFilePath: freezed == mainFilePath ? _self.mainFilePath : mainFilePath // ignore: cast_nullable_to_non_nullable
 as String?,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draftMode: null == draftMode ? _self.draftMode : draftMode // ignore: cast_nullable_to_non_nullable
+as Engine,draftMode: null == draftMode ? _self.draftMode : draftMode // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,isImporting: null == isImporting ? _self.isImporting : isImporting // ignore: cast_nullable_to_non_nullable
 as bool,isExporting: null == isExporting ? _self.isExporting : isExporting // ignore: cast_nullable_to_non_nullable
 as bool,importError: freezed == importError ? _self.importError : importError // ignore: cast_nullable_to_non_nullable
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  String engine,  bool draftMode,  bool isImporting,  bool isExporting,  String? importError)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  Engine engine,  bool draftMode,  bool enableCache,  bool isImporting,  bool isExporting,  String? importError)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProjectState() when $default != null:
-return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.isImporting,_that.isExporting,_that.importError);case _:
+return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.enableCache,_that.isImporting,_that.isExporting,_that.importError);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  String engine,  bool draftMode,  bool isImporting,  bool isExporting,  String? importError)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  Engine engine,  bool draftMode,  bool enableCache,  bool isImporting,  bool isExporting,  String? importError)  $default,) {final _that = this;
 switch (_that) {
 case _ProjectState():
-return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.isImporting,_that.isExporting,_that.importError);}
+return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.enableCache,_that.isImporting,_that.isExporting,_that.importError);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,10 +196,10 @@ return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  String engine,  bool draftMode,  bool isImporting,  bool isExporting,  String? importError)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProjectFile> files,  String? activeFilePath,  String? mainFilePath,  Engine engine,  bool draftMode,  bool enableCache,  bool isImporting,  bool isExporting,  String? importError)?  $default,) {final _that = this;
 switch (_that) {
 case _ProjectState() when $default != null:
-return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.isImporting,_that.isExporting,_that.importError);case _:
+return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine,_that.draftMode,_that.enableCache,_that.isImporting,_that.isExporting,_that.importError);case _:
   return null;
 
 }
@@ -210,7 +211,7 @@ return $default(_that.files,_that.activeFilePath,_that.mainFilePath,_that.engine
 @JsonSerializable()
 
 class _ProjectState implements ProjectState {
-  const _ProjectState({final  List<ProjectFile> files = const [], this.activeFilePath, this.mainFilePath, this.engine = 'pdflatex', this.draftMode = false, this.isImporting = false, this.isExporting = false, this.importError}): _files = files;
+  const _ProjectState({final  List<ProjectFile> files = const [], this.activeFilePath, this.mainFilePath, this.engine = Engine.pdflatex, this.draftMode = false, this.enableCache = true, this.isImporting = false, this.isExporting = false, this.importError}): _files = files;
   factory _ProjectState.fromJson(Map<String, dynamic> json) => _$ProjectStateFromJson(json);
 
  final  List<ProjectFile> _files;
@@ -222,8 +223,9 @@ class _ProjectState implements ProjectState {
 
 @override final  String? activeFilePath;
 @override final  String? mainFilePath;
-@override@JsonKey() final  String engine;
+@override@JsonKey() final  Engine engine;
 @override@JsonKey() final  bool draftMode;
+@override@JsonKey() final  bool enableCache;
 @override@JsonKey() final  bool isImporting;
 @override@JsonKey() final  bool isExporting;
 @override final  String? importError;
@@ -241,16 +243,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectState&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draftMode, draftMode) || other.draftMode == draftMode)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting)&&(identical(other.importError, importError) || other.importError == importError));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProjectState&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.activeFilePath, activeFilePath) || other.activeFilePath == activeFilePath)&&(identical(other.mainFilePath, mainFilePath) || other.mainFilePath == mainFilePath)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draftMode, draftMode) || other.draftMode == draftMode)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache)&&(identical(other.isImporting, isImporting) || other.isImporting == isImporting)&&(identical(other.isExporting, isExporting) || other.isExporting == isExporting)&&(identical(other.importError, importError) || other.importError == importError));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),activeFilePath,mainFilePath,engine,draftMode,isImporting,isExporting,importError);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_files),activeFilePath,mainFilePath,engine,draftMode,enableCache,isImporting,isExporting,importError);
 
 @override
 String toString() {
-  return 'ProjectState(files: $files, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, engine: $engine, draftMode: $draftMode, isImporting: $isImporting, isExporting: $isExporting, importError: $importError)';
+  return 'ProjectState(files: $files, activeFilePath: $activeFilePath, mainFilePath: $mainFilePath, engine: $engine, draftMode: $draftMode, enableCache: $enableCache, isImporting: $isImporting, isExporting: $isExporting, importError: $importError)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class _$ProjectStateCopyWith<$Res> implements $ProjectStateCopyWi
   factory _$ProjectStateCopyWith(_ProjectState value, $Res Function(_ProjectState) _then) = __$ProjectStateCopyWithImpl;
 @override @useResult
 $Res call({
- List<ProjectFile> files, String? activeFilePath, String? mainFilePath, String engine, bool draftMode, bool isImporting, bool isExporting, String? importError
+ List<ProjectFile> files, String? activeFilePath, String? mainFilePath, Engine engine, bool draftMode, bool enableCache, bool isImporting, bool isExporting, String? importError
 });
 
 
@@ -278,13 +280,14 @@ class __$ProjectStateCopyWithImpl<$Res>
 
 /// Create a copy of ProjectState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? engine = null,Object? draftMode = null,Object? isImporting = null,Object? isExporting = null,Object? importError = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? files = null,Object? activeFilePath = freezed,Object? mainFilePath = freezed,Object? engine = null,Object? draftMode = null,Object? enableCache = null,Object? isImporting = null,Object? isExporting = null,Object? importError = freezed,}) {
   return _then(_ProjectState(
 files: null == files ? _self._files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,activeFilePath: freezed == activeFilePath ? _self.activeFilePath : activeFilePath // ignore: cast_nullable_to_non_nullable
 as String?,mainFilePath: freezed == mainFilePath ? _self.mainFilePath : mainFilePath // ignore: cast_nullable_to_non_nullable
 as String?,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draftMode: null == draftMode ? _self.draftMode : draftMode // ignore: cast_nullable_to_non_nullable
+as Engine,draftMode: null == draftMode ? _self.draftMode : draftMode // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,isImporting: null == isImporting ? _self.isImporting : isImporting // ignore: cast_nullable_to_non_nullable
 as bool,isExporting: null == isExporting ? _self.isExporting : isExporting // ignore: cast_nullable_to_non_nullable
 as bool,importError: freezed == importError ? _self.importError : importError // ignore: cast_nullable_to_non_nullable

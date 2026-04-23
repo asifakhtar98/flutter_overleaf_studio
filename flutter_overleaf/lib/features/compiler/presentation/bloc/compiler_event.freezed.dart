@@ -119,10 +119,10 @@ return reset(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String engine,  bool draft,  List<ProjectFile> files,  String mainFile)?  compileRequested,TResult Function()?  reset,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( Engine engine,  bool draft,  List<ProjectFile> files,  String mainFile,  bool enableCache)?  compileRequested,TResult Function()?  reset,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CompileRequested() when compileRequested != null:
-return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile);case CompileReset() when reset != null:
+return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile,_that.enableCache);case CompileReset() when reset != null:
 return reset();case _:
   return orElse();
 
@@ -141,10 +141,10 @@ return reset();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String engine,  bool draft,  List<ProjectFile> files,  String mainFile)  compileRequested,required TResult Function()  reset,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( Engine engine,  bool draft,  List<ProjectFile> files,  String mainFile,  bool enableCache)  compileRequested,required TResult Function()  reset,}) {final _that = this;
 switch (_that) {
 case CompileRequested():
-return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile);case CompileReset():
+return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile,_that.enableCache);case CompileReset():
 return reset();}
 }
 /// A variant of `when` that fallback to returning `null`
@@ -159,10 +159,10 @@ return reset();}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String engine,  bool draft,  List<ProjectFile> files,  String mainFile)?  compileRequested,TResult? Function()?  reset,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( Engine engine,  bool draft,  List<ProjectFile> files,  String mainFile,  bool enableCache)?  compileRequested,TResult? Function()?  reset,}) {final _that = this;
 switch (_that) {
 case CompileRequested() when compileRequested != null:
-return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile);case CompileReset() when reset != null:
+return compileRequested(_that.engine,_that.draft,_that.files,_that.mainFile,_that.enableCache);case CompileReset() when reset != null:
 return reset();case _:
   return null;
 
@@ -175,10 +175,10 @@ return reset();case _:
 
 
 class CompileRequested implements CompilerEvent {
-  const CompileRequested({required this.engine, required this.draft, required final  List<ProjectFile> files, required this.mainFile}): _files = files;
+  const CompileRequested({required this.engine, required this.draft, required final  List<ProjectFile> files, required this.mainFile, this.enableCache = true}): _files = files;
   
 
- final  String engine;
+ final  Engine engine;
  final  bool draft;
  final  List<ProjectFile> _files;
  List<ProjectFile> get files {
@@ -188,6 +188,7 @@ class CompileRequested implements CompilerEvent {
 }
 
  final  String mainFile;
+@JsonKey() final  bool enableCache;
 
 /// Create a copy of CompilerEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -199,16 +200,16 @@ $CompileRequestedCopyWith<CompileRequested> get copyWith => _$CompileRequestedCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileRequested&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileRequested&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&const DeepCollectionEquality().equals(other._files, _files)&&(identical(other.mainFile, mainFile) || other.mainFile == mainFile)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,engine,draft,const DeepCollectionEquality().hash(_files),mainFile);
+int get hashCode => Object.hash(runtimeType,engine,draft,const DeepCollectionEquality().hash(_files),mainFile,enableCache);
 
 @override
 String toString() {
-  return 'CompilerEvent.compileRequested(engine: $engine, draft: $draft, files: $files, mainFile: $mainFile)';
+  return 'CompilerEvent.compileRequested(engine: $engine, draft: $draft, files: $files, mainFile: $mainFile, enableCache: $enableCache)';
 }
 
 
@@ -219,7 +220,7 @@ abstract mixin class $CompileRequestedCopyWith<$Res> implements $CompilerEventCo
   factory $CompileRequestedCopyWith(CompileRequested value, $Res Function(CompileRequested) _then) = _$CompileRequestedCopyWithImpl;
 @useResult
 $Res call({
- String engine, bool draft, List<ProjectFile> files, String mainFile
+ Engine engine, bool draft, List<ProjectFile> files, String mainFile, bool enableCache
 });
 
 
@@ -236,13 +237,14 @@ class _$CompileRequestedCopyWithImpl<$Res>
 
 /// Create a copy of CompilerEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? engine = null,Object? draft = null,Object? files = null,Object? mainFile = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? engine = null,Object? draft = null,Object? files = null,Object? mainFile = null,Object? enableCache = null,}) {
   return _then(CompileRequested(
 engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as Engine,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
 as bool,files: null == files ? _self._files : files // ignore: cast_nullable_to_non_nullable
 as List<ProjectFile>,mainFile: null == mainFile ? _self.mainFile : mainFile // ignore: cast_nullable_to_non_nullable
-as String,
+as String,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

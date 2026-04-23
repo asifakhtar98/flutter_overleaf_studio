@@ -7,6 +7,7 @@ abstract class CompilerRepository {
     required String source,
     String engine,
     bool draft,
+    bool enableCache,
   });
 
   FutureEither<CompileResult> compileProject({
@@ -14,5 +15,6 @@ abstract class CompilerRepository {
     required String mainFile,
     String engine,
     bool draft,
+    bool enableCache,
   });
 }

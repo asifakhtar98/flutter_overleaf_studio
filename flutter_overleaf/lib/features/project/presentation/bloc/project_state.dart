@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:flutter_overleaf/core/models/engine.dart';
 import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 
 part 'project_state.freezed.dart';
@@ -11,8 +12,9 @@ sealed class ProjectState with _$ProjectState {
     @Default([]) List<ProjectFile> files,
     String? activeFilePath,
     String? mainFilePath,
-    @Default('pdflatex') String engine,
+    @Default(Engine.pdflatex) Engine engine,
     @Default(false) bool draftMode,
+    @Default(true) bool enableCache,
     @Default(false) bool isImporting,
     @Default(false) bool isExporting,
     String? importError,

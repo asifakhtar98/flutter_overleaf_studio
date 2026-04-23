@@ -6,8 +6,15 @@ import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bl
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_state.dart';
 
-class CompileLogPanel extends StatelessWidget {
+class CompileLogPanel extends StatefulWidget {
   const CompileLogPanel({super.key});
+
+  @override
+  State<CompileLogPanel> createState() => _CompileLogPanelState();
+}
+
+class _CompileLogPanelState extends State<CompileLogPanel> {
+  bool _expanded = true;
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +28,10 @@ class CompileLogPanel extends StatelessWidget {
 
         if (log == null || log.isEmpty) return const SizedBox.shrink();
 
-        return Container(
-          height: 180,
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          height: _expanded ? 180 : 32,
           decoration: const BoxDecoration(
             color: LatexTheme.logBg,
             border: Border(top: BorderSide(color: LatexTheme.border)),
@@ -30,69 +39,78 @@ class CompileLogPanel extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: LatexTheme.logBg.withValues(alpha: 0.95),
-                  border: const Border(
-                    bottom: BorderSide(color: Color(0xFF374151)),
+              // Header — clickable to toggle
+              GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: LatexTheme.logBg.withValues(alpha: 0.95),
+                    border: const Border(
+                      bottom: BorderSide(color: Color(0xFF374151)),
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      state is CompilerFailure
-                          ? Icons.error_outline
-                          : Icons.terminal,
-                      size: 14,
-                      color: state is CompilerFailure
-                          ? LatexTheme.error
-                          : LatexTheme.logText,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Compilation Log',
-                      style: LatexTheme.monoSmall.copyWith(
-                        fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_right,
+                        size: 16,
+                        color: LatexTheme.logText,
                       ),
-                    ),
-                    const Spacer(),
-                    if (state case CompilerFailure(:final compilationTime))
-                      if (compilationTime != null)
+                      const SizedBox(width: 4),
+                      Icon(
+                        state is CompilerFailure
+                            ? Icons.error_outline
+                            : Icons.terminal,
+                        size: 14,
+                        color: state is CompilerFailure
+                            ? LatexTheme.error
+                            : LatexTheme.logText,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Compilation Log',
+                        style: LatexTheme.monoSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (state case CompilerFailure(:final compilationTime))
+                        if (compilationTime != null)
+                          Text(
+                            '${compilationTime.toStringAsFixed(2)}s',
+                            style: LatexTheme.monoSmall,
+                          ),
+                      if (state case CompilerSuccess(:final result))
                         Text(
-                          '${compilationTime.toStringAsFixed(2)}s',
+                          '${result.compilationTime.toStringAsFixed(2)}s',
                           style: LatexTheme.monoSmall,
                         ),
-                    if (state case CompilerSuccess(:final result))
-                      Text(
-                        '${result.compilationTime.toStringAsFixed(2)}s',
-                        style: LatexTheme.monoSmall,
-                      ),
-                    const SizedBox(width: 8),
-                    // RM3: Close button
-                    InkWell(
-                      onTap: () => context.read<CompilerBloc>().add(
-                        const CompilerEvent.reset(),
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                      child: const Padding(
-                        padding: EdgeInsets.all(2),
-                        child: Icon(
-                          Icons.close,
-                          size: 14,
-                          color: LatexTheme.logText,
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => context.read<CompilerBloc>().add(
+                          const CompilerEvent.reset(),
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                        child: const Padding(
+                          padding: EdgeInsets.all(2),
+                          child: Icon(
+                            Icons.close,
+                            size: 14,
+                            color: LatexTheme.logText,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              // Log content — RM4: auto-scroll to bottom
-              Expanded(child: _AutoScrollLog(log: log)),
+              // Log content — only when expanded
+              if (_expanded)
+                Expanded(child: _AutoScrollLog(log: log)),
             ],
           ),
         );

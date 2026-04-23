@@ -18,10 +18,18 @@ class CompilerRemoteDatasource {
     required String source,
     String engine = 'pdflatex',
     bool draft = false,
+    bool enableCache = true,
+    String mainFile = 'main.tex',
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/compile',
-      data: {'source': source, 'engine': engine, 'draft': draft},
+      data: {
+        'source': source,
+        'engine': engine,
+        'draft': draft,
+        'enable_cache': enableCache,
+        'main_file': mainFile,
+      },
     );
 
     return _parseResponse(response);
@@ -32,6 +40,7 @@ class CompilerRemoteDatasource {
     required String mainFile,
     String engine = 'pdflatex',
     bool draft = false,
+    bool enableCache = true,
   }) async {
     final zipBytes = _createZip(files);
 
@@ -40,6 +49,7 @@ class CompilerRemoteDatasource {
       'main_file': mainFile,
       'engine': engine,
       'draft': draft.toString(),
+      'enable_cache': enableCache.toString(),
     });
 
     final response = await _dio.post<Map<String, dynamic>>(

@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:flutter_overleaf/core/models/engine.dart';
 import 'package:flutter_overleaf/core/utils/typedefs.dart';
 import 'package:flutter_overleaf/features/compiler/domain/entities/compile_result.dart';
 import 'package:flutter_overleaf/features/compiler/domain/repositories/compiler_repository.dart';
@@ -11,8 +12,9 @@ part 'compile_single.freezed.dart';
 sealed class CompileSingleParams with _$CompileSingleParams {
   const factory CompileSingleParams({
     required String source,
-    @Default('pdflatex') String engine,
+    @Default(Engine.pdflatex) Engine engine,
     @Default(false) bool draft,
+    @Default(true) bool enableCache,
   }) = _CompileSingleParams;
 }
 
@@ -25,7 +27,8 @@ class CompileSingle {
   FutureEither<CompileResult> call(CompileSingleParams params) =>
       _repository.compileSingle(
         source: params.source,
-        engine: params.engine,
+        engine: params.engine.name,
         draft: params.draft,
+        enableCache: params.enableCache,
       );
 }

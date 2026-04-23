@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$HealthStatus {
 
- String get status;@JsonKey(name: 'texlive_version') String get texliveVersion;@JsonKey(name: 'cache_stats') Map<String, dynamic>? get cacheStats;
+ String get status;@JsonKey(name: 'texlive_version') String get texliveVersion; List<String> get engines;@JsonKey(name: 'uptime_seconds') double get uptimeSeconds;@JsonKey(name: 'cache_stats') CacheStats? get cacheStats;
 /// Create a copy of HealthStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $HealthStatusCopyWith<HealthStatus> get copyWith => _$HealthStatusCopyWithImpl<H
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HealthStatus&&(identical(other.status, status) || other.status == status)&&(identical(other.texliveVersion, texliveVersion) || other.texliveVersion == texliveVersion)&&const DeepCollectionEquality().equals(other.cacheStats, cacheStats));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HealthStatus&&(identical(other.status, status) || other.status == status)&&(identical(other.texliveVersion, texliveVersion) || other.texliveVersion == texliveVersion)&&const DeepCollectionEquality().equals(other.engines, engines)&&(identical(other.uptimeSeconds, uptimeSeconds) || other.uptimeSeconds == uptimeSeconds)&&(identical(other.cacheStats, cacheStats) || other.cacheStats == cacheStats));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,texliveVersion,const DeepCollectionEquality().hash(cacheStats));
+int get hashCode => Object.hash(runtimeType,status,texliveVersion,const DeepCollectionEquality().hash(engines),uptimeSeconds,cacheStats);
 
 @override
 String toString() {
-  return 'HealthStatus(status: $status, texliveVersion: $texliveVersion, cacheStats: $cacheStats)';
+  return 'HealthStatus(status: $status, texliveVersion: $texliveVersion, engines: $engines, uptimeSeconds: $uptimeSeconds, cacheStats: $cacheStats)';
 }
 
 
@@ -48,11 +48,11 @@ abstract mixin class $HealthStatusCopyWith<$Res>  {
   factory $HealthStatusCopyWith(HealthStatus value, $Res Function(HealthStatus) _then) = _$HealthStatusCopyWithImpl;
 @useResult
 $Res call({
- String status,@JsonKey(name: 'texlive_version') String texliveVersion,@JsonKey(name: 'cache_stats') Map<String, dynamic>? cacheStats
+ String status,@JsonKey(name: 'texlive_version') String texliveVersion, List<String> engines,@JsonKey(name: 'uptime_seconds') double uptimeSeconds,@JsonKey(name: 'cache_stats') CacheStats? cacheStats
 });
 
 
-
+$CacheStatsCopyWith<$Res>? get cacheStats;
 
 }
 /// @nodoc
@@ -65,15 +65,29 @@ class _$HealthStatusCopyWithImpl<$Res>
 
 /// Create a copy of HealthStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? texliveVersion = null,Object? cacheStats = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? texliveVersion = null,Object? engines = null,Object? uptimeSeconds = null,Object? cacheStats = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,texliveVersion: null == texliveVersion ? _self.texliveVersion : texliveVersion // ignore: cast_nullable_to_non_nullable
-as String,cacheStats: freezed == cacheStats ? _self.cacheStats : cacheStats // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,
+as String,engines: null == engines ? _self.engines : engines // ignore: cast_nullable_to_non_nullable
+as List<String>,uptimeSeconds: null == uptimeSeconds ? _self.uptimeSeconds : uptimeSeconds // ignore: cast_nullable_to_non_nullable
+as double,cacheStats: freezed == cacheStats ? _self.cacheStats : cacheStats // ignore: cast_nullable_to_non_nullable
+as CacheStats?,
   ));
 }
+/// Create a copy of HealthStatus
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CacheStatsCopyWith<$Res>? get cacheStats {
+    if (_self.cacheStats == null) {
+    return null;
+  }
 
+  return $CacheStatsCopyWith<$Res>(_self.cacheStats!, (value) {
+    return _then(_self.copyWith(cacheStats: value));
+  });
+}
 }
 
 
@@ -152,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion, @JsonKey(name: 'cache_stats')  Map<String, dynamic>? cacheStats)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion,  List<String> engines, @JsonKey(name: 'uptime_seconds')  double uptimeSeconds, @JsonKey(name: 'cache_stats')  CacheStats? cacheStats)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HealthStatus() when $default != null:
-return $default(_that.status,_that.texliveVersion,_that.cacheStats);case _:
+return $default(_that.status,_that.texliveVersion,_that.engines,_that.uptimeSeconds,_that.cacheStats);case _:
   return orElse();
 
 }
@@ -173,10 +187,10 @@ return $default(_that.status,_that.texliveVersion,_that.cacheStats);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion, @JsonKey(name: 'cache_stats')  Map<String, dynamic>? cacheStats)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion,  List<String> engines, @JsonKey(name: 'uptime_seconds')  double uptimeSeconds, @JsonKey(name: 'cache_stats')  CacheStats? cacheStats)  $default,) {final _that = this;
 switch (_that) {
 case _HealthStatus():
-return $default(_that.status,_that.texliveVersion,_that.cacheStats);}
+return $default(_that.status,_that.texliveVersion,_that.engines,_that.uptimeSeconds,_that.cacheStats);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -190,10 +204,10 @@ return $default(_that.status,_that.texliveVersion,_that.cacheStats);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion, @JsonKey(name: 'cache_stats')  Map<String, dynamic>? cacheStats)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String status, @JsonKey(name: 'texlive_version')  String texliveVersion,  List<String> engines, @JsonKey(name: 'uptime_seconds')  double uptimeSeconds, @JsonKey(name: 'cache_stats')  CacheStats? cacheStats)?  $default,) {final _that = this;
 switch (_that) {
 case _HealthStatus() when $default != null:
-return $default(_that.status,_that.texliveVersion,_that.cacheStats);case _:
+return $default(_that.status,_that.texliveVersion,_that.engines,_that.uptimeSeconds,_that.cacheStats);case _:
   return null;
 
 }
@@ -205,20 +219,20 @@ return $default(_that.status,_that.texliveVersion,_that.cacheStats);case _:
 @JsonSerializable()
 
 class _HealthStatus implements HealthStatus {
-  const _HealthStatus({required this.status, @JsonKey(name: 'texlive_version') required this.texliveVersion, @JsonKey(name: 'cache_stats') final  Map<String, dynamic>? cacheStats}): _cacheStats = cacheStats;
+  const _HealthStatus({required this.status, @JsonKey(name: 'texlive_version') required this.texliveVersion, final  List<String> engines = const [], @JsonKey(name: 'uptime_seconds') this.uptimeSeconds = 0, @JsonKey(name: 'cache_stats') this.cacheStats}): _engines = engines;
   factory _HealthStatus.fromJson(Map<String, dynamic> json) => _$HealthStatusFromJson(json);
 
 @override final  String status;
 @override@JsonKey(name: 'texlive_version') final  String texliveVersion;
- final  Map<String, dynamic>? _cacheStats;
-@override@JsonKey(name: 'cache_stats') Map<String, dynamic>? get cacheStats {
-  final value = _cacheStats;
-  if (value == null) return null;
-  if (_cacheStats is EqualUnmodifiableMapView) return _cacheStats;
+ final  List<String> _engines;
+@override@JsonKey() List<String> get engines {
+  if (_engines is EqualUnmodifiableListView) return _engines;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableMapView(value);
+  return EqualUnmodifiableListView(_engines);
 }
 
+@override@JsonKey(name: 'uptime_seconds') final  double uptimeSeconds;
+@override@JsonKey(name: 'cache_stats') final  CacheStats? cacheStats;
 
 /// Create a copy of HealthStatus
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HealthStatus&&(identical(other.status, status) || other.status == status)&&(identical(other.texliveVersion, texliveVersion) || other.texliveVersion == texliveVersion)&&const DeepCollectionEquality().equals(other._cacheStats, _cacheStats));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _HealthStatus&&(identical(other.status, status) || other.status == status)&&(identical(other.texliveVersion, texliveVersion) || other.texliveVersion == texliveVersion)&&const DeepCollectionEquality().equals(other._engines, _engines)&&(identical(other.uptimeSeconds, uptimeSeconds) || other.uptimeSeconds == uptimeSeconds)&&(identical(other.cacheStats, cacheStats) || other.cacheStats == cacheStats));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,status,texliveVersion,const DeepCollectionEquality().hash(_cacheStats));
+int get hashCode => Object.hash(runtimeType,status,texliveVersion,const DeepCollectionEquality().hash(_engines),uptimeSeconds,cacheStats);
 
 @override
 String toString() {
-  return 'HealthStatus(status: $status, texliveVersion: $texliveVersion, cacheStats: $cacheStats)';
+  return 'HealthStatus(status: $status, texliveVersion: $texliveVersion, engines: $engines, uptimeSeconds: $uptimeSeconds, cacheStats: $cacheStats)';
 }
 
 
@@ -253,11 +267,11 @@ abstract mixin class _$HealthStatusCopyWith<$Res> implements $HealthStatusCopyWi
   factory _$HealthStatusCopyWith(_HealthStatus value, $Res Function(_HealthStatus) _then) = __$HealthStatusCopyWithImpl;
 @override @useResult
 $Res call({
- String status,@JsonKey(name: 'texlive_version') String texliveVersion,@JsonKey(name: 'cache_stats') Map<String, dynamic>? cacheStats
+ String status,@JsonKey(name: 'texlive_version') String texliveVersion, List<String> engines,@JsonKey(name: 'uptime_seconds') double uptimeSeconds,@JsonKey(name: 'cache_stats') CacheStats? cacheStats
 });
 
 
-
+@override $CacheStatsCopyWith<$Res>? get cacheStats;
 
 }
 /// @nodoc
@@ -270,16 +284,30 @@ class __$HealthStatusCopyWithImpl<$Res>
 
 /// Create a copy of HealthStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? texliveVersion = null,Object? cacheStats = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? texliveVersion = null,Object? engines = null,Object? uptimeSeconds = null,Object? cacheStats = freezed,}) {
   return _then(_HealthStatus(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,texliveVersion: null == texliveVersion ? _self.texliveVersion : texliveVersion // ignore: cast_nullable_to_non_nullable
-as String,cacheStats: freezed == cacheStats ? _self._cacheStats : cacheStats // ignore: cast_nullable_to_non_nullable
-as Map<String, dynamic>?,
+as String,engines: null == engines ? _self._engines : engines // ignore: cast_nullable_to_non_nullable
+as List<String>,uptimeSeconds: null == uptimeSeconds ? _self.uptimeSeconds : uptimeSeconds // ignore: cast_nullable_to_non_nullable
+as double,cacheStats: freezed == cacheStats ? _self.cacheStats : cacheStats // ignore: cast_nullable_to_non_nullable
+as CacheStats?,
   ));
 }
 
+/// Create a copy of HealthStatus
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CacheStatsCopyWith<$Res>? get cacheStats {
+    if (_self.cacheStats == null) {
+    return null;
+  }
 
+  return $CacheStatsCopyWith<$Res>(_self.cacheStats!, (value) {
+    return _then(_self.copyWith(cacheStats: value));
+  });
+}
 }
 
 // dart format on

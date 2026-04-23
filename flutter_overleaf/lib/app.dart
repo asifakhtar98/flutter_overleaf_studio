@@ -9,6 +9,7 @@ import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bl
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_bloc.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_event.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
+import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_state.dart';
 import 'package:flutter_overleaf/presentation/pages/editor_page.dart';
 
@@ -17,30 +18,27 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Restore active file into the editor singleton on app start.
+    final projectBloc = getIt<ProjectBloc>();
+    final editorBloc = getIt<EditorBloc>();
+    final activeFile = projectBloc.state.files
+        .where((f) => f.path == projectBloc.state.activeFilePath)
+        .firstOrNull;
+    if (activeFile != null) {
+      editorBloc.add(
+        EditorEvent.fileOpened(
+          path: activeFile.path,
+          content: activeFile.content,
+        ),
+      );
+    }
+
+    // Use BlocProvider.value — singletons must not be closed by the widget tree.
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => getIt<ProjectBloc>()),
-        BlocProvider(
-          create: (context) {
-            final projectBloc = context.read<ProjectBloc>();
-            final editorBloc = getIt<EditorBloc>();
-
-            final activeFile = projectBloc.state.files
-                .where((f) => f.path == projectBloc.state.activeFilePath)
-                .firstOrNull;
-
-            if (activeFile != null) {
-              editorBloc.add(
-                EditorEvent.fileOpened(
-                  path: activeFile.path,
-                  content: activeFile.content,
-                ),
-              );
-            }
-            return editorBloc;
-          },
-        ),
-        BlocProvider(create: (_) => getIt<CompilerBloc>()),
+        BlocProvider.value(value: projectBloc),
+        BlocProvider.value(value: editorBloc),
+        BlocProvider.value(value: getIt<CompilerBloc>()),
       ],
       child: _AppContent(),
     );
@@ -62,6 +60,18 @@ class _AppContent extends StatelessWidget {
           listenWhen: (previous, current) =>
               previous.activeFilePath != current.activeFilePath,
           listener: (context, state) {
+            // Fix #2: Flush dirty editor content before switching.
+            final editor = context.read<EditorBloc>().state;
+            if (editor.currentTabPath != null &&
+                editor.currentTabPath != state.activeFilePath) {
+              context.read<ProjectBloc>().add(
+                ProjectEvent.updateFileContent(
+                  path: editor.currentTabPath!,
+                  content: editor.content,
+                ),
+              );
+            }
+
             final activeFile = state.files
                 .where((f) => f.path == state.activeFilePath)
                 .firstOrNull;

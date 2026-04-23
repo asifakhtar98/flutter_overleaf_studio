@@ -29,8 +29,6 @@ dependencies:
   pdfrx: ^2.2.24
   # UI
   multi_split_view: ^3.6.1
-  flutter_treeview2: ^1.0.0+2
-  flutter_monaco: ^1.4.0
   desktop_drop: ^0.7.0
   google_fonts: ^6.2.1
   # Zip
@@ -38,20 +36,18 @@ dependencies:
   # Storage (for hydrated_bloc)
   path_provider: ^2.1.5
   # Utils
-  equatable: ^2.0.7
-  uuid: ^4.5.1
   talker: ^5.1.16
   talker_flutter: ^5.1.16
   talker_dio_logger: ^5.1.16
   talker_bloc_logger: ^5.1.16
   rxdart: ^0.28.0
-  bloc_concurrency: ^0.3.0
   file_picker: ^9.0.2
   cross_file: ^0.3.5+2
   share_plus: ^12.0.2
   flutter_code_editor: ^0.3.0
   flutter_highlight: ^0.7.0
   highlight: ^0.7.0
+  universal_io: ^2.3.1
 
 dev_dependencies:
   flutter_test:

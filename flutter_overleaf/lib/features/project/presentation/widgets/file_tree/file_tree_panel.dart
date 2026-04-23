@@ -199,6 +199,18 @@ class _FileTreeState extends State<_FileTree> {
       return;
     }
 
+    // Fix #2: Flush dirty editor content before switching files.
+    final editorState = context.read<EditorBloc>().state;
+    if (editorState.currentTabPath != null &&
+        editorState.currentTabPath != node.path) {
+      context.read<ProjectBloc>().add(
+        ProjectEvent.updateFileContent(
+          path: editorState.currentTabPath!,
+          content: editorState.content,
+        ),
+      );
+    }
+
     context.read<ProjectBloc>().add(ProjectEvent.selectFile(path: node.path));
     context.read<EditorBloc>().add(
       EditorEvent.tabOpened(path: node.path, content: node.file?.content ?? ''),

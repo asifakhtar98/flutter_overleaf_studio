@@ -39,10 +39,10 @@ class Toolbar extends HookWidget {
           ),
           const SizedBox(width: 24),
 
-          const SizedBox(width: 24),
-
-          // Compile button
+          // Compile button + target indicator
           const _CompileButton(),
+          const SizedBox(width: 8),
+          const _CompileTarget(),
           const SizedBox(width: 8),
 
           const Spacer(),
@@ -65,6 +65,57 @@ class Toolbar extends HookWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Shows the resolved entry file name next to the compile button,
+/// so the user always knows which file will be compiled.
+class _CompileTarget extends StatelessWidget {
+  const _CompileTarget();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<EditorBloc, EditorState>(
+      builder: (context, editorState) {
+        return BlocBuilder<ProjectBloc, ProjectState>(
+          builder: (context, projectState) {
+            final entryFile = resolveEntryFile(
+              activePath: editorState.currentTabPath,
+              activeContent: editorState.content,
+              mainFilePath: projectState.mainFilePath,
+            );
+            if (entryFile == null) return const SizedBox.shrink();
+
+            final fileName = entryFile.split('/').last;
+            final isActiveOverride = entryFile == editorState.currentTabPath &&
+                entryFile != projectState.mainFilePath;
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.description_outlined,
+                  size: 13,
+                  color: LatexTheme.textSecondary.withValues(alpha: 0.7),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  fileName,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isActiveOverride
+                        ? LatexTheme.primary
+                        : LatexTheme.textSecondary,
+                    fontWeight:
+                        isActiveOverride ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -106,36 +157,39 @@ class _CompileButton extends StatelessWidget {
                     projectState.files.any((f) => f.path == entryFile);
                 final canCompile = !isLoading && hasEntry;
 
-                return FilledButton.icon(
-                  onPressed: canCompile
-                      ? () => _compile(
-                          context,
-                          editorState: editorState,
-                          projectState: projectState,
-                          entryFile: entryFile,
-                        )
-                      : null,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.play_arrow, size: 18),
-                  label: Text(isLoading ? 'Compiling…' : 'Compile'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: LatexTheme.primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 0,
-                    ),
-                    minimumSize: const Size(0, 34),
-                    textStyle: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                return Tooltip(
+                  message: canCompile
+                      ? 'Compile (⌘S)'
+                      : isLoading
+                          ? 'Compilation in progress'
+                          : 'No compilable file',
+                  waitDuration: const Duration(milliseconds: 400),
+                  child: FilledButton.icon(
+                    onPressed: canCompile
+                        ? () => _compile(context)
+                        : null,
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.play_arrow, size: 18),
+                    label: Text(isLoading ? 'Compiling…' : 'Compile'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: LatexTheme.primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 0,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 );
@@ -147,12 +201,21 @@ class _CompileButton extends StatelessWidget {
     );
   }
 
-  void _compile(
-    BuildContext context, {
-    required EditorState editorState,
-    required ProjectState projectState,
-    required String entryFile,
-  }) {
+  /// Read fresh state at press time — avoids stale closure captures
+  /// when ProjectBloc and EditorBloc update out of sync.
+  void _compile(BuildContext context) {
+    final editorState = context.read<EditorBloc>().state;
+    final projectState = context.read<ProjectBloc>().state;
+
+    final entryFile = resolveEntryFile(
+      activePath: editorState.currentTabPath,
+      activeContent: editorState.content,
+      mainFilePath: projectState.mainFilePath,
+    );
+
+    if (entryFile == null) return;
+    if (!projectState.files.any((f) => f.path == entryFile)) return;
+
     final activePath = editorState.currentTabPath;
 
     // Flush active editor content to project
@@ -165,7 +228,9 @@ class _CompileButton extends StatelessWidget {
       );
     }
 
-    // Build files with active content overlaid
+    // Active file content is overlaid directly in the compile payload
+    // to bypass the 300ms debounce. Other files are guaranteed fresh
+    // because content is flushed synchronously on every tab switch (#2).
     final files = activePath != null
         ? projectState.files.map((f) {
             if (f.path == activePath) {
@@ -181,6 +246,7 @@ class _CompileButton extends StatelessWidget {
         draft: projectState.draftMode,
         files: files,
         mainFile: entryFile,
+        enableCache: projectState.enableCache,
       ),
     );
   }

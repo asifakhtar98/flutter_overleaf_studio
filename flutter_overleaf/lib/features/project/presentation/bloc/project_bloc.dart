@@ -4,6 +4,7 @@ import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'package:flutter_overleaf/core/constants/app_constants.dart';
+import 'package:flutter_overleaf/core/error/failures.dart';
 import 'package:flutter_overleaf/core/utils/path_utils.dart';
 import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 import 'package:flutter_overleaf/features/project/domain/usecases/import_project.dart';
@@ -12,7 +13,7 @@ import 'package:flutter_overleaf/features/project/presentation/bloc/project_even
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_state.dart'
     show ProjectState;
 
-@injectable
+@lazySingleton
 class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
   final ImportProjectUseCase _importProject;
   final ExportProjectUseCase _exportProject;
@@ -49,6 +50,7 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     on<SetMainFile>(_onSetMainFile);
     on<SetEngine>(_onSetEngine);
     on<SetDraftMode>(_onSetDraftMode);
+    on<SetEnableCache>(_onSetEnableCache);
     on<AddFolder>(_onAddFolder);
     on<RenameFolder>(_onRenameFolder);
     on<DeleteFolder>(_onDeleteFolder);
@@ -67,8 +69,19 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
       fromPicker: event.bytes == null,
     );
     result.fold(
-      (_) {
-        emit(state.copyWith(isImporting: false));
+      (failure) {
+        // Fix #4: Surface the import error to the user.
+        final message = switch (failure) {
+          ServerFailure(:final message) => message,
+          NetworkFailure(:final message) => message,
+          CompilationFailure(:final log) => log,
+          ValidationFailure(:final message) => message,
+          AuthFailure(:final message) => message,
+          RateLimitedFailure(:final message) => message,
+          UploadTooLargeFailure(:final message) => message,
+          UnknownFailure(:final message) => message ?? 'Import failed',
+        };
+        emit(state.copyWith(isImporting: false, importError: message));
       },
       (List<ProjectFile> files) {
         final detectedMain = files.any((f) => f.isMainFile)
@@ -227,6 +240,10 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
 
   void _onSetDraftMode(SetDraftMode event, Emitter<ProjectState> emit) {
     emit(state.copyWith(draftMode: event.draft));
+  }
+
+  void _onSetEnableCache(SetEnableCache event, Emitter<ProjectState> emit) {
+    emit(state.copyWith(enableCache: event.enable));
   }
 
   void _onAddFolder(AddFolder event, Emitter<ProjectState> emit) {

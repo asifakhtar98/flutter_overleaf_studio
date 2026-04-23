@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$CompileSingleParams {
 
- String get source; String get engine; bool get draft;
+ String get source; Engine get engine; bool get draft; bool get enableCache;
 /// Create a copy of CompileSingleParams
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $CompileSingleParamsCopyWith<CompileSingleParams> get copyWith => _$CompileSingl
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileSingleParams&&(identical(other.source, source) || other.source == source)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompileSingleParams&&(identical(other.source, source) || other.source == source)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,source,engine,draft);
+int get hashCode => Object.hash(runtimeType,source,engine,draft,enableCache);
 
 @override
 String toString() {
-  return 'CompileSingleParams(source: $source, engine: $engine, draft: $draft)';
+  return 'CompileSingleParams(source: $source, engine: $engine, draft: $draft, enableCache: $enableCache)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $CompileSingleParamsCopyWith<$Res>  {
   factory $CompileSingleParamsCopyWith(CompileSingleParams value, $Res Function(CompileSingleParams) _then) = _$CompileSingleParamsCopyWithImpl;
 @useResult
 $Res call({
- String source, String engine, bool draft
+ String source, Engine engine, bool draft, bool enableCache
 });
 
 
@@ -62,11 +62,12 @@ class _$CompileSingleParamsCopyWithImpl<$Res>
 
 /// Create a copy of CompileSingleParams
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? source = null,Object? engine = null,Object? draft = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? source = null,Object? engine = null,Object? draft = null,Object? enableCache = null,}) {
   return _then(_self.copyWith(
 source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as Engine,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -149,10 +150,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String source,  String engine,  bool draft)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String source,  Engine engine,  bool draft,  bool enableCache)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CompileSingleParams() when $default != null:
-return $default(_that.source,_that.engine,_that.draft);case _:
+return $default(_that.source,_that.engine,_that.draft,_that.enableCache);case _:
   return orElse();
 
 }
@@ -170,10 +171,10 @@ return $default(_that.source,_that.engine,_that.draft);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String source,  String engine,  bool draft)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String source,  Engine engine,  bool draft,  bool enableCache)  $default,) {final _that = this;
 switch (_that) {
 case _CompileSingleParams():
-return $default(_that.source,_that.engine,_that.draft);}
+return $default(_that.source,_that.engine,_that.draft,_that.enableCache);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -187,10 +188,10 @@ return $default(_that.source,_that.engine,_that.draft);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String source,  String engine,  bool draft)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String source,  Engine engine,  bool draft,  bool enableCache)?  $default,) {final _that = this;
 switch (_that) {
 case _CompileSingleParams() when $default != null:
-return $default(_that.source,_that.engine,_that.draft);case _:
+return $default(_that.source,_that.engine,_that.draft,_that.enableCache);case _:
   return null;
 
 }
@@ -202,12 +203,13 @@ return $default(_that.source,_that.engine,_that.draft);case _:
 
 
 class _CompileSingleParams implements CompileSingleParams {
-  const _CompileSingleParams({required this.source, this.engine = 'pdflatex', this.draft = false});
+  const _CompileSingleParams({required this.source, this.engine = Engine.pdflatex, this.draft = false, this.enableCache = true});
   
 
 @override final  String source;
-@override@JsonKey() final  String engine;
+@override@JsonKey() final  Engine engine;
 @override@JsonKey() final  bool draft;
+@override@JsonKey() final  bool enableCache;
 
 /// Create a copy of CompileSingleParams
 /// with the given fields replaced by the non-null parameter values.
@@ -219,16 +221,16 @@ _$CompileSingleParamsCopyWith<_CompileSingleParams> get copyWith => __$CompileSi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompileSingleParams&&(identical(other.source, source) || other.source == source)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompileSingleParams&&(identical(other.source, source) || other.source == source)&&(identical(other.engine, engine) || other.engine == engine)&&(identical(other.draft, draft) || other.draft == draft)&&(identical(other.enableCache, enableCache) || other.enableCache == enableCache));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,source,engine,draft);
+int get hashCode => Object.hash(runtimeType,source,engine,draft,enableCache);
 
 @override
 String toString() {
-  return 'CompileSingleParams(source: $source, engine: $engine, draft: $draft)';
+  return 'CompileSingleParams(source: $source, engine: $engine, draft: $draft, enableCache: $enableCache)';
 }
 
 
@@ -239,7 +241,7 @@ abstract mixin class _$CompileSingleParamsCopyWith<$Res> implements $CompileSing
   factory _$CompileSingleParamsCopyWith(_CompileSingleParams value, $Res Function(_CompileSingleParams) _then) = __$CompileSingleParamsCopyWithImpl;
 @override @useResult
 $Res call({
- String source, String engine, bool draft
+ String source, Engine engine, bool draft, bool enableCache
 });
 
 
@@ -256,11 +258,12 @@ class __$CompileSingleParamsCopyWithImpl<$Res>
 
 /// Create a copy of CompileSingleParams
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? source = null,Object? engine = null,Object? draft = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? source = null,Object? engine = null,Object? draft = null,Object? enableCache = null,}) {
   return _then(_CompileSingleParams(
 source: null == source ? _self.source : source // ignore: cast_nullable_to_non_nullable
 as String,engine: null == engine ? _self.engine : engine // ignore: cast_nullable_to_non_nullable
-as String,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as Engine,draft: null == draft ? _self.draft : draft // ignore: cast_nullable_to_non_nullable
+as bool,enableCache: null == enableCache ? _self.enableCache : enableCache // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

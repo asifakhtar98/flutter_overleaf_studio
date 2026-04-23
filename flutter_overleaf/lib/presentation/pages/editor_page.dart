@@ -62,6 +62,7 @@ class EditorPage extends StatelessWidget {
       activeContent: editorState.content,
       mainFilePath: projectState.mainFilePath,
     );
+
     if (entryFile == null) return;
     if (!projectState.files.any((f) => f.path == entryFile)) return;
 
@@ -76,7 +77,9 @@ class EditorPage extends StatelessWidget {
       );
     }
 
-    // Build files with active content overlaid
+    // Active file content is overlaid directly in the compile payload
+    // to bypass the 300ms debounce. Other files are guaranteed fresh
+    // because content is flushed synchronously on every tab switch (#2).
     final files = activePath != null
         ? projectState.files.map((f) {
             if (f.path == activePath) {
@@ -92,6 +95,7 @@ class EditorPage extends StatelessWidget {
         draft: projectState.draftMode,
         files: files,
         mainFile: entryFile,
+        enableCache: projectState.enableCache,
       ),
     );
   }
