@@ -13,49 +13,6 @@ import 'package:flutter_overleaf/features/project/presentation/widgets/file_tree
 import 'package:flutter_overleaf/features/project/presentation/widgets/file_tree/tree_node_widget.dart';
 import 'package:flutter_overleaf/features/project/presentation/widgets/settings_panel.dart';
 
-const _textExtensions = {
-  '.tex',
-  '.bib',
-  '.sty',
-  '.cls',
-  '.log',
-  '.txt',
-  '.md',
-  '.json',
-  '.yaml',
-  '.yml',
-  '.xml',
-  '.html',
-  '.css',
-  '.js',
-  '.sh',
-  '.bat',
-};
-
-const _binaryExtensions = {
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.bmp',
-  '.pdf',
-  '.zip',
-  '.tar',
-  '.gz',
-  '.mp4',
-  '.mp3',
-  '.wav',
-};
-
-bool _isTextFile(String fileName) {
-  final dotIndex = fileName.lastIndexOf('.');
-  if (dotIndex == -1) return true;
-  final ext = fileName.toLowerCase().substring(dotIndex);
-  if (_textExtensions.contains(ext)) return true;
-  if (_binaryExtensions.contains(ext)) return false;
-  return true;
-}
-
 class FileTreePanel extends StatelessWidget {
   const FileTreePanel({super.key});
 
@@ -100,7 +57,7 @@ class _FileTreeState extends State<_FileTree> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header with New File + New Folder buttons
+          // Header with New File + Upload + New Folder buttons
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: const BoxDecoration(
@@ -128,6 +85,12 @@ class _FileTreeState extends State<_FileTree> {
                   icon: Icons.note_add_outlined,
                   tooltip: 'New File',
                   onTap: () => FileTreeDialogs.showNewFileDialog(context),
+                ),
+                const SizedBox(width: 4),
+                _ActionButton(
+                  icon: Icons.upload_file_outlined,
+                  tooltip: 'Upload File',
+                  onTap: () => FileTreeDialogs.showUploadDialog(context),
                 ),
                 const SizedBox(width: 4),
                 _ActionButton(
@@ -188,17 +151,6 @@ class _FileTreeState extends State<_FileTree> {
       return;
     }
 
-    final fileName = node.name;
-    if (!_isTextFile(fileName)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Cannot open $fileName in editor'),
-          backgroundColor: LatexTheme.error,
-        ),
-      );
-      return;
-    }
-
     // Fix #2: Flush dirty editor content before switching files.
     final editorState = context.read<EditorBloc>().state;
     if (editorState.currentTabPath != null &&
@@ -240,6 +192,7 @@ class _FileTreeState extends State<_FileTree> {
       ),
       items: const [
         PopupMenuItem(value: 'new_file', child: Text('New File')),
+        PopupMenuItem(value: 'upload', child: Text('Upload File')),
         PopupMenuItem(value: 'new_folder', child: Text('New Folder')),
         PopupMenuItem(value: 'rename', child: Text('Rename')),
         PopupMenuItem(value: 'delete', child: Text('Delete')),
@@ -253,6 +206,11 @@ class _FileTreeState extends State<_FileTree> {
         await FileTreeDialogs.showNewFileDialog(
           context,
           parentFolderPath: node.path,
+        );
+      case 'upload':
+        await FileTreeDialogs.showUploadDialog(
+          context,
+          targetFolder: node.path,
         );
       case 'new_folder':
         await FileTreeDialogs.showNewFolderDialog(

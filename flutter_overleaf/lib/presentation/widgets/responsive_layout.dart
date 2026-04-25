@@ -8,6 +8,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/widgets/pdf_viewer_panel.dart';
 import 'package:flutter_overleaf/features/editor/presentation/widgets/code_editor_panel.dart';
+import 'package:flutter_overleaf/features/project/domain/entities/uploaded_file_data.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
 import 'package:flutter_overleaf/features/project/presentation/widgets/file_tree/file_tree_panel.dart';
@@ -91,7 +92,7 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
                       ),
                       SizedBox(height: 16),
                       Text(
-                        'Drop .tex or .zip file here',
+                        'Drop files here',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -113,6 +114,7 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
     List<XFile> files,
   ) async {
     final bloc = context.read<ProjectBloc>();
+    final uploads = <UploadedFileData>[];
 
     for (final xFile in files) {
       final path = xFile.path;
@@ -144,20 +146,26 @@ class _DesktopLayoutState extends State<_DesktopLayout> {
               ],
             ),
           );
-          if (confirmed != true) return;
+          if (confirmed != true) continue;
         }
         final bytes = await xFile.readAsBytes();
         bloc.add(ProjectEvent.importProject(bytes: bytes));
-      } else if (fileName.endsWith('.tex')) {
-        final content = await xFile.readAsString();
-        bloc.add(
-          ProjectEvent.addFile(
+        // Zip replaces the whole project — don't process remaining files.
+        return;
+      } else {
+        // Any non-zip file → upload as individual file.
+        final bytes = await xFile.readAsBytes();
+        uploads.add(
+          UploadedFileData(
             name: fileName,
-            path: fileName,
-            content: content,
+            bytes: bytes,
           ),
         );
       }
+    }
+
+    if (uploads.isNotEmpty) {
+      bloc.add(ProjectEvent.uploadFiles(files: uploads));
     }
   }
 }

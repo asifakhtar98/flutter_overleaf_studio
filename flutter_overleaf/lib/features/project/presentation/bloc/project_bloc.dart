@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -57,6 +59,7 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
     on<ImportProjectEvent>(_onImportProject);
     on<ExportProjectEvent>(_onExportProject);
     on<LoadFiles>(_onLoadFiles);
+    on<UploadFiles>(_onUploadFiles);
   }
 
   Future<void> _onImportProject(
@@ -314,6 +317,60 @@ class ProjectBloc extends HydratedBloc<ProjectEvent, ProjectState> {
         files: updated,
         activeFilePath: newActive ?? state.activeFilePath,
         mainFilePath: newMain ?? state.mainFilePath,
+      ),
+    );
+  }
+
+  void _onUploadFiles(UploadFiles event, Emitter<ProjectState> emit) {
+    final newFiles = <ProjectFile>[];
+    final currentFiles = [...state.files];
+
+    for (final upload in event.files) {
+      final prefix = event.targetFolder;
+      var fileName = upload.name;
+      var fullPath = buildFullPath(prefix, fileName);
+
+      // Auto-rename on conflict (same logic as _onAddFile).
+      var counter = 1;
+      while (currentFiles.any((f) => f.path == fullPath)) {
+        final dotIndex = upload.name.lastIndexOf('.');
+        if (dotIndex == -1) {
+          fileName = '${upload.name} ($counter)';
+        } else {
+          final baseName = upload.name.substring(0, dotIndex);
+          final extension = upload.name.substring(dotIndex);
+          fileName = '$baseName ($counter)$extension';
+        }
+        fullPath = buildFullPath(prefix, fileName);
+        counter++;
+      }
+
+      final ProjectFile projectFile;
+      if (isBinaryFileName(fileName)) {
+        projectFile = ProjectFile(
+          name: fileName,
+          path: fullPath,
+          content: '',
+          binaryContentBase64: base64Encode(upload.bytes),
+        );
+      } else {
+        projectFile = ProjectFile(
+          name: fileName,
+          path: fullPath,
+          content: utf8.decode(upload.bytes, allowMalformed: true),
+        );
+      }
+
+      newFiles.add(projectFile);
+      currentFiles.add(projectFile);
+    }
+
+    if (newFiles.isEmpty) return;
+
+    emit(
+      state.copyWith(
+        files: currentFiles,
+        mainFilePath: state.mainFilePath ?? _detectMainFile(currentFiles),
       ),
     );
   }

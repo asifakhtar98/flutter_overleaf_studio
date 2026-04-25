@@ -1,11 +1,16 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:flutter_overleaf/core/constants/app_constants.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/core/utils/path_utils.dart';
+import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
+import 'package:flutter_overleaf/features/project/domain/entities/uploaded_file_data.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_event.dart';
-import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 import 'package:flutter_overleaf/features/project/presentation/models/tree_node.dart';
 
 class FileTreeDialogs {
@@ -250,5 +255,94 @@ class FileTreeDialogs {
         ],
       ),
     );
+  }
+
+  /// Opens the native file picker and uploads selected files into the project.
+  static Future<void> showUploadDialog(
+    BuildContext context, {
+    String targetFolder = '',
+  }) async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.any,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+    if (!context.mounted) return;
+
+    final uploads = <UploadedFileData>[];
+
+    for (final file in result.files) {
+      if (file.bytes == null) continue;
+
+      // Warn on large files.
+      if (file.size > kMaxUploadFileSizeBytes) {
+        if (!context.mounted) return;
+        final sizeMb = (file.size / (1024 * 1024)).toStringAsFixed(1);
+        final proceed = await _showLargeFileConfirmation(
+          context,
+          file.name,
+          sizeMb,
+        );
+        if (!proceed) continue;
+      }
+
+      uploads.add(
+        UploadedFileData(
+          name: file.name,
+          bytes: Uint8List.fromList(file.bytes!),
+        ),
+      );
+    }
+
+    if (uploads.isEmpty) return;
+    if (!context.mounted) return;
+
+    context.read<ProjectBloc>().add(
+      ProjectEvent.uploadFiles(
+        files: uploads,
+        targetFolder: targetFolder,
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          uploads.length == 1
+              ? 'Uploaded ${uploads.first.name}'
+              : 'Uploaded ${uploads.length} file(s)',
+        ),
+        backgroundColor: LatexTheme.success,
+      ),
+    );
+  }
+
+  static Future<bool> _showLargeFileConfirmation(
+    BuildContext context,
+    String fileName,
+    String sizeMb,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Large file'),
+        content: Text(
+          '$fileName is $sizeMb MB. '
+          'Large files may slow down compilation. Continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Upload'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 }

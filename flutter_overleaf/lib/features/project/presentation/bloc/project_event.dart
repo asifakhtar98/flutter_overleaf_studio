@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'package:flutter_overleaf/core/models/engine.dart';
 import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
+import 'package:flutter_overleaf/features/project/domain/entities/uploaded_file_data.dart';
 
 part 'project_event.freezed.dart';
 
@@ -59,4 +60,9 @@ sealed class ProjectEvent with _$ProjectEvent {
     String? activeFilePath,
     String? mainFilePath,
   }) = LoadFiles;
+
+  const factory ProjectEvent.uploadFiles({
+    required List<UploadedFileData> files,
+    @Default('') String targetFolder,
+  }) = UploadFiles;
 }

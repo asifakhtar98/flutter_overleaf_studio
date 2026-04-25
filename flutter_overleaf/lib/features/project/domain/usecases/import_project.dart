@@ -5,29 +5,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:injectable/injectable.dart';
 
+import 'package:flutter_overleaf/core/constants/app_constants.dart';
 import 'package:flutter_overleaf/features/project/domain/entities/project_file.dart';
 import 'package:flutter_overleaf/core/error/failures.dart';
-
-const _binaryExtensions = {
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.pdf',
-  '.ttf',
-  '.otf',
-  '.gif',
-  '.bmp',
-  '.svg',
-  '.ico',
-  '.webp',
-};
-
-bool _isBinaryFile(String fileName) {
-  final dotIndex = fileName.lastIndexOf('.');
-  if (dotIndex == -1) return false;
-  final ext = fileName.toLowerCase().substring(dotIndex);
-  return _binaryExtensions.contains(ext);
-}
 
 @lazySingleton
 class ImportProjectUseCase {
@@ -68,7 +48,7 @@ class ImportProjectUseCase {
           final name = archiveFile.name.split('/').last;
           if (name.isEmpty) continue;
 
-          if (_isBinaryFile(name)) {
+          if (isBinaryFileName(name)) {
             files.add(
               ProjectFile(
                 name: name,
