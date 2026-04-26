@@ -12,6 +12,8 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     on<TabOpened>(_onTabOpened);
     on<TabClosed>(_onTabClosed);
     on<TabSwitched>(_onTabSwitched);
+    on<NavigateToLine>(_onNavigateToLine);
+    on<ClearTargetLine>(_onClearTargetLine);
   }
 
   void _onFileOpened(FileOpened event, Emitter<EditorState> emit) {
@@ -68,5 +70,25 @@ class EditorBloc extends Bloc<EditorEvent, EditorState> {
     if (state.openTabs.contains(event.path)) {
       emit(state.copyWith(currentTabPath: event.path, content: event.content));
     }
+  }
+
+  void _onNavigateToLine(NavigateToLine event, Emitter<EditorState> emit) {
+    final newTabs = state.openTabs.contains(event.path)
+        ? state.openTabs
+        : [...state.openTabs, event.path];
+    emit(
+      state.copyWith(
+        openTabs: newTabs,
+        currentTabPath: event.path,
+        targetLine: event.line,
+      ),
+    );
+  }
+
+  void _onClearTargetLine(
+    ClearTargetLine event,
+    Emitter<EditorState> emit,
+  ) {
+    emit(state.copyWith(targetLine: null));
   }
 }

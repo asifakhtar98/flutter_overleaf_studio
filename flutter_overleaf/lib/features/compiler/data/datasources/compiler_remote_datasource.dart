@@ -73,6 +73,9 @@ class CompilerRemoteDatasource {
   CompileResult _parseResponse(Response<Map<String, dynamic>> response) {
     final headers = response.headers;
     final data = response.data!;
+
+    final synctexB64 = data['synctex'] as String?;
+
     return CompileResult(
       pdfBytes: base64Decode(data['pdf'] as String),
       log: data['log'] as String? ?? '',
@@ -83,6 +86,9 @@ class CompilerRemoteDatasource {
           int.tryParse(headers.value('X-Warnings-Count') ?? '0') ?? 0,
       passesRun: int.tryParse(headers.value('X-Passes-Run') ?? '1') ?? 1,
       cached: headers.value('X-Cached') == 'true',
+      synctexBytes: synctexB64 != null && synctexB64.isNotEmpty
+          ? base64Decode(synctexB64)
+          : null,
     );
   }
 }

@@ -2,39 +2,140 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:flutter_overleaf/core/models/engine.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
+import 'package:flutter_overleaf/features/compiler/domain/utils/synctex_parser.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_state.dart';
+import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_bloc.dart';
+import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_event.dart';
+import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
+import 'package:flutter_overleaf/features/project/presentation/bloc/project_state.dart';
+import 'package:flutter_overleaf/core/models/engine.dart';
 
-class PdfViewerPanel extends HookWidget {
+class PdfViewerPanel extends StatefulWidget {
   const PdfViewerPanel({super.key});
 
   @override
+  State<PdfViewerPanel> createState() => _PdfViewerPanelState();
+}
+
+class _PdfViewerPanelState extends State<PdfViewerPanel> {
+  final _pdfController = PdfViewerController();
+
+  Uint8List? _lastPdfBytes;
+  bool _showSuccess = false;
+
+  /// Parsed SyncTeX data from the latest successful compilation.
+  SynctexData? _synctexData;
+
+  /// The loaded PDF document (set via onViewerReady).
+  PdfDocument? _pdfDocument;
+
+  /// Tap feedback state.
+  int? _tapPageNumber;
+  Offset? _tapOffsetInPage;
+
+
+  // ---------------------------------------------------------------------------
+  // SyncTeX reverse lookup: PDF tap → source line
+  // ---------------------------------------------------------------------------
+
+  void _onPdfTap(TapUpDetails details) {
+    if (_synctexData == null || _pdfDocument == null) return;
+
+    // 1. Global → document coordinates (pdfrx points, top-left origin).
+    final docPos = _pdfController.globalToDocument(details.globalPosition);
+    if (docPos == null) return;
+
+    // 2. Find which page was tapped.
+    final pageLayouts = _pdfController.layout.pageLayouts;
+    final pageIndex =
+        pageLayouts.indexWhere((rect) => rect.contains(docPos));
+    if (pageIndex < 0) return;
+
+    // 3. In-page offset (top-left origin, unzoomed points).
+    final offsetInPage = docPos - pageLayouts[pageIndex].topLeft;
+
+    // 4. Get page height for Y-axis flip.
+    final page = _pdfDocument!.pages[pageIndex];
+    final pageHeight = page.height;
+
+    // 5. SyncTeX lookup with Y-flip (pdfrx=top-left → synctex=bottom-left).
+    final source = _synctexData!.targetToSource(
+      pageIndex + 1, // SyncTeX pages are 1-indexed
+      offsetInPage.dx,
+      pageHeight - offsetInPage.dy,
+    );
+
+    // 6. Show brief visual feedback at click point.
+    setState(() {
+      _tapPageNumber = pageIndex + 1;
+      _tapOffsetInPage = offsetInPage;
+    });
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) setState(() => _tapPageNumber = null);
+    });
+
+    if (source == null) return;
+
+    // 7. Resolve the synctex file path to a project file.
+    // The server always renames to main.tex, so fall back to mainFilePath.
+    final projectState = context.read<ProjectBloc>().state;
+    final matchedPath = _resolveFilePath(source.filePath, projectState);
+    if (matchedPath == null) return;
+
+    // 8. Navigate to source line.
+    context.read<EditorBloc>().add(
+      EditorEvent.navigateToLine(path: matchedPath, line: source.line),
+    );
+  }
+
+  /// Maps a synctex file path to a project file path.
+  ///
+  /// The server renames uploaded files to `main.tex`, so synctex always
+  /// reports that name. Try exact/suffix match first, then fall back to
+  /// the project's designated main file.
+  static String? _resolveFilePath(String synctexPath, ProjectState project) {
+    for (final f in project.files) {
+      if (f.path == synctexPath ||
+          f.path.endsWith('/$synctexPath')) {
+        return f.path;
+      }
+    }
+    // Fall back to main file — the server always compiles as main.tex.
+    return project.mainFilePath ?? project.activeFilePath;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
+  @override
   Widget build(BuildContext context) {
-    final pdfController = useMemoized(PdfViewerController.new);
-
-    final lastPdfBytes = useState<Uint8List?>(null);
-    final showSuccess = useState(false);
-
     return BlocConsumer<CompilerBloc, CompilerState>(
       listener: (context, state) {
         if (state is CompilerSuccess) {
-          lastPdfBytes.value = state.result.pdfBytes;
-          // Brief success flash
-          showSuccess.value = true;
+          _lastPdfBytes = state.result.pdfBytes;
+
+          // Parse SyncTeX data for reverse lookup.
+          final synctexBytes = state.result.synctexBytes;
+          _synctexData = (synctexBytes != null && synctexBytes.isNotEmpty)
+              ? parseSynctex(synctexBytes)
+              : null;
+
+          // Brief success flash.
+          _showSuccess = true;
           Future.delayed(const Duration(milliseconds: 1500), () {
-            if (context.mounted) showSuccess.value = false;
+            if (mounted) setState(() => _showSuccess = false);
           });
         }
       },
       builder: (context, state) {
-        final hasPdf = lastPdfBytes.value != null;
+        final hasPdf = _lastPdfBytes != null;
 
         final stateLayer = switch (state) {
           CompilerInitial() =>
@@ -51,16 +152,58 @@ class PdfViewerPanel extends HookWidget {
           children: [
             if (hasPdf)
               PdfViewer.data(
-                lastPdfBytes.value!,
-                sourceName: 'output_${lastPdfBytes.value.hashCode}.pdf',
-                controller: pdfController,
-                params: const PdfViewerParams(
+                _lastPdfBytes!,
+                sourceName: 'output_${_lastPdfBytes.hashCode}.pdf',
+                controller: _pdfController,
+                params: PdfViewerParams(
                   backgroundColor: LatexTheme.surface,
+                  // Capture tap events for SyncTeX reverse lookup.
+                  viewerOverlayBuilder:
+                      (context, size, handleLinkTap) => [
+                        Positioned.fill(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTapUp: _onPdfTap,
+                          ),
+                        ),
+                      ],
+                  // Visual feedback: brief marker at clicked position.
+                  pageOverlaysBuilder: (context, pageRect, page) {
+                    if (_tapPageNumber != page.pageNumber ||
+                        _tapOffsetInPage == null) {
+                      return [];
+                    }
+                    final zoom = _pdfController.currentZoom;
+                    return [
+                      Positioned(
+                        left: _tapOffsetInPage!.dx * zoom - 8,
+                        top: _tapOffsetInPage!.dy * zoom - 8,
+                        child: IgnorePointer(
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: LatexTheme.primary.withValues(alpha: 0.4),
+                              border: Border.all(
+                                color: LatexTheme.primary,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ];
+                  },
+                  // Store the document reference for page height lookups.
+                  onViewerReady: (document, controller) {
+                    _pdfDocument = document;
+                  },
                 ),
               ),
             if (state is! CompilerSuccess) stateLayer,
             // Success flash
-            if (showSuccess.value)
+            if (_showSuccess)
               Positioned(
                 top: 0,
                 left: 0,
@@ -117,7 +260,7 @@ class PdfViewerPanel extends HookWidget {
                 bottom: 16,
                 right: 16,
                 child: FloatingActionButton.small(
-                  onPressed: () => _sharePdf(lastPdfBytes.value!),
+                  onPressed: () => _sharePdf(_lastPdfBytes!),
                   backgroundColor: LatexTheme.primary,
                   tooltip: 'Download PDF',
                   child: const Icon(Icons.download, size: 20),

@@ -23,4 +23,11 @@ sealed class EditorEvent with _$EditorEvent {
     required String path,
     required String content,
   }) = TabSwitched;
+
+  const factory EditorEvent.navigateToLine({
+    required String path,
+    required int line,
+  }) = NavigateToLine;
+
+  const factory EditorEvent.clearTargetLine() = ClearTargetLine;
 }

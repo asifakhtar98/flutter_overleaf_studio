@@ -14,7 +14,6 @@ dependencies:
   hydrated_bloc: ^10.0.0
   # Hooks
   flutter_hooks: ^0.21.2
-  hooked_bloc: ^1.5.1
   # DI
   get_it: ^8.0.3
   injectable: ^2.5.0

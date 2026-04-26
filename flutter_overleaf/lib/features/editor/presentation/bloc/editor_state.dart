@@ -8,5 +8,6 @@ sealed class EditorState with _$EditorState {
     @Default('') String content,
     @Default([]) List<String> openTabs,
     String? currentTabPath,
+    int? targetLine,
   }) = _EditorState;
 }

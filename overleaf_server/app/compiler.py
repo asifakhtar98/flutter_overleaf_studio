@@ -178,6 +178,7 @@ class CompileResult:
     passes_run: int
     cached: bool = False
     engine: str = "pdflatex"
+    synctex_bytes: bytes = b""
 
 
 def _error_result(
@@ -419,6 +420,7 @@ def _compile_sync(
             "-pdf",
             "-interaction=nonstopmode",
             "-halt-on-error",
+            "-synctex=1",
             f"-outdir={work_dir}",
             str(main_path),
         ]
@@ -438,6 +440,7 @@ def _compile_sync(
             engine_path,
             "-interaction=nonstopmode",
             "-halt-on-error",
+            "-synctex=1",
             f"-output-directory={work_dir}",
             str(main_path),
         ]
@@ -518,6 +521,16 @@ def _compile_sync(
                 passes=passes_run,
                 warnings=_count_warnings(combined_log),
             )
+
+        # Read SyncTeX data (non-critical)
+        synctex_path = work_path / f"{Path(main_file).stem}.synctex.gz"
+        synctex_bytes = b""
+        if synctex_path.exists():
+            try:
+                synctex_bytes = synctex_path.read_bytes()
+            except OSError:
+                pass
+
         return CompileResult(
             success=True,
             pdf_bytes=pdf_bytes,
@@ -526,6 +539,7 @@ def _compile_sync(
             warnings_count=_count_warnings(combined_log),
             passes_run=passes_run,
             engine=engine,
+            synctex_bytes=synctex_bytes,
         )
 
     return _error_result(
@@ -587,6 +601,7 @@ async def compile_latex(
                 passes_run=cached.passes_run,
                 cached=True,
                 engine=cached.engine,
+                synctex_bytes=cached.synctex_bytes,
             )
 
     # --- Compile in tmpfs ---
@@ -620,6 +635,7 @@ async def compile_latex(
                     warnings_count=result.warnings_count,
                     passes_run=result.passes_run,
                     log_snippet=_get_log_snippet(result.log),
+                    synctex_bytes=result.synctex_bytes,
                 ),
             )
 

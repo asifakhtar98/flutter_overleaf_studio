@@ -35,6 +35,8 @@ import 'package:flutter_overleaf/features/health/domain/repositories/health_repo
     as _i775;
 import 'package:flutter_overleaf/features/health/domain/usecases/check_health.dart'
     as _i415;
+import 'package:flutter_overleaf/features/health/presentation/bloc/health_bloc.dart'
+    as _i829;
 import 'package:flutter_overleaf/features/project/domain/usecases/export_project.dart'
     as _i13;
 import 'package:flutter_overleaf/features/project/domain/usecases/import_project.dart'
@@ -102,6 +104,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.lazySingleton<_i1038.CompilerBloc>(
       () => _i1038.CompilerBloc(compileProject: gh<_i906.CompileProject>()),
+    );
+    gh.lazySingleton<_i829.HealthBloc>(
+      () => _i829.HealthBloc(gh<_i415.CheckHealth>()),
     );
     return this;
   }

@@ -55,7 +55,7 @@ extension EditorEventPatterns on EditorEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,TResult Function( TabOpened value)?  tabOpened,TResult Function( TabClosed value)?  tabClosed,TResult Function( TabSwitched value)?  tabSwitched,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( FileOpened value)?  fileOpened,TResult Function( ContentChanged value)?  contentChanged,TResult Function( TabOpened value)?  tabOpened,TResult Function( TabClosed value)?  tabClosed,TResult Function( TabSwitched value)?  tabSwitched,TResult Function( NavigateToLine value)?  navigateToLine,TResult Function( ClearTargetLine value)?  clearTargetLine,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
@@ -63,7 +63,9 @@ return fileOpened(_that);case ContentChanged() when contentChanged != null:
 return contentChanged(_that);case TabOpened() when tabOpened != null:
 return tabOpened(_that);case TabClosed() when tabClosed != null:
 return tabClosed(_that);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that);case _:
+return tabSwitched(_that);case NavigateToLine() when navigateToLine != null:
+return navigateToLine(_that);case ClearTargetLine() when clearTargetLine != null:
+return clearTargetLine(_that);case _:
   return orElse();
 
 }
@@ -81,7 +83,7 @@ return tabSwitched(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,required TResult Function( TabOpened value)  tabOpened,required TResult Function( TabClosed value)  tabClosed,required TResult Function( TabSwitched value)  tabSwitched,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( FileOpened value)  fileOpened,required TResult Function( ContentChanged value)  contentChanged,required TResult Function( TabOpened value)  tabOpened,required TResult Function( TabClosed value)  tabClosed,required TResult Function( TabSwitched value)  tabSwitched,required TResult Function( NavigateToLine value)  navigateToLine,required TResult Function( ClearTargetLine value)  clearTargetLine,}){
 final _that = this;
 switch (_that) {
 case FileOpened():
@@ -89,7 +91,9 @@ return fileOpened(_that);case ContentChanged():
 return contentChanged(_that);case TabOpened():
 return tabOpened(_that);case TabClosed():
 return tabClosed(_that);case TabSwitched():
-return tabSwitched(_that);}
+return tabSwitched(_that);case NavigateToLine():
+return navigateToLine(_that);case ClearTargetLine():
+return clearTargetLine(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -103,7 +107,7 @@ return tabSwitched(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,TResult? Function( TabOpened value)?  tabOpened,TResult? Function( TabClosed value)?  tabClosed,TResult? Function( TabSwitched value)?  tabSwitched,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( FileOpened value)?  fileOpened,TResult? Function( ContentChanged value)?  contentChanged,TResult? Function( TabOpened value)?  tabOpened,TResult? Function( TabClosed value)?  tabClosed,TResult? Function( TabSwitched value)?  tabSwitched,TResult? Function( NavigateToLine value)?  navigateToLine,TResult? Function( ClearTargetLine value)?  clearTargetLine,}){
 final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
@@ -111,7 +115,9 @@ return fileOpened(_that);case ContentChanged() when contentChanged != null:
 return contentChanged(_that);case TabOpened() when tabOpened != null:
 return tabOpened(_that);case TabClosed() when tabClosed != null:
 return tabClosed(_that);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that);case _:
+return tabSwitched(_that);case NavigateToLine() when navigateToLine != null:
+return navigateToLine(_that);case ClearTargetLine() when clearTargetLine != null:
+return clearTargetLine(_that);case _:
   return null;
 
 }
@@ -128,14 +134,16 @@ return tabSwitched(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path,  String content)?  tabSwitched,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String path,  String content)?  fileOpened,TResult Function( String content)?  contentChanged,TResult Function( String path,  String content)?  tabOpened,TResult Function( String path)?  tabClosed,TResult Function( String path,  String content)?  tabSwitched,TResult Function( String path,  int line)?  navigateToLine,TResult Function()?  clearTargetLine,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path,_that.content);case _:
+return tabSwitched(_that.path,_that.content);case NavigateToLine() when navigateToLine != null:
+return navigateToLine(_that.path,_that.line);case ClearTargetLine() when clearTargetLine != null:
+return clearTargetLine();case _:
   return orElse();
 
 }
@@ -153,14 +161,16 @@ return tabSwitched(_that.path,_that.content);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path,  String content)  tabSwitched,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String path,  String content)  fileOpened,required TResult Function( String content)  contentChanged,required TResult Function( String path,  String content)  tabOpened,required TResult Function( String path)  tabClosed,required TResult Function( String path,  String content)  tabSwitched,required TResult Function( String path,  int line)  navigateToLine,required TResult Function()  clearTargetLine,}) {final _that = this;
 switch (_that) {
 case FileOpened():
 return fileOpened(_that.path,_that.content);case ContentChanged():
 return contentChanged(_that.content);case TabOpened():
 return tabOpened(_that.path,_that.content);case TabClosed():
 return tabClosed(_that.path);case TabSwitched():
-return tabSwitched(_that.path,_that.content);}
+return tabSwitched(_that.path,_that.content);case NavigateToLine():
+return navigateToLine(_that.path,_that.line);case ClearTargetLine():
+return clearTargetLine();}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -174,14 +184,16 @@ return tabSwitched(_that.path,_that.content);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path,  String content)?  tabSwitched,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String path,  String content)?  fileOpened,TResult? Function( String content)?  contentChanged,TResult? Function( String path,  String content)?  tabOpened,TResult? Function( String path)?  tabClosed,TResult? Function( String path,  String content)?  tabSwitched,TResult? Function( String path,  int line)?  navigateToLine,TResult? Function()?  clearTargetLine,}) {final _that = this;
 switch (_that) {
 case FileOpened() when fileOpened != null:
 return fileOpened(_that.path,_that.content);case ContentChanged() when contentChanged != null:
 return contentChanged(_that.content);case TabOpened() when tabOpened != null:
 return tabOpened(_that.path,_that.content);case TabClosed() when tabClosed != null:
 return tabClosed(_that.path);case TabSwitched() when tabSwitched != null:
-return tabSwitched(_that.path,_that.content);case _:
+return tabSwitched(_that.path,_that.content);case NavigateToLine() when navigateToLine != null:
+return navigateToLine(_that.path,_that.line);case ClearTargetLine() when clearTargetLine != null:
+return clearTargetLine();case _:
   return null;
 
 }
@@ -524,5 +536,105 @@ as String,
 
 
 }
+
+/// @nodoc
+
+
+class NavigateToLine implements EditorEvent {
+  const NavigateToLine({required this.path, required this.line});
+  
+
+ final  String path;
+ final  int line;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$NavigateToLineCopyWith<NavigateToLine> get copyWith => _$NavigateToLineCopyWithImpl<NavigateToLine>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NavigateToLine&&(identical(other.path, path) || other.path == path)&&(identical(other.line, line) || other.line == line));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,path,line);
+
+@override
+String toString() {
+  return 'EditorEvent.navigateToLine(path: $path, line: $line)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $NavigateToLineCopyWith<$Res> implements $EditorEventCopyWith<$Res> {
+  factory $NavigateToLineCopyWith(NavigateToLine value, $Res Function(NavigateToLine) _then) = _$NavigateToLineCopyWithImpl;
+@useResult
+$Res call({
+ String path, int line
+});
+
+
+
+
+}
+/// @nodoc
+class _$NavigateToLineCopyWithImpl<$Res>
+    implements $NavigateToLineCopyWith<$Res> {
+  _$NavigateToLineCopyWithImpl(this._self, this._then);
+
+  final NavigateToLine _self;
+  final $Res Function(NavigateToLine) _then;
+
+/// Create a copy of EditorEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? path = null,Object? line = null,}) {
+  return _then(NavigateToLine(
+path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
+as String,line: null == line ? _self.line : line // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class ClearTargetLine implements EditorEvent {
+  const ClearTargetLine();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ClearTargetLine);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'EditorEvent.clearTargetLine()';
+}
+
+
+}
+
+
+
 
 // dart format on

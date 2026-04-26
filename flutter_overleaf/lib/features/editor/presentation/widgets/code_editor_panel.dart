@@ -42,6 +42,19 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
     }
   }
 
+  void _scrollToLine(int targetLine) {
+    final text = _controller.text;
+    final lines = text.split('\n');
+    if (targetLine < 1 || targetLine > lines.length) return;
+
+    var offset = 0;
+    for (var i = 0; i < targetLine - 1; i++) {
+      offset += lines[i].length + 1; // +1 for \n
+    }
+
+    _controller.selection = TextSelection.collapsed(offset: offset);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocListener(
@@ -81,6 +94,18 @@ class _CodeEditorPanelState extends State<CodeEditorPanel> {
               prev.content != curr.content &&
               prev.currentTabPath == curr.currentTabPath,
           listener: (context, state) => _syncContent(state.content),
+        ),
+        // Navigate to a specific line when targetLine is set (e.g. from
+        // clicking a log error entry).
+        BlocListener<EditorBloc, EditorState>(
+          listenWhen: (prev, curr) =>
+              curr.targetLine != null && prev.targetLine != curr.targetLine,
+          listener: (context, state) {
+            _scrollToLine(state.targetLine!);
+            context
+                .read<EditorBloc>()
+                .add(const EditorEvent.clearTargetLine());
+          },
         ),
       ],
       child: BlocBuilder<EditorBloc, EditorState>(

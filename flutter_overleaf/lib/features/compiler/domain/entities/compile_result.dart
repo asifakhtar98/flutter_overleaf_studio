@@ -14,5 +14,6 @@ sealed class CompileResult with _$CompileResult {
     required int warningsCount,
     required int passesRun,
     required bool cached,
+    Uint8List? synctexBytes,
   }) = _CompileResult;
 }

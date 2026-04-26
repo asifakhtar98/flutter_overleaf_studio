@@ -6,6 +6,7 @@ import 'package:flutter_overleaf/core/config/server_config.dart';
 import 'package:flutter_overleaf/core/di/injection.dart';
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bloc.dart';
+import 'package:flutter_overleaf/features/health/presentation/bloc/health_bloc.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_bloc.dart';
 import 'package:flutter_overleaf/features/editor/presentation/bloc/editor_event.dart';
 import 'package:flutter_overleaf/features/project/presentation/bloc/project_bloc.dart';
@@ -39,6 +40,7 @@ class App extends StatelessWidget {
         BlocProvider.value(value: projectBloc),
         BlocProvider.value(value: editorBloc),
         BlocProvider.value(value: getIt<CompilerBloc>()),
+        BlocProvider.value(value: getIt<HealthBloc>()),
       ],
       child: _AppContent(),
     );

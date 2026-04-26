@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EditorState {
 
- String get content; List<String> get openTabs; String? get currentTabPath;
+ String get content; List<String> get openTabs; String? get currentTabPath; int? get targetLine;
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $EditorStateCopyWith<EditorState> get copyWith => _$EditorStateCopyWithImpl<Edit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorState&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.openTabs, openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EditorState&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.openTabs, openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath)&&(identical(other.targetLine, targetLine) || other.targetLine == targetLine));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,const DeepCollectionEquality().hash(openTabs),currentTabPath);
+int get hashCode => Object.hash(runtimeType,content,const DeepCollectionEquality().hash(openTabs),currentTabPath,targetLine);
 
 @override
 String toString() {
-  return 'EditorState(content: $content, openTabs: $openTabs, currentTabPath: $currentTabPath)';
+  return 'EditorState(content: $content, openTabs: $openTabs, currentTabPath: $currentTabPath, targetLine: $targetLine)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $EditorStateCopyWith<$Res>  {
   factory $EditorStateCopyWith(EditorState value, $Res Function(EditorState) _then) = _$EditorStateCopyWithImpl;
 @useResult
 $Res call({
- String content, List<String> openTabs, String? currentTabPath
+ String content, List<String> openTabs, String? currentTabPath, int? targetLine
 });
 
 
@@ -62,12 +62,13 @@ class _$EditorStateCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? openTabs = null,Object? currentTabPath = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? content = null,Object? openTabs = null,Object? currentTabPath = freezed,Object? targetLine = freezed,}) {
   return _then(_self.copyWith(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,openTabs: null == openTabs ? _self.openTabs : openTabs // ignore: cast_nullable_to_non_nullable
 as List<String>,currentTabPath: freezed == currentTabPath ? _self.currentTabPath : currentTabPath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,targetLine: freezed == targetLine ? _self.targetLine : targetLine // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -149,10 +150,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  List<String> openTabs,  String? currentTabPath)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String content,  List<String> openTabs,  String? currentTabPath,  int? targetLine)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EditorState() when $default != null:
-return $default(_that.content,_that.openTabs,_that.currentTabPath);case _:
+return $default(_that.content,_that.openTabs,_that.currentTabPath,_that.targetLine);case _:
   return orElse();
 
 }
@@ -170,10 +171,10 @@ return $default(_that.content,_that.openTabs,_that.currentTabPath);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  List<String> openTabs,  String? currentTabPath)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String content,  List<String> openTabs,  String? currentTabPath,  int? targetLine)  $default,) {final _that = this;
 switch (_that) {
 case _EditorState():
-return $default(_that.content,_that.openTabs,_that.currentTabPath);}
+return $default(_that.content,_that.openTabs,_that.currentTabPath,_that.targetLine);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -187,10 +188,10 @@ return $default(_that.content,_that.openTabs,_that.currentTabPath);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  List<String> openTabs,  String? currentTabPath)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String content,  List<String> openTabs,  String? currentTabPath,  int? targetLine)?  $default,) {final _that = this;
 switch (_that) {
 case _EditorState() when $default != null:
-return $default(_that.content,_that.openTabs,_that.currentTabPath);case _:
+return $default(_that.content,_that.openTabs,_that.currentTabPath,_that.targetLine);case _:
   return null;
 
 }
@@ -202,7 +203,7 @@ return $default(_that.content,_that.openTabs,_that.currentTabPath);case _:
 
 
 class _EditorState implements EditorState {
-  const _EditorState({this.content = '', final  List<String> openTabs = const [], this.currentTabPath}): _openTabs = openTabs;
+  const _EditorState({this.content = '', final  List<String> openTabs = const [], this.currentTabPath, this.targetLine}): _openTabs = openTabs;
   
 
 @override@JsonKey() final  String content;
@@ -214,6 +215,7 @@ class _EditorState implements EditorState {
 }
 
 @override final  String? currentTabPath;
+@override final  int? targetLine;
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
@@ -225,16 +227,16 @@ _$EditorStateCopyWith<_EditorState> get copyWith => __$EditorStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EditorState&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._openTabs, _openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EditorState&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._openTabs, _openTabs)&&(identical(other.currentTabPath, currentTabPath) || other.currentTabPath == currentTabPath)&&(identical(other.targetLine, targetLine) || other.targetLine == targetLine));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,const DeepCollectionEquality().hash(_openTabs),currentTabPath);
+int get hashCode => Object.hash(runtimeType,content,const DeepCollectionEquality().hash(_openTabs),currentTabPath,targetLine);
 
 @override
 String toString() {
-  return 'EditorState(content: $content, openTabs: $openTabs, currentTabPath: $currentTabPath)';
+  return 'EditorState(content: $content, openTabs: $openTabs, currentTabPath: $currentTabPath, targetLine: $targetLine)';
 }
 
 
@@ -245,7 +247,7 @@ abstract mixin class _$EditorStateCopyWith<$Res> implements $EditorStateCopyWith
   factory _$EditorStateCopyWith(_EditorState value, $Res Function(_EditorState) _then) = __$EditorStateCopyWithImpl;
 @override @useResult
 $Res call({
- String content, List<String> openTabs, String? currentTabPath
+ String content, List<String> openTabs, String? currentTabPath, int? targetLine
 });
 
 
@@ -262,12 +264,13 @@ class __$EditorStateCopyWithImpl<$Res>
 
 /// Create a copy of EditorState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? openTabs = null,Object? currentTabPath = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? content = null,Object? openTabs = null,Object? currentTabPath = freezed,Object? targetLine = freezed,}) {
   return _then(_EditorState(
 content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,openTabs: null == openTabs ? _self._openTabs : openTabs // ignore: cast_nullable_to_non_nullable
 as List<String>,currentTabPath: freezed == currentTabPath ? _self.currentTabPath : currentTabPath // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,targetLine: freezed == targetLine ? _self.targetLine : targetLine // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

@@ -18,6 +18,7 @@ class CachedResult:
     warnings_count: int
     passes_run: int
     log_snippet: str
+    synctex_bytes: bytes = b""
 
 
 class CompileCache:

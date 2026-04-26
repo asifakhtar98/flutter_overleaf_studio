@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'package:flutter_overleaf/core/theme/latex_theme.dart';
+import 'package:flutter_overleaf/features/health/presentation/widgets/connection_indicator.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_bloc.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_event.dart';
 import 'package:flutter_overleaf/features/compiler/presentation/bloc/compiler_state.dart';
@@ -44,6 +45,7 @@ class Toolbar extends HookWidget {
           const SizedBox(width: 8),
           const _CompileTarget(),
           const SizedBox(width: 8),
+          const ConnectionIndicator(),
 
           const Spacer(),
 

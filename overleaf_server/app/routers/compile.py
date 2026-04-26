@@ -268,6 +268,7 @@ async def compile_endpoint(
         content={
             "pdf": base64.b64encode(result.pdf_bytes).decode("utf-8"),
             "log": result.log,
+            "synctex": base64.b64encode(result.synctex_bytes).decode("utf-8") if result.synctex_bytes else None,
         },
         headers={
             "X-Compilation-Time": f"{result.compilation_time:.2f}",
