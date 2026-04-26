@@ -80,26 +80,26 @@ ssh -i ~/.ssh/your_key root@YOUR_HETZNER_IP
 > [!NOTE]
 > Hetzner Ubuntu images log in as `root` by default, unlike Oracle's `ubuntu` user. Create a non-root user if preferred.
 
-Run the setup script:
+Run the Hetzner-specific setup script:
 
 ```bash
 # Option A: Run from repo (if repo is public)
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/overleaf-server/main/scripts/server-setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/overleaf-server/main/scripts/server-setup-hetzner.sh | bash
 
 # Option B: Copy and run manually
-# (paste contents of scripts/server-setup.sh and run)
+# (paste contents of scripts/server-setup-hetzner.sh and run)
 ```
 
 **What the script does:**
 - ✅ Updates system packages
 - ✅ Installs Docker CE (ARM64)
 - ✅ Adds user to docker group
-- ✅ Configures UFW firewall (ports 22, 8080)
-- ✅ Creates `~/overleaf-server/` directory with `.env` template
+- ✅ Configures UFW firewall (ports 22, 80, 443, 8080)
+- ✅ Creates `~/overleaf-server/` directory with `.env` template (tuned for CAX11)
 - ✅ Sets up Docker log rotation
 
 > [!NOTE]
-> No Oracle-specific iptables rules needed. Hetzner's firewall is managed at the network level via the console.
+> Uses `server-setup-hetzner.sh` (not `server-setup.sh`). The Hetzner variant skips Oracle-specific iptables rules — Hetzner's firewall is managed at the network level via the console.
 
 **After the script:**
 
@@ -140,13 +140,16 @@ MAX_CONCURRENT_COMPILES=2   # Match your vCPU count
 > [!WARNING]
 > CAX11 has 4GB RAM. Keep `MAX_CONCURRENT_COMPILES=2` and `WORKERS=2`. Pushing beyond this will cause OOM kills under load.
 
-Copy the deploy script and prod compose to the server:
+Copy the deploy script and Hetzner-tuned compose to the server:
 
 ```bash
 # From your local machine
 scp -i ~/.ssh/your_key scripts/deploy.sh root@YOUR_HETZNER_IP:~/overleaf-server/scripts/
-scp -i ~/.ssh/your_key docker-compose.prod.yml root@YOUR_HETZNER_IP:~/overleaf-server/
+scp -i ~/.ssh/your_key docker-compose.prod.hetzner.yml root@YOUR_HETZNER_IP:~/overleaf-server/docker-compose.prod.yml
 ```
+
+> [!TIP]
+> `docker-compose.prod.hetzner.yml` has resource limits tuned for 4GB RAM (cpus: 1.8, memory: 3G, shm_size: 2gb). We rename it to `docker-compose.prod.yml` on the server so the deploy script works unchanged.
 
 ---
 
@@ -154,13 +157,22 @@ scp -i ~/.ssh/your_key docker-compose.prod.yml root@YOUR_HETZNER_IP:~/overleaf-s
 
 In your GitHub repo → **Settings → Secrets and variables → Actions**:
 
+**Secrets** (add these alongside any existing Oracle secrets):
+
 | Secret               | How to get the value                                        |
 | -------------------- | ----------------------------------------------------------- |
-| `DOCKERHUB_USERNAME` | Your Docker Hub username                                    |
+| `DOCKERHUB_USERNAME` | Your Docker Hub username (shared with Oracle)               |
 | `DOCKERHUB_TOKEN`    | Docker Hub → Account Settings → Security → New Access Token |
 | `HETZNER_HOST`       | Your server's public IPv4 address                           |
 | `HETZNER_SSH_USER`   | `root` (default for Hetzner Ubuntu)                         |
 | `HETZNER_SSH_KEY`    | `cat ~/.ssh/your_key` — the PRIVATE key                     |
+
+**Variables** (Settings → Variables → Actions):
+
+| Variable           | Value  | Purpose                              |
+| ------------------ | ------ | ------------------------------------ |
+| `DEPLOY_HETZNER`   | `true` | Enables Hetzner deployment in CD     |
+| `DEPLOY_ORACLE`    | `true` | Keeps Oracle deployment enabled      |
 
 ### Generate Docker Hub access token
 
@@ -171,7 +183,7 @@ In your GitHub repo → **Settings → Secrets and variables → Actions**:
 5. Copy the token — you won't see it again
 
 > [!IMPORTANT]
-> Update your GitHub Actions workflow: replace `ORACLE_HOST`, `ORACLE_SSH_USER`, `ORACLE_SSH_KEY` secret references with `HETZNER_HOST`, `HETZNER_SSH_USER`, `HETZNER_SSH_KEY`.
+> The CD workflow deploys to both Oracle and Hetzner in parallel, gated by repository variables. Keep existing `ORACLE_*` secrets — don't replace them.
 
 ---
 

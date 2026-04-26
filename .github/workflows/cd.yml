@@ -3,9 +3,10 @@ name: CD
 on: workflow_dispatch
 
 jobs:
-  deploy:
+  deploy-oracle:
     name: Deploy to Oracle VM
     runs-on: ubuntu-latest
+    if: vars.DEPLOY_ORACLE == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +39,46 @@ jobs:
       - name: Post deployment status
         if: always()
         run: |
-          echo "Deployment ${{ job.status }}"
+          echo "Oracle deployment ${{ job.status }}"
           echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server:latest"
           echo "Host: ${{ secrets.ORACLE_HOST }}"
+
+  deploy-hetzner:
+    name: Deploy to Hetzner
+    runs-on: ubuntu-latest
+    if: vars.DEPLOY_HETZNER == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -e
+
+            APP_DIR="$HOME/overleaf-server"
+            IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server:latest"
+
+            echo "=== Pulling latest image ==="
+            docker pull "$IMAGE"
+
+            echo "=== Running deploy script ==="
+            cd "$APP_DIR"
+            bash scripts/deploy.sh "$IMAGE"
+
+            echo "=== Verifying health ==="
+            sleep 5
+            curl -sf http://localhost:8080/api/v1/health | python3 -m json.tool
+
+            echo "=== Deploy complete ==="
+
+      - name: Post deployment status
+        if: always()
+        run: |
+          echo "Hetzner deployment ${{ job.status }}"
+          echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/overleaf-server:latest"
+          echo "Host: ${{ secrets.HETZNER_HOST }}"

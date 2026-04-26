@@ -14,16 +14,16 @@
 
 ### Scope
 
-| In scope | Out of scope — do NOT add |
-|----------|--------------------------|
-| Raw `.tex` or `.zip` → PDF via HTTP | Frontend code of any kind |
-| `pdflatex`, `xelatex`, `lualatex`, `latexmk` | Database, ORM, or persistent storage |
-| API key auth (`X-API-Key` header) | User registration, login, or sessions |
-| In-memory LRU cache (TTL, hash-keyed) | Redis, Memcached, or external cache |
-| Rate limiting (SlowAPI, in-process) | Queue systems (Celery, RQ) |
-| tmpfs compilation (`/dev/shm`) | Disk-backed temp dirs |
-| `ProcessPoolExecutor` concurrency | Threading, `asyncio.subprocess`, or `shell=True` |
-| ARM64 Docker images only | x86/amd64 images |
+| In scope                                     | Out of scope — do NOT add                        |
+| -------------------------------------------- | ------------------------------------------------ |
+| Raw `.tex` or `.zip` → PDF via HTTP          | Frontend code of any kind                        |
+| `pdflatex`, `xelatex`, `lualatex`, `latexmk` | Database, ORM, or persistent storage             |
+| API key auth (`X-API-Key` header)            | User registration, login, or sessions            |
+| In-memory LRU cache (TTL, hash-keyed)        | Redis, Memcached, or external cache              |
+| Rate limiting (SlowAPI, in-process)          | Queue systems (Celery, RQ)                       |
+| tmpfs compilation (`/dev/shm`)               | Disk-backed temp dirs                            |
+| `ProcessPoolExecutor` concurrency            | Threading, `asyncio.subprocess`, or `shell=True` |
+| ARM64 Docker images only                     | x86/amd64 images                                 |
 
 ---
 
@@ -31,44 +31,44 @@
 
 ### Infrastructure — no deviations
 
-| Component | Value | Non-negotiable |
-|-----------|-------|----------------|
-| Cloud | Oracle Cloud Free Tier | ✅ |
-| VM | VM.Standard.A1.Flex — 4 OCPU, 24 GB RAM | ✅ |
-| OS | Ubuntu 22.04 LTS (aarch64) | ✅ |
-| Container | Single Docker container | ✅ |
-| Port | 8080 | ✅ |
-| Arch | ARM64 everywhere (dev, CI, prod) | ✅ |
+| Component | Value                                   | Non-negotiable |
+| --------- | --------------------------------------- | -------------- |
+| Cloud     | Oracle Cloud Free Tier /Hetzner         | ✅              |
+| VM        | VM.Standard.A1.Flex — 4 OCPU, 24 GB RAM | ✅              |
+| OS        | Ubuntu 22.04 LTS (aarch64)              | ✅              |
+| Container | Single Docker container                 | ✅              |
+| Port      | 8080                                    | ✅              |
+| Arch      | ARM64 everywhere (dev, CI, prod)        | ✅              |
 
 ### Stack — pinned, do not swap
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | FastAPI (Python 3.11+, async) |
-| ASGI | Uvicorn |
-| TeX | TeX Live scheme-full (no docs/sources) |
-| Auth | `X-API-Key` header → `settings.api_keys_set` |
-| Rate limit | SlowAPI (in-memory, keyed by API key or IP) |
-| Cache | `cachetools.TTLCache` in `app/cache.py` |
-| Compilation | `concurrent.futures.ProcessPoolExecutor` in `app/compiler.py` |
-| Request ID | `asgi-correlation-id` — X-Request-ID header, structlog context |
-| Errors | `app/errors.py` — `TexLiveError` hierarchy + `ErrorEnvelope` |
-| Middleware | `app/middleware.py` — request ID, body limit, request logging |
-| JSON | `orjson` — fast JSON rendering for logs + error responses |
-| Tests | pytest + httpx (async), run inside container |
-| Lint | ruff (configured in `pyproject.toml`) |
-| Logging | structlog (structured, JSON via orjson, configured in `app/logging.py`) |
-| Docker | Multi-stage build (`Dockerfile`), dev with `--reload` (`Dockerfile.dev`) |
-| Python env | `venv` at `/opt/venv` — never `--break-system-packages` |
+| Layer       | Technology                                                               |
+| ----------- | ------------------------------------------------------------------------ |
+| Framework   | FastAPI (Python 3.11+, async)                                            |
+| ASGI        | Uvicorn                                                                  |
+| TeX         | TeX Live scheme-full (no docs/sources)                                   |
+| Auth        | `X-API-Key` header → `settings.api_keys_set`                             |
+| Rate limit  | SlowAPI (in-memory, keyed by API key or IP)                              |
+| Cache       | `cachetools.TTLCache` in `app/cache.py`                                  |
+| Compilation | `concurrent.futures.ProcessPoolExecutor` in `app/compiler.py`            |
+| Request ID  | `asgi-correlation-id` — X-Request-ID header, structlog context           |
+| Errors      | `app/errors.py` — `TexLiveError` hierarchy + `ErrorEnvelope`             |
+| Middleware  | `app/middleware.py` — request ID, body limit, request logging            |
+| JSON        | `orjson` — fast JSON rendering for logs + error responses                |
+| Tests       | pytest + httpx (async), run inside container                             |
+| Lint        | ruff (configured in `pyproject.toml`)                                    |
+| Logging     | structlog (structured, JSON via orjson, configured in `app/logging.py`)  |
+| Docker      | Multi-stage build (`Dockerfile`), dev with `--reload` (`Dockerfile.dev`) |
+| Python env  | `venv` at `/opt/venv` — never `--break-system-packages`                  |
 
 ### API — exact endpoints
 
-| Endpoint | Method | Auth | Purpose |
-|----------|--------|------|---------|
-| `/api/v1/health` | GET | No | Status + TeX Live version + cache stats |
-| `/api/v1/compile` | POST | Yes (`X-API-Key`) | LaTeX → PDF |
-| `/docs` | GET | No | OpenAPI/Swagger |
-| `/redoc` | GET | No | ReDoc |
+| Endpoint          | Method | Auth              | Purpose                                 |
+| ----------------- | ------ | ----------------- | --------------------------------------- |
+| `/api/v1/health`  | GET    | No                | Status + TeX Live version + cache stats |
+| `/api/v1/compile` | POST   | Yes (`X-API-Key`) | LaTeX → PDF                             |
+| `/docs`           | GET    | No                | OpenAPI/Swagger                         |
+| `/redoc`          | GET    | No                | ReDoc                                   |
 
 ### Request modes — two, no others
 
@@ -187,44 +187,44 @@ X-Request-ID: <uuid-hex>
 
 These are **structural requirements**, not optimizations to toggle. Do not weaken, bypass, or make optional.
 
-| # | Feature | Where | What it does | Impact |
-|---|---------|-------|-------------|--------|
-| 1 | **tmpfs** | `compiler.py:TMPFS_DIR` | All temp dirs in `/dev/shm` | ~40-60% speedup |
-| 2 | **Pre-compiled `.fmt`** | `Dockerfile: fmtutil-sys --all` | Avoids format parsing per-request | ~20-30% speedup |
-| 3 | **LRU cache** | `cache.py:compile_cache` | SHA-256 keyed `TTLCache(200, 1800s)` | ~10ms cache hits |
-| 4 | **Smart passes** | `compiler.py:_compile_sync` | Parse log for rerun warnings, max 3 | ~30-50% fewer passes |
-| 5 | **Draft mode** | `compiler.py:_compile_sync` | `\PassOptionsToPackage{draft}{graphicx}` | ~50-70% on image-heavy |
-| 6 | **Process pool** | `compiler.py:get_executor` | `ProcessPoolExecutor(max_workers=4)` + crash recovery | True parallelism |
-| 7 | **Engine paths** | `compiler.py:ENGINE_PATHS` | `shutil.which()` once at import | Zero per-request PATH lookup |
-| 8 | **Health caching** | `health.py:_get_texlive_version` | `@lru_cache` — no shell-out per request | Instant health checks |
-| 9 | **Fontconfig** | `Dockerfile: fc-cache` | TeX Live fonts registered with fontconfig | XeLaTeX/LuaLaTeX font discovery |
-| 10 | **Body size limit** | `middleware.py` | Rejects oversized/malformed `Content-Length` | Prevents OOM |
-| 11 | **Cache entry cap** | `compiler.py:MAX_CACHE_ENTRY_SIZE` | Skip caching PDFs > 10 MB | Protects cache budget |
-| 12 | **Graceful shutdown** | `Dockerfile: --timeout-graceful-shutdown 30` | In-flight compiles finish on SIGTERM | No zombie temp dirs |
-| 13 | **Pool crash recovery** | `compiler.py:_recreate_executor` | Catches `BrokenProcessPool`, rebuilds | Survives TeX segfaults |
-| 14 | **Request ID** | `middleware.py` + `asgi-correlation-id` | UUID per request, bound to logs + response | Full request tracing |
-| 15 | **Orphan cleanup** | `compiler.py:sweep_orphan_temp_dirs` | Startup sweep of stale `texlive_*` dirs | Prevents tmpfs leak |
-| 16 | **Unified errors** | `errors.py:ErrorEnvelope` | All errors use same JSON shape with `request_id` | Consistent DX |
-| 17 | **main_file validation** | `compiler.py:validate_main_file` | Blocks path traversal + invalid extensions | Security hardening |
-| 18 | **File I/O hardening** | `compiler.py:_compile_sync` | All file ops wrapped in `try/except OSError` | No silent worker crashes |
+| #   | Feature                  | Where                                        | What it does                                          | Impact                          |
+| --- | ------------------------ | -------------------------------------------- | ----------------------------------------------------- | ------------------------------- |
+| 1   | **tmpfs**                | `compiler.py:TMPFS_DIR`                      | All temp dirs in `/dev/shm`                           | ~40-60% speedup                 |
+| 2   | **Pre-compiled `.fmt`**  | `Dockerfile: fmtutil-sys --all`              | Avoids format parsing per-request                     | ~20-30% speedup                 |
+| 3   | **LRU cache**            | `cache.py:compile_cache`                     | SHA-256 keyed `TTLCache(200, 1800s)`                  | ~10ms cache hits                |
+| 4   | **Smart passes**         | `compiler.py:_compile_sync`                  | Parse log for rerun warnings, max 3                   | ~30-50% fewer passes            |
+| 5   | **Draft mode**           | `compiler.py:_compile_sync`                  | `\PassOptionsToPackage{draft}{graphicx}`              | ~50-70% on image-heavy          |
+| 6   | **Process pool**         | `compiler.py:get_executor`                   | `ProcessPoolExecutor(max_workers=4)` + crash recovery | True parallelism                |
+| 7   | **Engine paths**         | `compiler.py:ENGINE_PATHS`                   | `shutil.which()` once at import                       | Zero per-request PATH lookup    |
+| 8   | **Health caching**       | `health.py:_get_texlive_version`             | `@lru_cache` — no shell-out per request               | Instant health checks           |
+| 9   | **Fontconfig**           | `Dockerfile: fc-cache`                       | TeX Live fonts registered with fontconfig             | XeLaTeX/LuaLaTeX font discovery |
+| 10  | **Body size limit**      | `middleware.py`                              | Rejects oversized/malformed `Content-Length`          | Prevents OOM                    |
+| 11  | **Cache entry cap**      | `compiler.py:MAX_CACHE_ENTRY_SIZE`           | Skip caching PDFs > 10 MB                             | Protects cache budget           |
+| 12  | **Graceful shutdown**    | `Dockerfile: --timeout-graceful-shutdown 30` | In-flight compiles finish on SIGTERM                  | No zombie temp dirs             |
+| 13  | **Pool crash recovery**  | `compiler.py:_recreate_executor`             | Catches `BrokenProcessPool`, rebuilds                 | Survives TeX segfaults          |
+| 14  | **Request ID**           | `middleware.py` + `asgi-correlation-id`      | UUID per request, bound to logs + response            | Full request tracing            |
+| 15  | **Orphan cleanup**       | `compiler.py:sweep_orphan_temp_dirs`         | Startup sweep of stale `texlive_*` dirs               | Prevents tmpfs leak             |
+| 16  | **Unified errors**       | `errors.py:ErrorEnvelope`                    | All errors use same JSON shape with `request_id`      | Consistent DX                   |
+| 17  | **main_file validation** | `compiler.py:validate_main_file`             | Blocks path traversal + invalid extensions            | Security hardening              |
+| 18  | **File I/O hardening**   | `compiler.py:_compile_sync`                  | All file ops wrapped in `try/except OSError`          | No silent worker crashes        |
 
 ---
 
 ## Environment Variables (complete list)
 
-| Variable | Required | Default | Type | Description |
-|----------|----------|---------|------|-------------|
-| `API_KEYS` | **Yes** | — | CSV string | Comma-separated valid API keys |
-| `ALLOWED_ORIGINS` | No | `*` | CSV string | CORS origins |
-| `MAX_UPLOAD_SIZE_MB` | No | `50` | int | Max zip upload MB |
-| `COMPILATION_TIMEOUT` | No | `120` | int (seconds) | Hard timeout per compilation |
-| `RATE_LIMIT` | No | `30/minute` | SlowAPI format | Per-key rate limit |
-| `LOG_LEVEL` | No | `info` | string | `debug`, `info`, `warning`, `error` |
-| `WORKERS` | No | `4` | int | Uvicorn workers (prod CMD uses `$WORKERS`) |
-| `CACHE_MAX_SIZE` | No | `200` | int | Max LRU cache entries |
-| `CACHE_TTL_SECONDS` | No | `1800` | int (seconds) | Cache entry TTL |
-| `USE_TMPFS` | No | `true` | bool | Use `/dev/shm` for temp dirs |
-| `MAX_CONCURRENT_COMPILES` | No | `4` | int | ProcessPoolExecutor workers |
+| Variable                  | Required | Default     | Type           | Description                                |
+| ------------------------- | -------- | ----------- | -------------- | ------------------------------------------ |
+| `API_KEYS`                | **Yes**  | —           | CSV string     | Comma-separated valid API keys             |
+| `ALLOWED_ORIGINS`         | No       | `*`         | CSV string     | CORS origins                               |
+| `MAX_UPLOAD_SIZE_MB`      | No       | `50`        | int            | Max zip upload MB                          |
+| `COMPILATION_TIMEOUT`     | No       | `120`       | int (seconds)  | Hard timeout per compilation               |
+| `RATE_LIMIT`              | No       | `30/minute` | SlowAPI format | Per-key rate limit                         |
+| `LOG_LEVEL`               | No       | `info`      | string         | `debug`, `info`, `warning`, `error`        |
+| `WORKERS`                 | No       | `4`         | int            | Uvicorn workers (prod CMD uses `$WORKERS`) |
+| `CACHE_MAX_SIZE`          | No       | `200`       | int            | Max LRU cache entries                      |
+| `CACHE_TTL_SECONDS`       | No       | `1800`      | int (seconds)  | Cache entry TTL                            |
+| `USE_TMPFS`               | No       | `true`      | bool           | Use `/dev/shm` for temp dirs               |
+| `MAX_CONCURRENT_COMPILES` | No       | `4`         | int            | ProcessPoolExecutor workers                |
 
 ---
 
@@ -285,18 +285,18 @@ These are **structural requirements**, not optimizations to toggle. Do not weake
 
 ### Code Conventions
 
-| Rule | Standard |
-|------|----------|
-| Python version | 3.11+ with type hints on every function |
-| Endpoints | `async def` in `app/routers/` |
-| Docstrings | Google-style |
-| Linter | `ruff` (config in `pyproject.toml`) |
-| Formatter | `ruff format` |
-| Logging | `structlog` structured logging |
-| Enums | `StrEnum` (not `str, Enum`) |
-| Config | `pydantic-settings` with `model_config` |
-| Tests | `pytest` + `httpx` async, run inside container |
-| Regex | Pre-compile at module level (`re.compile()`), never inline `re.search()` with string pattern |
+| Rule           | Standard                                                                                     |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| Python version | 3.11+ with type hints on every function                                                      |
+| Endpoints      | `async def` in `app/routers/`                                                                |
+| Docstrings     | Google-style                                                                                 |
+| Linter         | `ruff` (config in `pyproject.toml`)                                                          |
+| Formatter      | `ruff format`                                                                                |
+| Logging        | `structlog` structured logging                                                               |
+| Enums          | `StrEnum` (not `str, Enum`)                                                                  |
+| Config         | `pydantic-settings` with `model_config`                                                      |
+| Tests          | `pytest` + `httpx` async, run inside container                                               |
+| Regex          | Pre-compile at module level (`re.compile()`), never inline `re.search()` with string pattern |
 
 ### Commit & PR Rules
 

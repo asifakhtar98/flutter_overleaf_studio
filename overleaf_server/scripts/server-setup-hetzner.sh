@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Oracle Cloud VM — One-Time Server Setup
+# Hetzner Cloud (CAX11) — One-Time Server Setup
 # =============================================================================
-# Usage: bash scripts/server-setup.sh
+# Usage: bash scripts/server-setup-hetzner.sh
 # Idempotent — safe to run multiple times.
-# For Hetzner, use server-setup-hetzner.sh instead.
+#
+# Differences from Oracle setup:
+#   - No Oracle-specific iptables rules (Hetzner firewall is at network level)
+#   - Defaults tuned for CAX11 (2 vCPU, 4GB RAM)
 # =============================================================================
 set -euo pipefail
 
-echo "=== Overleaf Server — Server Setup ==="
+echo "=== Overleaf Server — Hetzner Server Setup ==="
 
 # --- System updates ---
-echo "[1/7] Updating system packages..."
+echo "[1/6] Updating system packages..."
 sudo apt-get update -y
 sudo apt-get upgrade -y
 
 # --- Install Docker ---
-echo "[2/7] Installing Docker..."
+echo "[2/6] Installing Docker..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com | sudo bash
     sudo usermod -aG docker "$USER"
@@ -26,7 +29,7 @@ else
 fi
 
 # --- Install Docker Compose plugin ---
-echo "[3/7] Installing Docker Compose plugin..."
+echo "[3/6] Installing Docker Compose plugin..."
 if ! docker compose version &> /dev/null; then
     sudo apt-get install -y docker-compose-plugin
 else
@@ -34,40 +37,40 @@ else
 fi
 
 # --- Configure UFW firewall ---
-echo "[4/7] Configuring UFW firewall..."
+echo "[4/6] Configuring UFW firewall..."
 sudo apt-get install -y ufw
 sudo ufw --force enable
 sudo ufw allow 22/tcp    # SSH
 sudo ufw allow 8080/tcp  # API
+sudo ufw allow 80/tcp    # HTTP (for nginx/TLS)
+sudo ufw allow 443/tcp   # HTTPS (for nginx/TLS)
 sudo ufw status
 
-# --- Oracle Cloud iptables (required in addition to UFW) ---
-echo "[5/7] Configuring Oracle Cloud iptables..."
-# Oracle Cloud Ubuntu images have restrictive iptables by default
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8080 -j ACCEPT
-sudo netfilter-persistent save 2>/dev/null || true
+# Note: Hetzner's cloud firewall operates at the network level.
+# UFW is the only host firewall needed — no Oracle-style iptables workaround.
 
 # --- Create app directory ---
-echo "[6/7] Creating application directory..."
+echo "[5/6] Creating application directory..."
 APP_DIR="$HOME/overleaf-server"
 mkdir -p "$APP_DIR/scripts"
 echo "App directory: $APP_DIR"
 
-# --- Copy compose and deploy files ---
-echo "[7/7] Setting up deployment structure..."
+# --- Set up deployment structure ---
+echo "[6/6] Setting up deployment structure..."
 cat > "$APP_DIR/.env" << 'ENVEOF'
-# Production environment — EDIT THESE VALUES
+# Production environment (Hetzner CAX11) — EDIT THESE VALUES
+# ⚠️  CAX11 has 2 vCPU + 4GB RAM — these defaults are tuned accordingly
 API_KEYS=CHANGE_ME_TO_REAL_API_KEYS
 ALLOWED_ORIGINS=*
 MAX_UPLOAD_SIZE_MB=50
 COMPILATION_TIMEOUT=120
 RATE_LIMIT=30/minute
 LOG_LEVEL=info
-WORKERS=4
-CACHE_MAX_SIZE=200
+WORKERS=2
+CACHE_MAX_SIZE=100
 CACHE_TTL_SECONDS=1800
 USE_TMPFS=true
-MAX_CONCURRENT_COMPILES=4
+MAX_CONCURRENT_COMPILES=2
 ENVEOF
 
 # --- Configure log rotation ---

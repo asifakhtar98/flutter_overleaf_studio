@@ -29,7 +29,7 @@
 
 | Setting | Value |
 |---------|-------|
-| **Name: `overleaf-server`` |
+| **Name** | `overleaf-server` |
 | **Image** | Ubuntu 22.04 (Canonical) |
 | **Shape** | `VM.Standard.A1.Flex` |
 | **OCPUs** | 4 |
@@ -146,13 +146,22 @@ scp -i ~/.ssh/your_key docker-compose.prod.yml ubuntu@YOUR_ORACLE_IP:~/overleaf-
 
 In your GitHub repo → **Settings → Secrets and variables → Actions**:
 
+**Secrets:**
+
 | Secret | How to get the value |
 |--------|---------------------|
-| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_USERNAME` | Your Docker Hub username (shared with Hetzner) |
 | `DOCKERHUB_TOKEN` | Docker Hub → Account Settings → Security → New Access Token |
 | `ORACLE_HOST` | Your VM's public IP address |
 | `ORACLE_SSH_USER` | `ubuntu` (default for Oracle Ubuntu images) |
 | `ORACLE_SSH_KEY` | `cat ~/.ssh/your_key` — the PRIVATE key |
+
+**Variables** (Settings → Variables → Actions):
+
+| Variable | Value | Purpose |
+|----------|-------|--------|
+| `DEPLOY_ORACLE` | `true` | Enables Oracle deployment in CD |
+| `DEPLOY_HETZNER` | `true` | Enables Hetzner deployment (if configured) |
 
 ### Generate Docker Hub access token
 
